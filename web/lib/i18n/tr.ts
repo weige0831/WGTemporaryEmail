@@ -1,7 +1,7 @@
 import type { Dict } from "./en"
 
 export const tr: Partial<Dict> = {
-  nav: { about: "Hakkında", privacy: "Gizlilik" },
+  nav: { about: "Hakkında", privacy: "Gizlilik", api: "API" },
   home: {
     yourTempEmail: "Geçici e-postanız",
     readyDesc: "Geçici e-postanız hazır. {time} içinde otomatik olarak silinecek.",

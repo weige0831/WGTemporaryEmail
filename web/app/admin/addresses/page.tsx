@@ -20,10 +20,12 @@ import {
   type AdminAddressDetail,
   formatDateTime,
 } from "@/lib/admin-api"
+import { useI18n } from "@/lib/i18n"
 
 const PER_PAGE = 20
 
 export default function AdminAddresses() {
+  const { t } = useI18n()
   const [data, setData] = useState<AdminAddressList | null>(null)
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState("")
@@ -40,7 +42,7 @@ export default function AdminAddresses() {
       setData(res)
     } catch (e) {
       if (e instanceof ApiError) setError(e.message)
-      else setError("加载失败，请重试")
+      else setError(t("admin.loadFailed"))
     } finally {
       setLoading(false)
     }
@@ -66,7 +68,7 @@ export default function AdminAddresses() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm("确定删除该地址吗？其下所有邮件也会一并删除，此操作不可恢复。")) return
+    if (!confirm(t("admin.deleteAddressConfirm"))) return
     try {
       await adminApi.deleteAddress(id)
       setDetail(null)
@@ -78,13 +80,13 @@ export default function AdminAddresses() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold">地址管理</h1>
+      <h1 className="text-2xl font-bold">{t("admin.addressesTitle")}</h1>
 
       <div className="flex gap-2">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="搜索邮箱地址"
+            placeholder={t("admin.searchAddressesPlaceholder")}
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSearch()}
@@ -92,7 +94,7 @@ export default function AdminAddresses() {
           />
         </div>
         <Button onClick={handleSearch} variant="outline">
-          搜索
+          {t("admin.search")}
         </Button>
         <Button onClick={() => fetchAddresses()} variant="ghost" size="icon" disabled={loading}>
           <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
@@ -106,20 +108,20 @@ export default function AdminAddresses() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b text-left text-muted-foreground">
-                <th className="p-3 font-medium">邮箱地址</th>
-                <th className="p-3 font-medium">状态</th>
-                <th className="p-3 font-medium">邮件数</th>
-                <th className="p-3 font-medium">未读</th>
-                <th className="p-3 font-medium">创建时间</th>
-                <th className="p-3 font-medium">过期时间</th>
-                <th className="p-3 font-medium text-right">操作</th>
+                <th className="p-3 font-medium">{t("admin.emailCol")}</th>
+                <th className="p-3 font-medium">{t("admin.statusCol")}</th>
+                <th className="p-3 font-medium">{t("admin.emailCountCol")}</th>
+                <th className="p-3 font-medium">{t("admin.unreadCol")}</th>
+                <th className="p-3 font-medium">{t("admin.createdCol")}</th>
+                <th className="p-3 font-medium">{t("admin.expiresCol")}</th>
+                <th className="p-3 font-medium text-right">{t("admin.actionsCol")}</th>
               </tr>
             </thead>
             <tbody className="divide-y">
               {data?.items.length === 0 && (
                 <tr>
                   <td colSpan={7} className="p-6 text-center text-muted-foreground">
-                    暂无地址
+                    {t("admin.noAddresses")}
                   </td>
                 </tr>
               )}
@@ -128,9 +130,9 @@ export default function AdminAddresses() {
                   <td className="p-3 font-mono max-w-[260px] truncate">{a.email}</td>
                   <td className="p-3">
                     {a.is_expired ? (
-                      <Badge variant="outline">已过期</Badge>
+                      <Badge variant="outline">{t("admin.expired")}</Badge>
                     ) : (
-                      <Badge variant="success">活跃</Badge>
+                      <Badge variant="success">{t("admin.active")}</Badge>
                     )}
                   </td>
                   <td className="p-3">{a.email_count}</td>
@@ -150,7 +152,7 @@ export default function AdminAddresses() {
                   <td className="p-3 text-right whitespace-nowrap">
                     <Button size="sm" variant="ghost" onClick={() => handleView(a.id)}>
                       <Eye className="h-4 w-4 mr-1" />
-                      查看
+                      {t("admin.view")}
                     </Button>
                     <Button size="sm" variant="ghost" onClick={() => handleDelete(a.id)}>
                       <Trash2 className="h-4 w-4 text-destructive" />
@@ -166,7 +168,7 @@ export default function AdminAddresses() {
       {data && data.total > 0 && (
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <span>
-            共 {data.total} 个 · 第 {data.page} 页 / {Math.max(1, Math.ceil(data.total / PER_PAGE))} 页
+            {t("admin.totalItems", { n: data.total })} · {t("admin.pageOf", { p: data.page, n: Math.max(1, Math.ceil(data.total / PER_PAGE)) })}
           </span>
           <div className="flex gap-2">
             <Button
@@ -179,7 +181,7 @@ export default function AdminAddresses() {
                 fetchAddresses(p)
               }}
             >
-              上一页
+              {t("admin.prev")}
             </Button>
             <Button
               size="sm"
@@ -191,7 +193,7 @@ export default function AdminAddresses() {
                 fetchAddresses(p)
               }}
             >
-              下一页
+              {t("admin.next")}
             </Button>
           </div>
         </div>
@@ -202,41 +204,40 @@ export default function AdminAddresses() {
           <DialogHeader>
             <DialogTitle className="font-mono">{detail?.email}</DialogTitle>
             <DialogDescription>
-              创建于 {detail && formatDateTime(detail.created_at)} · 过期于{" "}
-              {detail && formatDateTime(detail.expires_at)}
+              {detail && t("admin.createdExpiresSub", { a: formatDateTime(detail.created_at), b: formatDateTime(detail.expires_at) })}
             </DialogDescription>
           </DialogHeader>
           {detail && (
             <div className="space-y-4 text-sm">
               <div className="flex items-center gap-2">
                 {detail.is_expired ? (
-                  <Badge variant="outline">已过期</Badge>
+                  <Badge variant="outline">{t("admin.expired")}</Badge>
                 ) : (
-                  <Badge variant="success">活跃</Badge>
+                  <Badge variant="success">{t("admin.active")}</Badge>
                 )}
-                <span className="text-muted-foreground">共 {detail.emails.length} 封邮件</span>
+                <span className="text-muted-foreground">{t("admin.emailsTotal", { n: detail.emails.length })}</span>
               </div>
 
               <div className="divide-y border rounded-md max-h-[320px] overflow-y-auto">
                 {detail.emails.length === 0 && (
-                  <p className="p-4 text-center text-muted-foreground">暂无邮件</p>
+                  <p className="p-4 text-center text-muted-foreground">{t("admin.noEmails")}</p>
                 )}
                 {detail.emails.map((e) => (
                   <div key={e.id} className="p-3 flex items-center justify-between gap-2">
                     <div className="min-w-0">
-                      <div className="truncate font-medium">{e.subject || "（无主题）"}</div>
+                      <div className="truncate font-medium">{e.subject || t("admin.noSubject")}</div>
                       <div className="text-xs text-muted-foreground truncate">
                         {e.from_address} · {formatDateTime(e.received_at)}
                       </div>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                      {!e.is_read && <Badge variant="default">新</Badge>}
+                      {!e.is_read && <Badge variant="default">{t("admin.new")}</Badge>}
                       <Button
                         size="sm"
                         variant="ghost"
                         onClick={() => (window.location.href = "/admin/emails")}
                       >
-                        在邮件管理中查看
+                        {t("admin.viewInEmails")}
                       </Button>
                     </div>
                   </div>
@@ -250,7 +251,7 @@ export default function AdminAddresses() {
                 className="w-full"
               >
                 <Trash2 className="h-4 w-4 mr-2" />
-                删除该地址及其所有邮件
+                {t("admin.deleteAddressBtn")}
               </Button>
             </div>
           )}

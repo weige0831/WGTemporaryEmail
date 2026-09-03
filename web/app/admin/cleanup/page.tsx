@@ -5,8 +5,10 @@ import { Trash2, CheckCircle2, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { adminApi, ApiError, type AdminStats, formatBytesZh } from "@/lib/admin-api"
+import { useI18n } from "@/lib/i18n"
 
 export default function AdminCleanup() {
+  const { t } = useI18n()
   const [stats, setStats] = useState<AdminStats | null>(null)
   const [running, setRunning] = useState(false)
   const [result, setResult] = useState<{
@@ -32,7 +34,7 @@ export default function AdminCleanup() {
   }, [])
 
   const handleRun = async () => {
-    if (!confirm("立即执行过期地址清理？将删除所有已过期地址及其邮件。")) return
+    if (!confirm(t("admin.cleanupConfirm"))) return
     setRunning(true)
     setError("")
     setResult(null)
@@ -43,12 +45,12 @@ export default function AdminCleanup() {
         emails: res.deleted_emails,
         before: res.storage_bytes_before,
         after: res.storage_bytes_after,
-        at: new Date().toLocaleString("zh-CN"),
+        at: new Date().toLocaleString(),
       })
       await fetchStats()
     } catch (e) {
       if (e instanceof ApiError) setError(e.message)
-      else setError("清理失败，请重试")
+      else setError(t("admin.cleanupFailed"))
     } finally {
       setRunning(false)
     }
@@ -56,27 +58,31 @@ export default function AdminCleanup() {
 
   return (
     <div className="space-y-4 max-w-2xl">
-      <h1 className="text-2xl font-bold">数据清理</h1>
+      <h1 className="text-2xl font-bold">{t("admin.cleanupTitle")}</h1>
 
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
             <Trash2 className="h-4 w-4" />
-            手动清理过期地址
+            {t("admin.cleanupCardTitle")}
           </CardTitle>
           <CardDescription>
-            系统会按配置的周期自动清理（当前每 {stats?.cleanup_interval_hours ?? "-"} 小时一次），
-            清理内容包括：过期地址、以及超出总存储上限（{stats?.max_storage_mb ?? "-"} MB，0 为不限制）的最旧邮件。
-            也可以在这里立即执行一次。
+            {t("admin.cleanupDesc", {
+              h: stats?.cleanup_interval_hours ?? "-",
+              m: stats?.max_storage_mb ?? "-",
+            })}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="text-sm text-muted-foreground">
-            当前共 {stats?.total_addresses ?? "-"} 个地址，其中活跃 {stats?.active_addresses ?? "-"} 个。
+            {t("admin.currentAddresses", {
+              total: stats?.total_addresses ?? "-",
+              active: stats?.active_addresses ?? "-",
+            })}
           </div>
           <Button onClick={handleRun} disabled={running} variant="destructive">
             <Trash2 className="h-4 w-4 mr-2" />
-            {running ? "清理中..." : "立即清理"}
+            {running ? t("admin.cleaning") : t("admin.runNow")}
           </Button>
 
           {error && (
@@ -89,13 +95,16 @@ export default function AdminCleanup() {
             <div className="text-sm text-primary space-y-1">
               <p className="flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4" />
-                清理完成（{result.at}）
+                {t("admin.cleanupDone", { time: result.at })}
               </p>
               <ul className="text-xs text-muted-foreground pl-6 space-y-0.5">
-                <li>删除过期地址：{result.deleted} 个</li>
-                <li>因超出存储上限删除邮件：{result.emails} 封</li>
+                <li>{t("admin.deletedAddresses", { n: result.deleted })}</li>
+                <li>{t("admin.deletedEmails", { n: result.emails })}</li>
                 <li>
-                  存储占用：{formatBytesZh(result.before)} → {formatBytesZh(result.after)}
+                  {t("admin.storageChanged", {
+                    a: formatBytesZh(result.before),
+                    b: formatBytesZh(result.after),
+                  })}
                 </li>
               </ul>
             </div>

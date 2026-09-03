@@ -24,8 +24,10 @@ import {
   formatBytesZh,
   formatUptime,
 } from "@/lib/admin-api"
+import { useI18n } from "@/lib/i18n"
 
 export default function AdminDashboard() {
+  const { t } = useI18n()
   const [stats, setStats] = useState<AdminStats | null>(null)
   const [recentEmails, setRecentEmails] = useState<AdminEmailSummary[]>([])
   const [recentAddresses, setRecentAddresses] = useState<AdminAddressSummary[]>([])
@@ -44,30 +46,27 @@ export default function AdminDashboard() {
         setRecentAddresses(addresses.items)
       } catch (e) {
         if (e instanceof ApiError) setError(e.message)
-        else setError("加载失败，请重试")
+        else setError(t("admin.loadFailed"))
       }
     })()
-  }, [])
+  }, [t])
 
   const cards = stats
     ? [
-        { label: "活跃地址", value: stats.active_addresses, sub: `共 ${stats.total_addresses} 个`, icon: Users },
-        { label: "邮件总数", value: stats.total_emails, sub: `未读 ${stats.unread_emails}`, icon: Mail },
-        { label: "近 24 小时邮件", value: stats.emails_24h, sub: "", icon: Clock },
-        { label: "附件数量", value: stats.total_attachments, sub: "", icon: Paperclip },
+        { label: t("admin.activeAddresses"), value: stats.active_addresses, sub: t("admin.totalAddressesSub", { n: stats.total_addresses }), icon: Users },
+        { label: t("admin.totalEmails"), value: stats.total_emails, sub: t("admin.unreadSub", { n: stats.unread_emails }), icon: Mail },
+        { label: t("admin.emails24h"), value: stats.emails_24h, sub: "", icon: Clock },
+        { label: t("admin.attachmentsTotal"), value: stats.total_attachments, sub: "", icon: Paperclip },
         {
-          label: "存储占用",
+          label: t("admin.storageUsage"),
           value: formatBytesZh(stats.email_size_bytes + stats.attachment_size_bytes),
-          sub:
-            stats.max_storage_mb > 0
-              ? `上限 ${stats.max_storage_mb} MB`
-              : "未设上限",
+          sub: stats.max_storage_mb > 0 ? t("admin.storageCap", { n: stats.max_storage_mb }) : t("admin.storageNoCap"),
           icon: HardDrive,
         },
         {
-          label: "运行时长",
+          label: t("admin.uptime"),
           value: formatUptime(stats.uptime_seconds),
-          sub: `地址有效期 ${stats.address_lifetime_hours}h`,
+          sub: t("admin.lifetimeSub", { n: stats.address_lifetime_hours }),
           icon: Database,
         },
       ]
@@ -76,11 +75,11 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">仪表盘</h1>
+        <h1 className="text-2xl font-bold">{t("admin.dashboard")}</h1>
         {stats && (
           <Badge variant={stats.db_ok ? "success" : "destructive"}>
             <Database className="h-3 w-3 mr-1" />
-            数据库{stats.db_ok ? "正常" : "异常"}
+            {stats.db_ok ? t("admin.dbHealthy") : t("admin.dbError")}
           </Badge>
         )}
       </div>
@@ -111,7 +110,7 @@ export default function AdminDashboard() {
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <Globe className="h-4 w-4" />
-            已配置域名（{stats?.domains.length ?? 0}）
+            {t("admin.configuredDomains", { n: stats?.domains.length ?? 0 })}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -122,7 +121,7 @@ export default function AdminDashboard() {
               </Badge>
             ))}
             {stats && stats.domains.length === 0 && (
-              <span className="text-sm text-muted-foreground">未配置域名</span>
+              <span className="text-sm text-muted-foreground">{t("admin.noDomains")}</span>
             )}
           </div>
         </CardContent>
@@ -135,22 +134,22 @@ export default function AdminDashboard() {
             <div className="flex items-center justify-between">
               <CardTitle className="text-base flex items-center gap-2">
                 <Inbox className="h-4 w-4" />
-                最近邮件
+                {t("admin.recentEmails")}
               </CardTitle>
               <Link href="/admin/emails" className="text-sm text-primary hover:underline">
-                查看全部
+                {t("admin.viewAll")}
               </Link>
             </div>
           </CardHeader>
           <CardContent className="p-0">
             <div className="divide-y">
               {recentEmails.length === 0 && (
-                <p className="p-4 text-sm text-muted-foreground text-center">暂无邮件</p>
+                <p className="p-4 text-sm text-muted-foreground text-center">{t("admin.noEmails")}</p>
               )}
               {recentEmails.map((e) => (
                 <div key={e.id} className="p-3 text-sm">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="font-medium truncate">{e.subject || "（无主题）"}</span>
+                    <span className="font-medium truncate">{e.subject || t("admin.noSubject")}</span>
                     <span className="text-xs text-muted-foreground shrink-0">
                       {formatDateTime(e.received_at)}
                     </span>
@@ -170,17 +169,17 @@ export default function AdminDashboard() {
             <div className="flex items-center justify-between">
               <CardTitle className="text-base flex items-center gap-2">
                 <Users className="h-4 w-4" />
-                最近地址
+                {t("admin.recentAddresses")}
               </CardTitle>
               <Link href="/admin/addresses" className="text-sm text-primary hover:underline">
-                查看全部
+                {t("admin.viewAll")}
               </Link>
             </div>
           </CardHeader>
           <CardContent className="p-0">
             <div className="divide-y">
               {recentAddresses.length === 0 && (
-                <p className="p-4 text-sm text-muted-foreground text-center">暂无地址</p>
+                <p className="p-4 text-sm text-muted-foreground text-center">{t("admin.noAddresses")}</p>
               )}
               {recentAddresses.map((a) => (
                 <div key={a.id} className="p-3 text-sm">
@@ -188,16 +187,16 @@ export default function AdminDashboard() {
                     <span className="font-mono font-medium truncate">{a.email}</span>
                     {a.is_expired ? (
                       <Badge variant="outline" className="shrink-0">
-                        已过期
+                        {t("admin.expired")}
                       </Badge>
                     ) : (
                       <Badge variant="success" className="shrink-0">
-                        活跃
+                        {t("admin.active")}
                       </Badge>
                     )}
                   </div>
                   <div className="text-xs text-muted-foreground mt-0.5">
-                    邮件 {a.email_count} 封 · 创建于 {formatDateTime(a.created_at)}
+                    {t("admin.emailsCount", { n: a.email_count })} · {t("admin.createdSub", { time: formatDateTime(a.created_at) })}
                   </div>
                 </div>
               ))}

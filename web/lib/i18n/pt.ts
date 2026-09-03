@@ -1,7 +1,7 @@
 import type { Dict } from "./en"
 
 export const pt: Partial<Dict> = {
-  nav: { about: "Sobre", privacy: "Privacidade" },
+  nav: { about: "Sobre", privacy: "Privacidade", api: "API" },
   home: {
     yourTempEmail: "Seu e-mail temporário",
     readyDesc: "Seu e-mail temporário está pronto. Ele será excluído automaticamente em {time}.",

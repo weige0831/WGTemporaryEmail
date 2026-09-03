@@ -37,6 +37,9 @@ export default function AboutPage() {
             <Link href="/privacy" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground whitespace-nowrap">
               {t("nav.privacy")}
             </Link>
+            <Link href="/api" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground whitespace-nowrap">
+              {t("nav.api")}
+            </Link>
             <LanguageSwitcher />
             <ThemeToggle />
           </div>

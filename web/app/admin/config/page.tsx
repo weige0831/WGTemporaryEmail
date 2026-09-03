@@ -7,9 +7,10 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { adminApi, ApiError, clearAdminToken } from "@/lib/admin-api"
+import { useI18n } from "@/lib/i18n"
 
 interface ConfigData {
-  server?: { max_message_size_mb?: number; docs_enabled?: boolean }
+  server?: { max_message_size_mb?: number; docs_enabled?: boolean; hostname?: string }
   tempmail?: {
     address_lifetime_hours?: number
     max_emails_per_address?: number
@@ -30,29 +31,25 @@ interface ConfigData {
   [key: string]: unknown
 }
 
-const INT_FIELDS: { section: keyof ConfigData; key: string; label: string; min?: number }[] = [
-  { section: "server", key: "max_message_size_mb", label: "单封邮件大小上限 (MB)", min: 1 },
-  { section: "tempmail", key: "address_lifetime_hours", label: "地址有效期 (小时)", min: 1 },
-  { section: "tempmail", key: "max_emails_per_address", label: "每个地址最多邮件数", min: 1 },
-  { section: "tempmail", key: "max_storage_mb", label: "总存储占用上限 (MB，0 不限制)" },
-  { section: "tempmail", key: "cleanup_interval_hours", label: "清理任务间隔 (小时)", min: 1 },
-  { section: "tempmail", key: "min_username_length", label: "用户名最短长度", min: 1 },
-  { section: "tempmail", key: "max_username_length", label: "用户名最长长度", min: 1 },
-  { section: "database", key: "pool_size", label: "数据库连接池大小", min: 1 },
-  { section: "database", key: "max_overflow", label: "连接池最大溢出", min: 1 },
+const INT_FIELDS: { section: keyof ConfigData; key: string; labelKey: string; min?: number; allowZero?: boolean }[] = [
+  { section: "server", key: "max_message_size_mb", labelKey: "admin.maxMsgSizeMb", min: 1 },
+  { section: "tempmail", key: "address_lifetime_hours", labelKey: "admin.addressLifetime", min: 1 },
+  { section: "tempmail", key: "max_emails_per_address", labelKey: "admin.maxEmailsPerAddress", min: 1 },
+  { section: "tempmail", key: "max_storage_mb", labelKey: "admin.maxStorageMb", allowZero: true },
+  { section: "tempmail", key: "cleanup_interval_hours", labelKey: "admin.cleanupInterval", min: 1 },
+  { section: "tempmail", key: "min_username_length", labelKey: "admin.minUsernameLength", min: 1 },
+  { section: "tempmail", key: "max_username_length", labelKey: "admin.maxUsernameLength", min: 1 },
+  { section: "database", key: "pool_size", labelKey: "admin.poolSize", min: 1 },
+  { section: "database", key: "max_overflow", labelKey: "admin.maxOverflow", min: 1 },
 ]
 
-const BOOL_FIELDS: { section: keyof ConfigData; key: string; label: string }[] = [
-  { section: "server", key: "docs_enabled", label: "启用 API 文档 (/docs Swagger)" },
-  { section: "tempmail", key: "allow_custom_usernames", label: "允许自定义用户名" },
-  { section: "validation", key: "check_dkim", label: "校验 DKIM" },
-  { section: "validation", key: "check_spf", label: "校验 SPF" },
-  { section: "validation", key: "check_dmarc", label: "校验 DMARC" },
-  { section: "validation", key: "store_results", label: "存储校验结果" },
-]
-
-const STRING_FIELDS: { section: keyof ConfigData; key: string; label: string }[] = [
-  { section: "server", key: "hostname", label: "邮件服务器主机名" },
+const BOOL_FIELDS: { section: keyof ConfigData; key: string; labelKey: string }[] = [
+  { section: "server", key: "docs_enabled", labelKey: "admin.docsEnabled" },
+  { section: "tempmail", key: "allow_custom_usernames", labelKey: "admin.allowCustomUsernames" },
+  { section: "validation", key: "check_dkim", labelKey: "admin.checkDkim" },
+  { section: "validation", key: "check_spf", labelKey: "admin.checkSpf" },
+  { section: "validation", key: "check_dmarc", labelKey: "admin.checkDmarc" },
+  { section: "validation", key: "store_results", labelKey: "admin.storeResults" },
 ]
 
 function getValue(config: ConfigData, section: keyof ConfigData, key: string): string | boolean {
@@ -65,6 +62,7 @@ function getValue(config: ConfigData, section: keyof ConfigData, key: string): s
 
 export default function AdminConfig() {
   const router = useRouter()
+  const { t } = useI18n()
   const [config, setConfig] = useState<ConfigData | null>(null)
   const [form, setForm] = useState<Record<string, string | boolean>>({})
   const [corsOrigins, setCorsOrigins] = useState("")
@@ -87,15 +85,12 @@ export default function AdminConfig() {
       for (const field of BOOL_FIELDS) {
         f[`${field.section}.${field.key}`] = getValue(cfg, field.section, field.key) === true
       }
-      for (const field of STRING_FIELDS) {
-        const v = getValue(cfg, field.section, field.key)
-        f[`${field.section}.${field.key}`] = typeof v === "string" ? v : ""
-      }
+      f["server.hostname"] = typeof getValue(cfg, "server", "hostname") === "string" ? String(getValue(cfg, "server", "hostname")) : ""
       setForm(f)
       setCorsOrigins((cfg.cors?.allow_origins || []).join("\n"))
     } catch (e) {
       if (e instanceof ApiError) setError(e.message)
-      else setError("加载失败，请重试")
+      else setError(t("admin.loadFailed"))
     }
   }
 
@@ -115,11 +110,9 @@ export default function AdminConfig() {
         const raw = form[`${field.section}.${field.key}`]
         if (raw === "" || raw === undefined) continue
         const num = Number(raw)
-        // max_storage_mb allows 0 (unlimited); other int fields require >= 1
-        const isStorageCap = field.key === "max_storage_mb"
-        const minAllowed = isStorageCap ? 0 : (field.min ?? 1)
+        const minAllowed = field.allowZero ? 0 : (field.min ?? 1)
         if (isNaN(num) || !Number.isInteger(num) || num < minAllowed) {
-          setError(`${field.label} 必须是 ≥${minAllowed} 的整数`)
+          setError(t("admin.intMinError", { n: minAllowed }))
           setLoading(false)
           return
         }
@@ -134,12 +127,10 @@ export default function AdminConfig() {
         }
       }
 
-      for (const field of STRING_FIELDS) {
-        const v = (form[`${field.section}.${field.key}`] ?? "").toString().trim()
-        const current = getValue(config as ConfigData, field.section, field.key)
-        if (v && v !== current) {
-          ;(patch[field.section as string] ||= {})[field.key] = v
-        }
+      const hostname = (form["server.hostname"] ?? "").toString().trim()
+      const currentHostname = getValue(config as ConfigData, "server", "hostname")
+      if (hostname && hostname !== currentHostname) {
+        ;(patch.server ||= {}).hostname = hostname
       }
 
       const tokenChanged = adminTokenInput.trim().length > 0
@@ -157,7 +148,7 @@ export default function AdminConfig() {
       }
 
       if (Object.keys(patch).length === 0) {
-        setNotice("没有需要保存的修改")
+        setNotice(t("admin.nothingToSave"))
         setLoading(false)
         return
       }
@@ -166,16 +157,16 @@ export default function AdminConfig() {
 
       if (tokenChanged) {
         clearAdminToken()
-        alert("管理令牌已更新，请使用新令牌重新登录")
+        alert(t("admin.tokenUpdated"))
         router.replace("/admin")
         return
       }
 
-      setNotice("配置已保存并热重载（无需重启服务）")
+      setNotice(t("admin.savedReloaded"))
       await fetchConfig()
     } catch (e) {
       if (e instanceof ApiError) setError(e.message)
-      else setError("保存失败，请重试")
+      else setError(t("admin.saveFailed"))
     } finally {
       setLoading(false)
     }
@@ -187,10 +178,8 @@ export default function AdminConfig() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold">系统配置</h1>
-      <p className="text-sm text-muted-foreground">
-        修改保存后立即热重载生效，无需重启服务。写入 config.yaml 时会移除其中的注释。
-      </p>
+      <h1 className="text-2xl font-bold">{t("admin.configTitle")}</h1>
+      <p className="text-sm text-muted-foreground">{t("admin.configHotReloadNote")}</p>
 
       {error && <p className="text-sm text-destructive">{error}</p>}
       {notice && <p className="text-sm text-primary">{notice}</p>}
@@ -200,39 +189,33 @@ export default function AdminConfig() {
         <div className="space-y-4">
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">邮件与地址</CardTitle>
-              <CardDescription>tempmail / server 相关参数</CardDescription>
+              <CardTitle className="text-base">{t("admin.mailSection")}</CardTitle>
+              <CardDescription>{t("admin.mailSectionDesc")}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {INT_FIELDS.filter((f) => f.section === "tempmail" || f.section === "server").map((f) => (
                 <div key={`${f.section}.${f.key}`} className="space-y-1">
-                  <label className="text-sm text-muted-foreground">{f.label}</label>
+                  <label className="text-sm text-muted-foreground">{t(f.labelKey)}</label>
                   <Input
                     type="number"
-                    min={f.key === "max_storage_mb" ? 0 : (f.min ?? 1)}
+                    min={f.allowZero ? 0 : (f.min ?? 1)}
                     value={String(form[`${f.section}.${f.key}`] ?? "")}
                     onChange={(e) => setField(`${f.section}.${f.key}`, e.target.value)}
                   />
                   {f.key === "max_storage_mb" && (
-                    <p className="text-xs text-muted-foreground">
-                      0 表示不限制；超过上限时清理任务会按“最旧邮件优先”删除，直到低于该值。
-                    </p>
+                    <p className="text-xs text-muted-foreground">{t("admin.storageCapHint")}</p>
                   )}
                 </div>
               ))}
-              {STRING_FIELDS.map((f) => (
-                <div key={`${f.section}.${f.key}`} className="space-y-1">
-                  <label className="text-sm text-muted-foreground">{f.label}</label>
-                  <Input
-                    value={String(form[`${f.section}.${f.key}`] ?? "")}
-                    onChange={(e) => setField(`${f.section}.${f.key}`, e.target.value)}
-                    className="font-mono"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    修改后需重启 MX 容器，SMTP 横幅中的主机名才会更新。
-                  </p>
-                </div>
-              ))}
+              <div className="space-y-1">
+                <label className="text-sm text-muted-foreground">{t("admin.mailHostname")}</label>
+                <Input
+                  value={String(form["server.hostname"] ?? "")}
+                  onChange={(e) => setField("server.hostname", e.target.value)}
+                  className="font-mono"
+                />
+                <p className="text-xs text-muted-foreground">{t("admin.hostnameHint")}</p>
+              </div>
             </CardContent>
           </Card>
 
@@ -240,25 +223,25 @@ export default function AdminConfig() {
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <KeyRound className="h-4 w-4" />
-                管理令牌
+                {t("admin.tokenSection")}
               </CardTitle>
-              <CardDescription>修改后需使用新令牌重新登录管理面板</CardDescription>
+              <CardDescription>{t("admin.tokenSectionDesc")}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
               <Input
                 type="password"
-                placeholder="输入新令牌（留空则不修改）"
+                placeholder={t("admin.tokenPlaceholder")}
                 value={adminTokenInput}
                 onChange={(e) => setAdminTokenInput(e.target.value)}
                 className="font-mono"
               />
-              <p className="text-xs text-muted-foreground">至少 8 个字符，建议 16 个以上</p>
+              <p className="text-xs text-muted-foreground">{t("admin.tokenHint")}</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">功能开关</CardTitle>
+              <CardTitle className="text-base">{t("admin.switchesSection")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {BOOL_FIELDS.map((f) => (
@@ -272,7 +255,7 @@ export default function AdminConfig() {
                     onChange={(e) => setField(`${f.section}.${f.key}`, e.target.checked)}
                     className="h-4 w-4"
                   />
-                  {f.label}
+                  {t(f.labelKey)}
                 </label>
               ))}
             </CardContent>
@@ -280,12 +263,12 @@ export default function AdminConfig() {
 
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">数据库</CardTitle>
+              <CardTitle className="text-base">{t("admin.databaseSection")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {INT_FIELDS.filter((f) => f.section === "database").map((f) => (
                 <div key={`${f.section}.${f.key}`} className="space-y-1">
-                  <label className="text-sm text-muted-foreground">{f.label}</label>
+                  <label className="text-sm text-muted-foreground">{t(f.labelKey)}</label>
                   <Input
                     type="number"
                     min={f.min ?? 1}
@@ -294,16 +277,14 @@ export default function AdminConfig() {
                   />
                 </div>
               ))}
-              <p className="text-xs text-muted-foreground">
-                注意：pool_size / max_overflow 修改后需要重启 API 容器才会真正生效（连接池在启动时创建）。
-              </p>
+              <p className="text-xs text-muted-foreground">{t("admin.poolHint")}</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">CORS 允许来源</CardTitle>
-              <CardDescription>每行一个来源，输入 * 表示允许所有</CardDescription>
+              <CardTitle className="text-base">{t("admin.corsSection")}</CardTitle>
+              <CardDescription>{t("admin.corsDesc")}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
               <textarea
@@ -317,7 +298,7 @@ export default function AdminConfig() {
 
           <Button onClick={handleSave} disabled={loading || !config} className="w-full">
             <Save className="h-4 w-4 mr-2" />
-            {loading ? "保存中..." : "保存并热重载"}
+            {loading ? t("admin.saving") : t("admin.saveReload")}
           </Button>
         </div>
 
@@ -325,7 +306,7 @@ export default function AdminConfig() {
         <Card className="h-fit">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-base">当前完整配置（敏感信息已脱敏）</CardTitle>
+              <CardTitle className="text-base">{t("admin.currentConfigTitle")}</CardTitle>
               <Button onClick={fetchConfig} variant="ghost" size="icon">
                 <RefreshCw className="h-4 w-4" />
               </Button>

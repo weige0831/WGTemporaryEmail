@@ -24,9 +24,28 @@ import { it } from "./it"
 import { tr } from "./tr"
 import { id } from "./id"
 import { vi } from "./vi"
+import { extraZhCN, extraZhTW } from "./extra-zh"
+import { extraJa, extraKo } from "./extra-jako"
+import { extraEs, extraFr } from "./extra-esfr"
+import { extraDe, extraPt } from "./extra-dept"
+import { extraRu, extraAr } from "./extra-ruar"
+import { extraHi, extraIt } from "./extra-hiit"
+import { extraTr, extraId, extraVi } from "./extra-tridvi"
 
-// 语言注册表：语言代码 -> 词典（Partial 缺键时回退英文）
-export const DICTS: Record<string, Partial<Dict>> = {
+function deepMerge(base: Partial<Dict>, extra?: Partial<Dict>): Partial<Dict> {
+  const out: Record<string, unknown> = { ...base }
+  for (const [k, v] of Object.entries(extra ?? {})) {
+    if (v && typeof v === "object" && !Array.isArray(v)) {
+      out[k] = { ...((out[k] as Record<string, unknown>) ?? {}), ...(v as Record<string, unknown>) }
+    } else {
+      out[k] = v
+    }
+  }
+  return out as Partial<Dict>
+}
+
+// 语言注册表：基础词典 + 扩展词典（admin/setup/api），缺键时回退英文
+const BASE_DICTS: Record<string, Partial<Dict>> = {
   en,
   "zh-CN": zhCN,
   "zh-TW": zhTW,
@@ -44,6 +63,28 @@ export const DICTS: Record<string, Partial<Dict>> = {
   id,
   vi,
 }
+
+const EXTRA_DICTS: Record<string, Partial<Dict>> = {
+  "zh-CN": extraZhCN,
+  "zh-TW": extraZhTW,
+  ja: extraJa,
+  ko: extraKo,
+  es: extraEs,
+  fr: extraFr,
+  de: extraDe,
+  pt: extraPt,
+  ru: extraRu,
+  ar: extraAr,
+  hi: extraHi,
+  it: extraIt,
+  tr: extraTr,
+  id: extraId,
+  vi: extraVi,
+}
+
+export const DICTS: Record<string, Partial<Dict>> = Object.fromEntries(
+  Object.keys(BASE_DICTS).map((code) => [code, deepMerge(BASE_DICTS[code], EXTRA_DICTS[code])]),
+)
 
 // 语言列表（以各自母语显示）
 export const LANGUAGES: { code: string; name: string }[] = [

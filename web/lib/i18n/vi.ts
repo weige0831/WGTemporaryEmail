@@ -1,7 +1,7 @@
 import type { Dict } from "./en"
 
 export const vi: Partial<Dict> = {
-  nav: { about: "Giới thiệu", privacy: "Quyền riêng tư" },
+  nav: { about: "Giới thiệu", privacy: "Quyền riêng tư", api: "API" },
   home: {
     yourTempEmail: "Email tạm thời của bạn",
     readyDesc: "Email tạm thời của bạn đã sẵn sàng. Nó sẽ tự động bị xóa sau {time}.",

@@ -1,7 +1,7 @@
 import type { Dict } from "./en"
 
 export const hi: Partial<Dict> = {
-  nav: { about: "परिचय", privacy: "गोपनीयता" },
+  nav: { about: "परिचय", privacy: "गोपनीयता", api: "API" },
   home: {
     yourTempEmail: "आपका अस्थायी ईमेल",
     readyDesc: "आपका अस्थायी ईमेल तैयार है। यह {time} में स्वतः हटा दिया जाएगा।",

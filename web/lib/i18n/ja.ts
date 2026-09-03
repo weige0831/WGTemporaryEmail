@@ -1,7 +1,7 @@
 import type { Dict } from "./en"
 
 export const ja: Partial<Dict> = {
-  nav: { about: "本サービスについて", privacy: "プライバシー" },
+  nav: { about: "本サービスについて", privacy: "プライバシー", api: "API" },
   home: {
     yourTempEmail: "あなたの一時メール",
     readyDesc: "一時メールアドレスの準備ができました。{time} 後に自動削除されます。",

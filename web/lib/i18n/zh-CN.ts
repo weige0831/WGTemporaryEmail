@@ -1,7 +1,7 @@
 import type { Dict } from "./en"
 
 export const zhCN: Partial<Dict> = {
-  nav: { about: "关于", privacy: "隐私" },
+  nav: { about: "关于", privacy: "隐私", api: "API" },
   home: {
     yourTempEmail: "你的临时邮箱",
     readyDesc: "你的临时邮箱已就绪，将在 {time} 后自动删除。",

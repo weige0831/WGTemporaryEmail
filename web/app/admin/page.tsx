@@ -7,9 +7,11 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { adminApi, ApiError, setAdminToken } from "@/lib/admin-api"
+import { useI18n } from "@/lib/i18n"
 
 export default function AdminLogin() {
   const router = useRouter()
+  const { t } = useI18n()
   const [token, setToken] = useState("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
@@ -26,7 +28,7 @@ export default function AdminLogin() {
       if (e instanceof ApiError) {
         setError(e.message)
       } else {
-        setError("登录失败，请检查网络后重试")
+        setError(t("admin.loginFailed"))
       }
       setAdminToken("")
     } finally {
@@ -41,8 +43,8 @@ export default function AdminLogin() {
           <div className="flex justify-center mb-2">
             <ShieldCheck className="h-10 w-10 text-primary" />
           </div>
-          <CardTitle className="text-xl">管理面板登录</CardTitle>
-          <CardDescription>输入 config.yaml 中配置的管理令牌</CardDescription>
+          <CardTitle className="text-xl">{t("admin.loginTitle")}</CardTitle>
+          <CardDescription>{t("admin.loginDesc")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
@@ -50,7 +52,7 @@ export default function AdminLogin() {
               <KeyRound className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 type="password"
-                placeholder="管理令牌"
+                placeholder={t("admin.loginPlaceholder")}
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
                 onKeyDown={(e) => {
@@ -63,11 +65,9 @@ export default function AdminLogin() {
             {error && <p className="text-sm text-destructive">{error}</p>}
           </div>
           <Button onClick={handleLogin} disabled={loading || !token.trim()} className="w-full">
-            {loading ? "登录中..." : "登录"}
+            {loading ? t("admin.loggingIn") : t("admin.loginBtn")}
           </Button>
-          <p className="text-xs text-muted-foreground text-center">
-            令牌只保存在浏览器本地，不会上传到任何第三方
-          </p>
+          <p className="text-xs text-muted-foreground text-center">{t("admin.loginLocalNote")}</p>
         </CardContent>
       </Card>
     </div>

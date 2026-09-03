@@ -10,8 +10,10 @@ import {
   ApiError,
   type DomainStats,
 } from "@/lib/admin-api"
+import { useI18n } from "@/lib/i18n"
 
 export default function AdminDomains() {
+  const { t } = useI18n()
   const [domains, setDomains] = useState<DomainStats[]>([])
   const [newDomain, setNewDomain] = useState("")
   const [loading, setLoading] = useState(false)
@@ -25,7 +27,7 @@ export default function AdminDomains() {
       setDomains(res.domains)
     } catch (e) {
       if (e instanceof ApiError) setError(e.message)
-      else setError("加载失败，请重试")
+      else setError(t("admin.loadFailed"))
     }
   }
 
@@ -43,42 +45,42 @@ export default function AdminDomains() {
     try {
       await adminApi.addDomain(domain)
       setNewDomain("")
-      setNotice(`已添加域名 ${domain}。API 立即生效，MX 收信服务约 15 秒内生效。`)
+      setNotice(t("admin.domainAdded", { domain }))
       await fetchDomains()
     } catch (e) {
       if (e instanceof ApiError) setError(e.message)
-      else setError("添加失败，请重试")
+      else setError(t("admin.addFailed"))
     } finally {
       setLoading(false)
     }
   }
 
   const handleRemove = async (domain: string) => {
-    if (!confirm(`确定移除域名 ${domain} 吗？该域名下现有地址的邮件仍保留，但 MX 将不再接收发往该域名的新邮件。`)) return
+    if (!confirm(t("admin.removeDomainConfirm", { domain }))) return
     setError("")
     setNotice("")
     try {
       const res = await adminApi.removeDomain(domain)
-      setNotice(`已移除域名 ${res.removed}（受影响的地址 ${res.affected_addresses} 个）。`)
+      setNotice(t("admin.domainRemoved", { domain: res.removed, n: res.affected_addresses }))
       await fetchDomains()
     } catch (e) {
       if (e instanceof ApiError) setError(e.message)
-      else setError("移除失败，请重试")
+      else setError(t("admin.removeFailed"))
     }
   }
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold">域名管理</h1>
+      <h1 className="text-2xl font-bold">{t("admin.domainsTitle")}</h1>
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">添加域名</CardTitle>
+          <CardTitle className="text-base">{t("admin.addDomain")}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex gap-2">
             <Input
-              placeholder="例如 temp.example.com"
+              placeholder={t("admin.addDomainPlaceholder")}
               value={newDomain}
               onChange={(e) => setNewDomain(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleAdd()}
@@ -86,12 +88,10 @@ export default function AdminDomains() {
             />
             <Button onClick={handleAdd} disabled={loading || !newDomain.trim()}>
               <Plus className="h-4 w-4 mr-2" />
-              添加
+              {t("admin.add")}
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground mt-2">
-            添加后需在 DNS 服务商处为该域名设置 MX 记录指向本服务器，否则无法收信。
-          </p>
+          <p className="text-xs text-muted-foreground mt-2">{t("admin.domainDnsHint")}</p>
         </CardContent>
       </Card>
 
@@ -103,7 +103,7 @@ export default function AdminDomains() {
           <div className="flex items-center justify-between">
             <CardTitle className="text-base flex items-center gap-2">
               <Globe className="h-4 w-4" />
-              已配置域名（{domains.length}）
+              {t("admin.configuredDomainsTitle", { n: domains.length })}
             </CardTitle>
             <Button onClick={fetchDomains} variant="ghost" size="icon">
               <RefreshCw className="h-4 w-4" />
@@ -114,17 +114,17 @@ export default function AdminDomains() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b text-left text-muted-foreground">
-                <th className="p-3 font-medium">域名</th>
-                <th className="p-3 font-medium">地址数</th>
-                <th className="p-3 font-medium">邮件数</th>
-                <th className="p-3 font-medium text-right">操作</th>
+                <th className="p-3 font-medium">{t("admin.domainCol")}</th>
+                <th className="p-3 font-medium">{t("admin.addressCountCol")}</th>
+                <th className="p-3 font-medium">{t("admin.emailCountCol")}</th>
+                <th className="p-3 font-medium text-right">{t("admin.actionsCol")}</th>
               </tr>
             </thead>
             <tbody className="divide-y">
               {domains.length === 0 && (
                 <tr>
                   <td colSpan={4} className="p-6 text-center text-muted-foreground">
-                    未配置域名
+                    {t("admin.noDomainsConfigured")}
                   </td>
                 </tr>
               )}
@@ -139,7 +139,7 @@ export default function AdminDomains() {
                       variant="ghost"
                       disabled={domains.length <= 1}
                       onClick={() => handleRemove(d.domain)}
-                      title={domains.length <= 1 ? "不能删除最后一个域名" : "移除域名"}
+                      title={domains.length <= 1 ? t("admin.cannotRemoveLast") : t("admin.removeDomain")}
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>

@@ -1,7 +1,7 @@
 import type { Dict } from "./en"
 
 export const ar: Partial<Dict> = {
-  nav: { about: "حول", privacy: "الخصوصية" },
+  nav: { about: "حول", privacy: "الخصوصية", api: "API" },
   home: {
     yourTempEmail: "بريدك المؤقت",
     readyDesc: "بريدك المؤقت جاهز. سيتم حذفه تلقائيًا خلال {time}.",

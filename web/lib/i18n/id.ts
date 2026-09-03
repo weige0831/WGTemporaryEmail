@@ -1,7 +1,7 @@
 import type { Dict } from "./en"
 
 export const id: Partial<Dict> = {
-  nav: { about: "Tentang", privacy: "Privasi" },
+  nav: { about: "Tentang", privacy: "Privasi", api: "API" },
   home: {
     yourTempEmail: "Email sementara Anda",
     readyDesc: "Email sementara Anda sudah siap. Akan dihapus otomatis dalam {time}.",

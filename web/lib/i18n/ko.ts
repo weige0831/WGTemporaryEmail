@@ -1,7 +1,7 @@
 import type { Dict } from "./en"
 
 export const ko: Partial<Dict> = {
-  nav: { about: "소개", privacy: "개인정보" },
+  nav: { about: "소개", privacy: "개인정보", api: "API" },
   home: {
     yourTempEmail: "내 임시 이메일",
     readyDesc: "임시 이메일이 준비되었습니다. {time} 후 자동 삭제됩니다.",

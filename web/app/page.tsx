@@ -236,6 +236,9 @@ export default function Home() {
             <Link href="/privacy" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground whitespace-nowrap">
               {t("nav.privacy")}
             </Link>
+            <Link href="/api" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground whitespace-nowrap">
+              {t("nav.api")}
+            </Link>
             <LanguageSwitcher />
             <ThemeToggle />
           </div>
@@ -550,6 +553,10 @@ export default function Home() {
             •{" "}
             <Link href="/privacy" className="hover:text-foreground">
               {t("nav.privacy")}
+            </Link>{" "}
+            •{" "}
+            <Link href="/api" className="hover:text-foreground">
+              {t("nav.api")}
             </Link>
           </p>
         </div>
