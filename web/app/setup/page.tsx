@@ -18,6 +18,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { copyToClipboard } from "@/lib/utils"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || ""
 
@@ -136,7 +137,7 @@ export default function SetupWizard() {
   const copyToken = async () => {
     if (!result) return
     try {
-      await navigator.clipboard.writeText(result.admin_token)
+      await copyToClipboard(result.admin_token)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch {

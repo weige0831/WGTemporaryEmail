@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Mail, Copy, RefreshCw, Search, Trash2, Download, Clock, CheckCircle2, XCircle, AlertCircle, Paperclip } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -9,14 +9,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { LanguageSwitcher } from "@/components/language-switcher"
 import { api, type EmailSummary, type EmailDetail, type AddressResponse } from "@/lib/api"
 import { formatRelativeTime, formatBytes, copyToClipboard, sanitizeHtml } from "@/lib/utils"
+import { useI18n } from "@/lib/i18n"
 import Link from "next/link"
 
 const AUTO_REFRESH_INTERVAL = 15000 // 15 seconds
 
 export default function Home() {
   const router = useRouter()
+  const { t } = useI18n()
   const [address, setAddress] = useState<AddressResponse | null>(null)
   const [emails, setEmails] = useState<EmailSummary[]>(() => [])
   const [selectedEmail, setSelectedEmail] = useState<EmailDetail | null>(null)
@@ -115,14 +118,14 @@ export default function Home() {
 
       // Show expiry message if this is an auto-rotation
       if (oldEmail) {
-        alert(`${oldEmail} has expired. New address: ${data.email}`)
+        alert(t("home.expiredNewAddress", { old: oldEmail, new: data.email }))
       }
     } catch (error: any) {
       console.error("Failed to create address", error)
       if (error.status === 409) {
-        alert(`This username is currently taken. Please choose a different username or leave it blank for a random email address.`)
+        alert(t("home.usernameTaken"))
       } else {
-        alert("Failed to create email address. Please try again.")
+        alert(t("home.failedToCreate"))
       }
     } finally {
       setLoading(false)
@@ -170,7 +173,7 @@ export default function Home() {
       if (error.status === 404 && error.detail === "Address has expired") {
         await handleExpiredAddress()
       } else {
-        alert("Failed to load email. Please try again.")
+        alert(t("home.failedToLoad"))
       }
     } finally {
       setLoading(false)
@@ -178,7 +181,7 @@ export default function Home() {
   }
 
   const handleDeleteEmail = async (emailId: string) => {
-    if (!address || !confirm("Delete this email?")) return
+    if (!address || !confirm(t("home.deleteEmailConfirm"))) return
     try {
       await api.deleteEmail(address.token, emailId)
       setEmails(emails.filter(e => e.id !== emailId))
@@ -191,7 +194,7 @@ export default function Home() {
       if (error.status === 404 && error.detail === "Address has expired") {
         await handleExpiredAddress()
       } else {
-        alert("Failed to delete email. Please try again.")
+        alert(t("home.failedToDelete"))
       }
     }
   }
@@ -221,18 +224,19 @@ export default function Home() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b">
-        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <Mail className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
-            <h1 className="text-xl sm:text-2xl font-bold">Mailbucket</h1>
+            <h1 className="text-lg sm:text-2xl font-bold">WGTemporaryEmail</h1>
           </div>
-          <div className="flex items-center gap-2 sm:gap-4">
-            <Link href="/about" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground">
-              About
+          <div className="flex items-center gap-1 sm:gap-3">
+            <Link href="/about" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground whitespace-nowrap">
+              {t("nav.about")}
             </Link>
-            <Link href="/privacy" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground">
-              Privacy
+            <Link href="/privacy" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground whitespace-nowrap">
+              {t("nav.privacy")}
             </Link>
+            <LanguageSwitcher />
             <ThemeToggle />
           </div>
         </div>
@@ -243,11 +247,11 @@ export default function Home() {
           {/* Email Address Section */}
           <Card>
             <CardHeader className="pb-3 sm:pb-6">
-              <CardTitle className="text-lg sm:text-xl">Your Temporary Email</CardTitle>
+              <CardTitle className="text-lg sm:text-xl">{t("home.yourTempEmail")}</CardTitle>
               <CardDescription className="text-sm sm:text-base">
                 {address
-                  ? "Your temporary email is ready. It will be automatically deleted in " + getTimeUntilExpiry() + "."
-                  : "Loading..."}
+                  ? t("home.readyDesc", { time: getTimeUntilExpiry() })
+                  : t("home.loading")}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3 sm:space-y-4">
@@ -262,16 +266,16 @@ export default function Home() {
                     <div className="flex gap-2">
                       <Button onClick={handleCopyAddress} variant="outline" className="flex-1 sm:flex-none min-h-[44px]">
                         {copied ? <CheckCircle2 className="h-4 w-4 sm:mr-2" /> : <Copy className="h-4 w-4 sm:mr-2" />}
-                        <span className="sm:inline">{copied ? "Copied" : "Copy"}</span>
+                        <span className="sm:inline">{copied ? t("home.copied") : t("home.copy")}</span>
                       </Button>
                       <Button onClick={() => setShowNewEmailDialog(true)} variant="outline" className="flex-1 sm:flex-none min-h-[44px]">
-                        New Email
+                        {t("home.newEmail")}
                       </Button>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 text-sm sm:text-base text-muted-foreground">
                     <Clock className="h-4 w-4" />
-                    <span>Expires in {getTimeUntilExpiry()}</span>
+                    <span>{t("home.expiresIn", { time: getTimeUntilExpiry() })}</span>
                   </div>
                 </div>
               ) : (
@@ -288,7 +292,7 @@ export default function Home() {
               <Card className="lg:col-span-1">
                 <CardHeader className="pb-3 sm:pb-6">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-base sm:text-lg">Inbox ({emails.length})</CardTitle>
+                    <CardTitle className="text-base sm:text-lg">{t("home.inbox")} ({emails.length})</CardTitle>
                     <div className="flex items-center gap-1 sm:gap-2">
                       <Button
                         variant="ghost"
@@ -305,7 +309,7 @@ export default function Home() {
                         onClick={() => setAutoRefresh(!autoRefresh)}
                         className="text-xs sm:text-sm h-9 sm:h-10 px-2 sm:px-4"
                       >
-                        Auto
+                        {t("home.auto")}
                       </Button>
                     </div>
                   </div>
@@ -313,7 +317,7 @@ export default function Home() {
                     <div className="relative">
                       <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                       <Input
-                        placeholder="Search emails..."
+                        placeholder={t("home.searchEmails")}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="pl-8 text-sm sm:text-base min-h-[40px]"
@@ -326,7 +330,7 @@ export default function Home() {
                         onClick={() => setSearchQuery("")}
                         className="text-xs sm:text-sm"
                       >
-                        Clear Search
+                        {t("home.clearSearch")}
                       </Button>
                     )}
                   </div>
@@ -336,9 +340,9 @@ export default function Home() {
                     {emails.length === 0 ? (
                       <div className="p-6 sm:p-8 text-center text-muted-foreground">
                         <Mail className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-3 sm:mb-4 opacity-20" />
-                        <p className="text-sm sm:text-base">No emails yet</p>
+                        <p className="text-sm sm:text-base">{t("home.noEmailsYet")}</p>
                         <p className="text-xs sm:text-sm mt-2">
-                          {autoRefresh && `Auto-refreshing every ${AUTO_REFRESH_INTERVAL / 1000}s`}
+                          {autoRefresh && t("home.autoRefreshingEvery", { sec: AUTO_REFRESH_INTERVAL / 1000 })}
                         </p>
                       </div>
                     ) : (
@@ -352,10 +356,10 @@ export default function Home() {
                         >
                           <div className="flex items-start justify-between gap-2 mb-1">
                             <p className="text-sm sm:text-base truncate flex-1">
-                              {email.subject || "(No Subject)"}
+                              {email.subject || t("home.noSubject")}
                             </p>
                             {!email.is_read && (
-                              <Badge variant="default" className="text-xs shrink-0">New</Badge>
+                              <Badge variant="default" className="text-xs shrink-0">{t("home.newBadge")}</Badge>
                             )}
                           </div>
                           <p className="text-xs sm:text-sm text-muted-foreground truncate mb-1">
@@ -380,7 +384,7 @@ export default function Home() {
                 <CardHeader className="pb-3 sm:pb-6">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <CardTitle className="text-base sm:text-lg line-clamp-2">
-                      {selectedEmail ? selectedEmail.subject || "(No Subject)" : "Select an email"}
+                      {selectedEmail ? selectedEmail.subject || t("home.noSubject") : t("home.selectAnEmail")}
                     </CardTitle>
                     {selectedEmail && (
                       <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
@@ -392,7 +396,7 @@ export default function Home() {
                               onClick={() => setViewMode("html")}
                               className="text-xs h-8 px-2 sm:px-3"
                             >
-                              HTML
+                              {t("home.html")}
                             </Button>
                             <Button
                               variant={viewMode === "plain" ? "default" : "ghost"}
@@ -400,7 +404,7 @@ export default function Home() {
                               onClick={() => setViewMode("plain")}
                               className="text-xs h-8 px-2 sm:px-3"
                             >
-                              Plain
+                              {t("home.plain")}
                             </Button>
                           </div>
                         )}
@@ -430,15 +434,15 @@ export default function Home() {
                       {/* Email Headers */}
                       <div className="space-y-2 text-xs sm:text-sm">
                         <div className="break-all">
-                          <span className="text-muted-foreground">From:</span>{" "}
+                          <span className="text-muted-foreground">{t("home.from")}</span>{" "}
                           <span className="font-mono">{selectedEmail.from_address}</span>
                         </div>
                         <div className="break-all">
-                          <span className="text-muted-foreground">To:</span>{" "}
+                          <span className="text-muted-foreground">{t("home.to")}</span>{" "}
                           <span className="font-mono">{selectedEmail.to_address}</span>
                         </div>
                         <div>
-                          <span className="text-muted-foreground">Date:</span>{" "}
+                          <span className="text-muted-foreground">{t("home.date")}</span>{" "}
                           {new Date(selectedEmail.received_at).toLocaleString()}
                         </div>
                       </div>
@@ -448,26 +452,26 @@ export default function Home() {
                         {selectedEmail.dkim_valid !== null && (
                           <Badge variant={selectedEmail.dkim_valid ? "success" : "destructive"} className="text-xs">
                             {selectedEmail.dkim_valid ? (
-                              <><CheckCircle2 className="h-3 w-3 mr-1" /> DKIM Valid</>
+                              <><CheckCircle2 className="h-3 w-3 mr-1" /> {t("home.dkimValid")}</>
                             ) : (
-                              <><XCircle className="h-3 w-3 mr-1" /> DKIM Invalid</>
+                              <><XCircle className="h-3 w-3 mr-1" /> {t("home.dkimInvalid")}</>
                             )}
                           </Badge>
                         )}
                         {selectedEmail.spf_result && (
                           <Badge variant={selectedEmail.spf_result === "pass" ? "success" : "outline"} className="text-xs">
-                            SPF: {selectedEmail.spf_result}
+                            {t("home.spf", { v: selectedEmail.spf_result })}
                           </Badge>
                         )}
                         {selectedEmail.dmarc_result && (
                           <Badge variant={selectedEmail.dmarc_result === "pass" ? "success" : "outline"} className="text-xs">
-                            DMARC: {selectedEmail.dmarc_result}
+                            {t("home.dmarc", { v: selectedEmail.dmarc_result })}
                           </Badge>
                         )}
                         {selectedEmail.has_attachments && (
                           <Badge variant="secondary" className="text-xs">
                             <Paperclip className="h-3 w-3 mr-1" />
-                            {selectedEmail.attachments.length} Attachment(s)
+                            {t("home.attachmentsCount", { n: selectedEmail.attachments.length })}
                           </Badge>
                         )}
                       </div>
@@ -475,7 +479,7 @@ export default function Home() {
                       {/* Attachments */}
                       {selectedEmail.attachments.length > 0 && (
                         <div className="space-y-2">
-                          <h4 className="text-sm sm:text-base font-semibold">Attachments</h4>
+                          <h4 className="text-sm sm:text-base font-semibold">{t("home.attachments")}</h4>
                           <div className="space-y-1.5">
                             {selectedEmail.attachments.map((att) => (
                               <a
@@ -510,7 +514,7 @@ export default function Home() {
                             {selectedEmail.body_plain}
                           </pre>
                         ) : (
-                          <p className="text-muted-foreground italic text-sm">No content</p>
+                          <p className="text-muted-foreground italic text-sm">{t("home.noContent")}</p>
                         )}
                       </div>
                     </div>
@@ -518,7 +522,7 @@ export default function Home() {
                     <div className="flex items-center justify-center h-48 sm:h-64 text-muted-foreground">
                       <div className="text-center">
                         <Mail className="h-12 w-12 sm:h-16 sm:w-16 mx-auto mb-3 sm:mb-4 opacity-20" />
-                        <p className="text-sm sm:text-base">Select an email to view its contents</p>
+                        <p className="text-sm sm:text-base">{t("home.viewContents")}</p>
                       </div>
                     </div>
                   )}
@@ -529,7 +533,7 @@ export default function Home() {
 
           {autoRefresh && address && (
             <div className="text-center text-xs sm:text-sm text-muted-foreground px-2">
-              Last refreshed: {lastRefresh.toLocaleTimeString()} • Auto-refresh enabled
+              {t("home.lastRefreshed", { time: lastRefresh.toLocaleTimeString() })}
             </div>
           )}
         </div>
@@ -539,13 +543,13 @@ export default function Home() {
       <footer className="border-t mt-8 sm:mt-16">
         <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 text-center text-xs sm:text-sm text-muted-foreground">
           <p>
-            Mailbucket - Open Source Temporary Email Service •{" "}
+            {t("home.footerText")} •{" "}
             <Link href="/about" className="hover:text-foreground">
-              About
+              {t("nav.about")}
             </Link>{" "}
             •{" "}
             <Link href="/privacy" className="hover:text-foreground">
-              Privacy
+              {t("nav.privacy")}
             </Link>
           </p>
         </div>
@@ -555,16 +559,16 @@ export default function Home() {
       <Dialog open={showNewEmailDialog} onOpenChange={setShowNewEmailDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-base sm:text-lg">Generate New Email</DialogTitle>
+            <DialogTitle className="text-base sm:text-lg">{t("home.dialogTitle")}</DialogTitle>
             <DialogDescription className="text-xs sm:text-sm">
-              Create a new temporary email address. Leave the username blank for a random address.
+              {t("home.dialogDesc")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 sm:space-y-4 py-3 sm:py-4">
             <div className="flex flex-col gap-2">
               <div className="flex items-center flex-1 border rounded-md bg-background min-h-[44px]">
                 <Input
-                  placeholder="custom-name (optional)"
+                  placeholder={t("home.customNamePlaceholder")}
                   value={customUsername}
                   onChange={(e) => setCustomUsername(e.target.value)}
                   className="flex-1 border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-base"
@@ -586,10 +590,10 @@ export default function Home() {
               </div>
             </div>
             <p className="text-xs sm:text-sm text-muted-foreground">
-              Leave blank for a random email address, or enter a custom username (3-64 chars, alphanumeric + . _ -)
+              {t("home.dialogHint")}
             </p>
             <Button onClick={() => createNewAddress()} disabled={loading} className="w-full min-h-[44px] text-base">
-              {loading ? "Creating..." : "Generate Email"}
+              {loading ? t("home.creating") : t("home.generateEmail")}
             </Button>
           </div>
         </DialogContent>

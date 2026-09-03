@@ -41,6 +41,42 @@ export function formatRelativeTime(date: string | Date): string {
   return past.toLocaleDateString()
 }
 
-export function copyToClipboard(text: string): Promise<void> {
-  return navigator.clipboard.writeText(text)
+export async function copyToClipboard(text: string): Promise<void> {
+  // Clipboard API 只在安全上下文（HTTPS/localhost）可用；HTTP 部署时回退到
+  // execCommand("copy") 兼容路径，保证复制功能在所有环境可用。
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text)
+      return
+    }
+  } catch {
+    // 继续走兼容路径
+  }
+
+  const textarea = document.createElement("textarea")
+  textarea.value = text
+  textarea.setAttribute("readonly", "")
+  textarea.style.position = "fixed"
+  textarea.style.top = "-9999px"
+  document.body.appendChild(textarea)
+
+  const selection = document.getSelection()
+  const prevRange = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null
+  textarea.select()
+  textarea.setSelectionRange(0, text.length)
+
+  let ok = false
+  try {
+    ok = document.execCommand("copy")
+  } catch {
+    ok = false
+  }
+
+  document.body.removeChild(textarea)
+  if (prevRange && selection) {
+    selection.removeAllRanges()
+    selection.addRange(prevRange)
+  }
+
+  if (!ok) throw new Error("Copy failed")
 }
