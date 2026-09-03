@@ -233,6 +233,9 @@ export const extraRu: Partial<Dict> = {
     testSuccess: "Успешно",
     testFailed: "Запрос не удался",
     closeResponse: "Закрыть",
+    confirmDestructive: "Это действие изменит или удалит данные. Продолжить?",
+    binaryResponse: "Бинарный ответ ({n} байт), невозможно показать как текст.",
+    fillParams: "Заполните параметры выше и запустите тест.",
   },
 }
 
@@ -469,5 +472,8 @@ export const extraAr: Partial<Dict> = {
     testSuccess: "نجاح",
     testFailed: "فشل الطلب",
     closeResponse: "إغلاق",
+    confirmDestructive: "سيؤدي هذا الإجراء إلى تعديل البيانات أو حذفها. هل تريد المتابعة؟",
+    binaryResponse: "استجابة ثنائية ({n} بايت)، لا يمكن عرضها كنص.",
+    fillParams: "املأ المعلمات أعلاه ثم شغّل الاختبار.",
   },
 }

@@ -233,6 +233,9 @@ export const extraDe: Partial<Dict> = {
     testSuccess: "Erfolg",
     testFailed: "Anfrage fehlgeschlagen",
     closeResponse: "Schließen",
+    confirmDestructive: "Diese Aktion ändert oder löscht Daten. Fortfahren?",
+    binaryResponse: "Binäre Antwort ({n} Bytes), kann nicht als Text angezeigt werden.",
+    fillParams: "Fülle die Parameter oben aus und führe den Test aus.",
   },
 }
 
@@ -469,5 +472,8 @@ export const extraPt: Partial<Dict> = {
     testSuccess: "Sucesso",
     testFailed: "Falha na requisição",
     closeResponse: "Fechar",
+    confirmDestructive: "Esta ação modificará ou excluirá dados. Continuar?",
+    binaryResponse: "Resposta binária ({n} bytes), não pode ser exibida como texto.",
+    fillParams: "Preencha os parâmetros acima e execute o teste.",
   },
 }

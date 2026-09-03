@@ -233,6 +233,9 @@ export const extraZhCN: Partial<Dict> = {
     testSuccess: "成功",
     testFailed: "请求失败",
     closeResponse: "关闭",
+    confirmDestructive: "此操作会修改或删除数据，确定继续吗？",
+    binaryResponse: "二进制响应（{n} 字节），无法以文本显示。",
+    fillParams: "请在上方填写参数后运行测试。",
   },
 }
 
@@ -469,5 +472,8 @@ export const extraZhTW: Partial<Dict> = {
     testSuccess: "成功",
     testFailed: "請求失敗",
     closeResponse: "關閉",
+    confirmDestructive: "此操作會修改或刪除資料，確定繼續嗎？",
+    binaryResponse: "二進位回應（{n} 位元組），無法以文字顯示。",
+    fillParams: "請在上方填寫參數後執行測試。",
   },
 }

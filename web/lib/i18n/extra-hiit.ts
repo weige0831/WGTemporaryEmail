@@ -233,6 +233,9 @@ export const extraHi: Partial<Dict> = {
     testSuccess: "सफल",
     testFailed: "अनुरोध विफल",
     closeResponse: "बंद करें",
+    confirmDestructive: "यह क्रिया डेटा बदलेगी या हटाएगी। जारी रखें?",
+    binaryResponse: "बाइनरी उत्तर ({n} बाइट), टेक्स्ट में नहीं दिखाया जा सकता।",
+    fillParams: "ऊपर पैरामीटर भरकर टेस्ट चलाएँ।",
   },
 }
 
@@ -469,5 +472,8 @@ export const extraIt: Partial<Dict> = {
     testSuccess: "Riuscito",
     testFailed: "Richiesta fallita",
     closeResponse: "Chiudi",
+    confirmDestructive: "Questa azione modificherà o eliminerà dei dati. Continuare?",
+    binaryResponse: "Risposta binaria ({n} byte), non visualizzabile come testo.",
+    fillParams: "Compila i parametri qui sopra ed esegui il test.",
   },
 }

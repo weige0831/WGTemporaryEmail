@@ -233,6 +233,9 @@ export const extraTr: Partial<Dict> = {
     testSuccess: "Başarılı",
     testFailed: "İstek başarısız",
     closeResponse: "Kapat",
+    confirmDestructive: "Bu işlem verileri değiştirir veya siler. Devam edilsin mi?",
+    binaryResponse: "İkili yanıt ({n} bayt), metin olarak gösterilemez.",
+    fillParams: "Yukarıdaki parametreleri doldurup testi çalıştırın.",
   },
 }
 
@@ -469,6 +472,9 @@ export const extraId: Partial<Dict> = {
     testSuccess: "Berhasil",
     testFailed: "Permintaan gagal",
     closeResponse: "Tutup",
+    confirmDestructive: "Tindakan ini akan mengubah atau menghapus data. Lanjutkan?",
+    binaryResponse: "Respons biner ({n} byte), tidak dapat ditampilkan sebagai teks.",
+    fillParams: "Isi parameter di atas lalu jalankan tes.",
   },
 }
 
@@ -705,5 +711,8 @@ export const extraVi: Partial<Dict> = {
     testSuccess: "Thành công",
     testFailed: "Yêu cầu thất bại",
     closeResponse: "Đóng",
+    confirmDestructive: "Hành động này sẽ sửa hoặc xóa dữ liệu. Tiếp tục?",
+    binaryResponse: "Phản hồi nhị phân ({n} byte), không thể hiển thị dạng văn bản.",
+    fillParams: "Điền các tham số ở trên rồi chạy kiểm thử.",
   },
 }

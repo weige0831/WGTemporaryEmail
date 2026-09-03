@@ -233,6 +233,9 @@ export const extraJa: Partial<Dict> = {
     testSuccess: "成功",
     testFailed: "リクエスト失敗",
     closeResponse: "閉じる",
+    confirmDestructive: "この操作はデータを変更・削除します。続行しますか？",
+    binaryResponse: "バイナリ応答（{n} バイト）のためテキスト表示できません。",
+    fillParams: "上のパラメータを入力してテストを実行してください。",
   },
 }
 
@@ -469,5 +472,8 @@ export const extraKo: Partial<Dict> = {
     testSuccess: "성공",
     testFailed: "요청 실패",
     closeResponse: "닫기",
+    confirmDestructive: "이 작업은 데이터를 변경하거나 삭제합니다. 계속할까요?",
+    binaryResponse: "바이너리 응답({n}바이트)으로 텍스트로 표시할 수 없습니다.",
+    fillParams: "위의 매개변수를 입력하고 테스트를 실행하세요.",
   },
 }
