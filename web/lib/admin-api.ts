@@ -159,6 +159,18 @@ export interface CleanupResult {
   storage_bytes_after: number
 }
 
+export interface TlsStatus {
+  enabled: boolean
+  hostname: string
+  cert_exists: boolean
+  not_after: string | null
+  issuer: string | null
+  cert_path: string
+  job_pending: boolean
+  job_result: { ok?: boolean; message?: string; issuedAt?: string } | null
+  last_renew: { ok?: boolean; message?: string; lastRenew?: string } | null
+}
+
 // ---------- API 方法 ----------
 
 export const adminApi = {
@@ -226,6 +238,17 @@ export const adminApi = {
 
   runCleanup(): Promise<CleanupResult> {
     return request('/api/v1/admin/cleanup/run', { method: 'POST' })
+  },
+
+  getTlsStatus(): Promise<TlsStatus> {
+    return request('/api/v1/admin/tls/status')
+  },
+
+  issueCertificate(email: string): Promise<{ submitted: boolean; hostname: string }> {
+    return request('/api/v1/admin/tls/issue', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    })
   },
 }
 

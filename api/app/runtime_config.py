@@ -29,6 +29,7 @@ ALLOWED_PATCH_SECTIONS = {
     'cors': {'allow_origins', 'allow_credentials', 'allow_methods', 'allow_headers'},
     'database': {'pool_size', 'max_overflow'},
     'admin': {'token'},
+    'tls': {'enabled'},
 }
 
 _INT_KEYS = {
@@ -51,6 +52,7 @@ _BOOL_KEYS = {
     ('validation', 'check_dmarc'),
     ('validation', 'store_results'),
     ('cors', 'allow_credentials'),
+    ('tls', 'enabled'),
 }
 
 _LIST_KEYS = {

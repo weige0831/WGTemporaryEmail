@@ -11,8 +11,10 @@ import (
 const configReloadInterval = 15 * time.Second
 
 // watchConfig polls config.yaml and hot-reloads it when it changes. A failed
-// reload keeps the previous config and retries on the next tick.
-func watchConfig(configPath string) {
+// reload keeps the previous config and retries on the next tick. The optional
+// onReload callback runs after every successful reload (used to re-evaluate
+// TLS support).
+func watchConfig(configPath string, onReload func(*Config)) {
 	var lastMod time.Time
 	var lastSize int64
 	if fi, err := os.Stat(configPath); err == nil {
@@ -43,5 +45,9 @@ func watchConfig(configPath string) {
 		SetCurrentConfig(cfg)
 		log.Printf("Config reloaded: domains=%v, max message size=%d MB",
 			cfg.Domains, cfg.Server.MaxMsgSizeMB)
+
+		if onReload != nil {
+			onReload(cfg)
+		}
 	}
 }

@@ -8,7 +8,10 @@ reload the new token takes effect immediately (settings is mutated in place).
 """
 
 import hmac
+import json
+import os
 import re
+import ssl
 import time
 from datetime import datetime, timedelta
 from typing import Optional
@@ -35,6 +38,8 @@ from app.schemas.admin import (
     CleanupResult,
     DomainAddRequest,
     DomainRemoveResponse,
+    TlsIssueRequest,
+    TlsStatus,
 )
 
 _START_TIME = time.time()
@@ -468,3 +473,83 @@ def run_cleanup_now(db: Session = Depends(get_db)):
         'storage_bytes_before': storage_before,
         'storage_bytes_after': storage_after,
     }
+
+
+# ============================================================================
+# TLS certificate management (Let's Encrypt via the certbot sidecar)
+# ============================================================================
+
+_CERTBOT_JOBS_DIR = os.getenv('CERTBOT_JOBS_DIR', '/certbot-data/jobs')
+
+
+def _read_json(path: str) -> Optional[dict]:
+    try:
+        with open(path, 'r') as f:
+            data = json.load(f)
+        return data if isinstance(data, dict) else None
+    except Exception:
+        return None
+
+
+def _read_cert_info() -> dict:
+    """Parse the TLS certificate file if present (stdlib only)."""
+    info: dict = {}
+    if not os.path.exists(settings.TLS_CERT_FILE):
+        return info
+    try:
+        decoded = ssl._ssl._test_decode_cert(settings.TLS_CERT_FILE)  # type: ignore[attr-defined]
+        info['not_after'] = decoded.get('notAfter')
+        issuer = decoded.get('issuer')
+        if isinstance(issuer, (list, tuple)):
+            for field, value in issuer:
+                if field == 'organizationName':
+                    info['issuer'] = value
+                    break
+        else:
+            info['issuer'] = None
+    except Exception:
+        pass
+    return info
+
+
+@router.get('/tls/status', response_model=TlsStatus)
+def tls_status():
+    """Return TLS configuration and certificate status."""
+    cert_info = _read_cert_info()
+    job_path = os.path.join(_CERTBOT_JOBS_DIR, 'issue.json')
+    return {
+        'enabled': settings.TLS_ENABLED,
+        'hostname': settings.HOSTNAME,
+        'cert_exists': os.path.exists(settings.TLS_CERT_FILE),
+        'not_after': cert_info.get('not_after'),
+        'issuer': cert_info.get('issuer'),
+        'cert_path': settings.TLS_CERT_FILE,
+        'job_pending': os.path.exists(job_path),
+        'job_result': _read_json(os.path.join(_CERTBOT_JOBS_DIR, 'result.json')),
+        'last_renew': _read_json(os.path.join(_CERTBOT_JOBS_DIR, 'renew-result.json')),
+    }
+
+
+@router.post('/tls/issue')
+def tls_issue(request: TlsIssueRequest):
+    """Submit a certificate issuance job to the certbot sidecar.
+
+    The certificate is issued for the configured mail server hostname via
+    HTTP-01. Its A record must point to this server and port 80 must be
+    publicly reachable.
+    """
+    hostname = settings.HOSTNAME.strip().lower()
+    if not hostname or '.' not in hostname:
+        raise HTTPException(status_code=400, detail='server.hostname 未配置有效的域名')
+
+    job_path = os.path.join(_CERTBOT_JOBS_DIR, 'issue.json')
+    if os.path.exists(job_path):
+        raise HTTPException(status_code=409, detail='已有签发任务正在进行中，请稍候')
+
+    os.makedirs(_CERTBOT_JOBS_DIR, exist_ok=True)
+    job = {'id': str(int(time.time())), 'email': request.email, 'domains': [hostname]}
+    tmp = job_path + '.tmp'
+    with open(tmp, 'w') as f:
+        json.dump(job, f)
+    os.replace(tmp, job_path)
+    return {'submitted': True, 'hostname': hostname}

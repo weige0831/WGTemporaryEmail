@@ -1,6 +1,6 @@
 """Pydantic schemas for the admin API"""
 
-from pydantic import BaseModel, field_serializer
+from pydantic import BaseModel, EmailStr, field_serializer
 from datetime import datetime
 from typing import Optional, List
 from uuid import UUID
@@ -155,6 +155,23 @@ class CleanupResult(BaseModel):
     deleted_emails: int
     storage_bytes_before: int
     storage_bytes_after: int
+
+
+class TlsIssueRequest(BaseModel):
+    email: EmailStr
+
+
+class TlsStatus(BaseModel):
+    """TLS certificate status for the admin panel"""
+    enabled: bool
+    hostname: str
+    cert_exists: bool
+    not_after: Optional[str] = None
+    issuer: Optional[str] = None
+    cert_path: str
+    job_pending: bool
+    job_result: Optional[dict] = None
+    last_renew: Optional[dict] = None
 
 
 class AdminConfigResponse(BaseModel):

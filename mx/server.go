@@ -85,25 +85,17 @@ func NewSMTPServer(cfg *Config, db *DB) (*SMTPServer, error) {
 	s.AllowInsecureAuth = false
 	s.AuthDisabled = true // MX servers don't require authentication
 
-	// Configure TLS if enabled
+	// Configure TLS if enabled. The certificate is loaded lazily on every
+	// STARTTLS handshake (tls.Config.GetCertificate), so renewals apply
+	// without a restart.
 	if cfg.TLS.Enabled {
-		cert, err := tls.LoadX509KeyPair(cfg.TLS.CertFile, cfg.TLS.KeyFile)
-		if err != nil {
-			return nil, fmt.Errorf("failed to load TLS certificate: %w", err)
+		loader := newCertLoader(cfg.TLS.CertFile, cfg.TLS.KeyFile)
+		if loader.FilesExist() {
+			log.Printf("✓ TLS/STARTTLS enabled (cert: %s)", cfg.TLS.CertFile)
+		} else {
+			log.Printf("⚠ TLS enabled but certificates not found at %s - STARTTLS will fail until certs are issued", cfg.TLS.CertFile)
 		}
-
-		s.TLSConfig = &tls.Config{
-			Certificates: []tls.Certificate{cert},
-			MinVersion:   tls.VersionTLS12, // Require TLS 1.2 or higher
-			CipherSuites: []uint16{
-				tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
-				tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
-				tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
-				tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
-			},
-			PreferServerCipherSuites: true,
-		}
-		log.Printf("✓ TLS/STARTTLS enabled (cert: %s)", cfg.TLS.CertFile)
+		s.TLSConfig = buildTLSConfig(cfg.TLS.CertFile, cfg.TLS.KeyFile)
 	} else {
 		log.Printf("⚠ TLS/STARTTLS disabled - connections will be unencrypted")
 	}
@@ -130,6 +122,19 @@ func (s *SMTPServer) Start() error {
 		return fmt.Errorf("SMTP server error: %w", err)
 	}
 	return nil
+}
+
+// ReloadTLS re-evaluates STARTTLS support after a config hot-reload: it
+// enables TLS when tls.enabled was switched on (certificates are loaded
+// lazily per handshake) and disables it when switched off.
+func (s *SMTPServer) ReloadTLS(cfg *Config) {
+	if cfg.TLS.Enabled && s.server.TLSConfig == nil {
+		s.server.TLSConfig = buildTLSConfig(cfg.TLS.CertFile, cfg.TLS.KeyFile)
+		log.Printf("TLS/STARTTLS enabled via config reload (cert: %s)", cfg.TLS.CertFile)
+	} else if !cfg.TLS.Enabled && s.server.TLSConfig != nil {
+		s.server.TLSConfig = nil
+		log.Printf("TLS/STARTTLS disabled via config reload")
+	}
 }
 
 // Close shuts down the SMTP server

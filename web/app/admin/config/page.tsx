@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Save, RefreshCw, KeyRound } from "lucide-react"
+import { Save, RefreshCw, KeyRound, ShieldCheck } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { adminApi, ApiError, clearAdminToken } from "@/lib/admin-api"
+import { Badge } from "@/components/ui/badge"
+import { adminApi, ApiError, clearAdminToken, type TlsStatus } from "@/lib/admin-api"
 import { useI18n } from "@/lib/i18n"
 
 interface ConfigData {
@@ -28,6 +29,7 @@ interface ConfigData {
   }
   cors?: { allow_origins?: string[] }
   database?: { pool_size?: number; max_overflow?: number }
+  tls?: { enabled?: boolean }
   [key: string]: unknown
 }
 
@@ -50,6 +52,7 @@ const BOOL_FIELDS: { section: keyof ConfigData; key: string; labelKey: string }[
   { section: "validation", key: "check_spf", labelKey: "admin.checkSpf" },
   { section: "validation", key: "check_dmarc", labelKey: "admin.checkDmarc" },
   { section: "validation", key: "store_results", labelKey: "admin.storeResults" },
+  { section: "tls", key: "enabled", labelKey: "admin.tlsEnabledLabel" },
 ]
 
 function getValue(config: ConfigData, section: keyof ConfigData, key: string): string | boolean {
@@ -70,6 +73,12 @@ export default function AdminConfig() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [notice, setNotice] = useState("")
+  // TLS 证书状态
+  const [tlsStatus, setTlsStatus] = useState<TlsStatus | null>(null)
+  const [tlsEmail, setTlsEmail] = useState("")
+  const [tlsBusy, setTlsBusy] = useState(false)
+  const [tlsNotice, setTlsNotice] = useState("")
+  const [tlsError, setTlsError] = useState("")
 
   const fetchConfig = async () => {
     setError("")
@@ -96,8 +105,51 @@ export default function AdminConfig() {
 
   useEffect(() => {
     fetchConfig()
+    fetchTlsStatus()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  const fetchTlsStatus = async () => {
+    try {
+      setTlsStatus(await adminApi.getTlsStatus())
+    } catch (e) {
+      if (e instanceof ApiError) setTlsError(e.message)
+    }
+  }
+
+  const handleIssueCert = async () => {
+    const email = tlsEmail.trim()
+    if (!email) {
+      setTlsError(t("admin.tlsEmailLabel"))
+      return
+    }
+    setTlsBusy(true)
+    setTlsError("")
+    setTlsNotice("")
+    try {
+      await adminApi.issueCertificate(email)
+      setTlsNotice(t("admin.tlsIssueSubmitted"))
+      // 轮询签发状态（最多 3 分钟）
+      for (let i = 0; i < 36; i++) {
+        await new Promise((r) => setTimeout(r, 5000))
+        const st = await adminApi.getTlsStatus()
+        setTlsStatus(st)
+        if (!st.job_pending) {
+          if (st.job_result?.ok) {
+            setTlsNotice(t("admin.tlsIssueSuccess"))
+          } else {
+            setTlsError(t("admin.tlsIssueFailed", { msg: st.job_result?.message || "" }))
+          }
+          break
+        }
+      }
+    } catch (e) {
+      if (e instanceof ApiError) setTlsError(e.message)
+      else setTlsError(t("admin.loadFailed"))
+    } finally {
+      setTlsBusy(false)
+    }
+  }
 
   const handleSave = async () => {
     setError("")
@@ -216,6 +268,70 @@ export default function AdminConfig() {
                 />
                 <p className="text-xs text-muted-foreground">{t("admin.hostnameHint")}</p>
               </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4" />
+                {t("admin.tlsTitle")}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="text-sm space-y-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-muted-foreground">{t("admin.tlsStatusLabel")}:</span>
+                  {tlsStatus?.cert_exists ? (
+                    <Badge variant="success">{t("admin.tlsCertIssued")}</Badge>
+                  ) : (
+                    <Badge variant="outline">{t("admin.tlsCertNotIssued")}</Badge>
+                  )}
+                  {tlsStatus?.enabled && <Badge variant="default">TLS ON</Badge>}
+                  {tlsStatus?.job_pending && (
+                    <Badge variant="secondary">{t("admin.tlsJobRunning")}</Badge>
+                  )}
+                </div>
+                {tlsStatus?.cert_exists && tlsStatus.not_after && (
+                  <p className="text-xs text-muted-foreground">
+                    {t("admin.tlsExpires", { date: tlsStatus.not_after })}
+                  </p>
+                )}
+                {tlsStatus?.cert_exists && tlsStatus.issuer && (
+                  <p className="text-xs text-muted-foreground">
+                    {t("admin.tlsIssuer", { issuer: tlsStatus.issuer })}
+                  </p>
+                )}
+                {tlsStatus?.last_renew?.lastRenew && (
+                  <p className="text-xs text-muted-foreground">
+                    {t("admin.tlsLastRenew", { date: tlsStatus.last_renew.lastRenew })}
+                  </p>
+                )}
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm text-muted-foreground">{t("admin.tlsEmailLabel")}</label>
+                <Input
+                  type="email"
+                  placeholder={t("admin.tlsEmailPlaceholder")}
+                  value={tlsEmail}
+                  onChange={(e) => setTlsEmail(e.target.value)}
+                />
+              </div>
+              <Button
+                onClick={handleIssueCert}
+                disabled={tlsBusy || tlsStatus?.job_pending}
+                variant="outline"
+                className="w-full"
+              >
+                <ShieldCheck className="h-4 w-4 mr-2" />
+                {tlsBusy || tlsStatus?.job_pending ? t("admin.tlsIssuing") : t("admin.tlsIssueBtn")}
+              </Button>
+              {tlsNotice && <p className="text-sm text-primary">{tlsNotice}</p>}
+              {tlsError && <p className="text-sm text-destructive">{tlsError}</p>}
+              <p className="text-xs text-muted-foreground">{t("admin.tlsAutoRenewNote")}</p>
+              <p className="text-xs text-muted-foreground">
+                {t("admin.tlsHostnameNote", { hostname: tlsStatus?.hostname || "-" })}
+              </p>
             </CardContent>
           </Card>
 

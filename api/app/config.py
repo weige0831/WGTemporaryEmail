@@ -72,6 +72,12 @@ class Config:
         self.CHECK_DMARC: bool = validation_config.get('check_dmarc', True)
         self.STORE_VALIDATION_RESULTS: bool = validation_config.get('store_results', True)
 
+        # TLS
+        tls_config = config.get('tls', {})
+        self.TLS_ENABLED: bool = tls_config.get('enabled', False)
+        self.TLS_CERT_FILE: str = tls_config.get('cert_file', '/config/certs/cert.pem')
+        self.TLS_KEY_FILE: str = tls_config.get('key_file', '/config/certs/key.pem')
+
         # Logging
         logging_config = config.get('logging', {})
         self.LOG_LEVEL: str = logging_config.get('level', 'info')
@@ -161,6 +167,9 @@ def create_test_config() -> Config:
     config.CHECK_SPF = False
     config.CHECK_DMARC = False
     config.STORE_VALIDATION_RESULTS = False
+    config.TLS_ENABLED = False
+    config.TLS_CERT_FILE = '/tmp/nonexistent-cert.pem'
+    config.TLS_KEY_FILE = '/tmp/nonexistent-key.pem'
     config.LOG_LEVEL = 'info'
     config.LOG_FORMAT = 'json'
     config.CORS_ALLOW_ORIGINS = ['*']
