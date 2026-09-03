@@ -30,6 +30,7 @@ ALLOWED_PATCH_SECTIONS = {
     'database': {'pool_size', 'max_overflow'},
     'admin': {'token'},
     'tls': {'enabled'},
+    'web': {'hostname'},
 }
 
 _INT_KEYS = {
@@ -141,6 +142,8 @@ def apply_patch(config: dict, patch: dict) -> None:
                 not isinstance(value, str) or not value.strip()
             ):
                 raise ValueError('server.hostname 不能为空')
+            if k == ('web', 'hostname') and not isinstance(value, str):
+                raise ValueError('web.hostname 必须是字符串（留空表示不单独配置面板域名）')
             if k == ('admin', 'token') and (
                 not isinstance(value, str) or not 8 <= len(value.strip()) <= 128
             ):

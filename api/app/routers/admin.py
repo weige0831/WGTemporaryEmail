@@ -520,6 +520,7 @@ def tls_status():
     return {
         'enabled': settings.TLS_ENABLED,
         'hostname': settings.HOSTNAME,
+        'web_hostname': settings.WEB_HOSTNAME,
         'cert_exists': os.path.exists(settings.TLS_CERT_FILE),
         'not_after': cert_info.get('not_after'),
         'issuer': cert_info.get('issuer'),
@@ -534,22 +535,29 @@ def tls_status():
 def tls_issue(request: TlsIssueRequest):
     """Submit a certificate issuance job to the certbot sidecar.
 
-    The certificate is issued for the configured mail server hostname via
-    HTTP-01. Its A record must point to this server and port 80 must be
-    publicly reachable.
+    The certificate is issued for the configured mail server hostname plus
+    the optional web panel hostname (SAN certificate, HTTP-01). Their A
+    records must point to this server and port 80 must be publicly reachable.
     """
     hostname = settings.HOSTNAME.strip().lower()
     if not hostname or '.' not in hostname:
         raise HTTPException(status_code=400, detail='server.hostname 未配置有效的域名')
+
+    domains = [hostname]
+    web_hostname = settings.WEB_HOSTNAME.strip().lower()
+    if web_hostname and web_hostname != hostname:
+        if '.' not in web_hostname:
+            raise HTTPException(status_code=400, detail='web.hostname 格式无效')
+        domains.append(web_hostname)
 
     job_path = os.path.join(_CERTBOT_JOBS_DIR, 'issue.json')
     if os.path.exists(job_path):
         raise HTTPException(status_code=409, detail='已有签发任务正在进行中，请稍候')
 
     os.makedirs(_CERTBOT_JOBS_DIR, exist_ok=True)
-    job = {'id': str(int(time.time())), 'email': request.email, 'domains': [hostname]}
+    job = {'id': str(int(time.time())), 'email': request.email, 'domains': domains}
     tmp = job_path + '.tmp'
     with open(tmp, 'w') as f:
         json.dump(job, f)
     os.replace(tmp, job_path)
-    return {'submitted': True, 'hostname': hostname}
+    return {'submitted': True, 'hostname': hostname, 'domains': domains}

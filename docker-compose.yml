@@ -83,9 +83,13 @@ services:
     container_name: tempmail_web
     ports:
       - "${WEB_PORT:-80}:80"
+      - "443:443"
     volumes:
       # Let's Encrypt HTTP-01 challenge files (written by the certbot sidecar)
       - certbot_webroot:/var/www/certbot:ro
+      # TLS certs shared with the MX (the entrypoint may write a self-signed
+      # placeholder here until certbot issues the real certificate)
+      - ./certs:/config/certs
     depends_on:
       api:
         condition: service_healthy

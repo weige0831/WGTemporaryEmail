@@ -286,6 +286,10 @@ export const en = {
     tlsHostnameNote: "The certificate is issued for the mail server hostname ({hostname}). Its A record must point to this server and port 80 must be publicly reachable.",
     tlsJobRunning: "Issuance in progress...",
     tlsLastRenew: "Last renewal check: {date}",
+    webHostnameLabel: "Panel access domain (web panel)",
+    webHostnameHint: "Leave empty to access the panel via the mail hostname. The HTTPS certificate covers both names.",
+    httpsUrl: "Panel HTTPS: https://{host}",
+    certCovers: "Certificate covers: {domains}",
     // cleanup page
     cleanupTitle: "Data Cleanup",
     cleanupCardTitle: "Manual cleanup of expired addresses",

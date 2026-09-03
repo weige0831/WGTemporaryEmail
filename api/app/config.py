@@ -78,6 +78,10 @@ class Config:
         self.TLS_CERT_FILE: str = tls_config.get('cert_file', '/config/certs/cert.pem')
         self.TLS_KEY_FILE: str = tls_config.get('key_file', '/config/certs/key.pem')
 
+        # Web panel access domain (used for the panel HTTPS certificate)
+        web_config = config.get('web', {})
+        self.WEB_HOSTNAME: str = web_config.get('hostname', '')
+
         # Logging
         logging_config = config.get('logging', {})
         self.LOG_LEVEL: str = logging_config.get('level', 'info')
@@ -170,6 +174,7 @@ def create_test_config() -> Config:
     config.TLS_ENABLED = False
     config.TLS_CERT_FILE = '/tmp/nonexistent-cert.pem'
     config.TLS_KEY_FILE = '/tmp/nonexistent-key.pem'
+    config.WEB_HOSTNAME = ''
     config.LOG_LEVEL = 'info'
     config.LOG_FORMAT = 'json'
     config.CORS_ALLOW_ORIGINS = ['*']

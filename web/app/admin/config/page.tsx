@@ -30,6 +30,7 @@ interface ConfigData {
   cors?: { allow_origins?: string[] }
   database?: { pool_size?: number; max_overflow?: number }
   tls?: { enabled?: boolean }
+  web?: { hostname?: string }
   [key: string]: unknown
 }
 
@@ -95,6 +96,7 @@ export default function AdminConfig() {
         f[`${field.section}.${field.key}`] = getValue(cfg, field.section, field.key) === true
       }
       f["server.hostname"] = typeof getValue(cfg, "server", "hostname") === "string" ? String(getValue(cfg, "server", "hostname")) : ""
+      f["web.hostname"] = typeof getValue(cfg, "web", "hostname") === "string" ? String(getValue(cfg, "web", "hostname")) : ""
       setForm(f)
       setCorsOrigins((cfg.cors?.allow_origins || []).join("\n"))
     } catch (e) {
@@ -185,6 +187,12 @@ export default function AdminConfig() {
         ;(patch.server ||= {}).hostname = hostname
       }
 
+      const webHostname = (form["web.hostname"] ?? "").toString().trim()
+      const currentWebHostname = getValue(config as ConfigData, "web", "hostname")
+      if (webHostname !== (typeof currentWebHostname === "string" ? currentWebHostname : "")) {
+        ;(patch.web ||= {}).hostname = webHostname
+      }
+
       const tokenChanged = adminTokenInput.trim().length > 0
       if (tokenChanged) {
         ;(patch.admin ||= {}).token = adminTokenInput.trim()
@@ -268,6 +276,16 @@ export default function AdminConfig() {
                 />
                 <p className="text-xs text-muted-foreground">{t("admin.hostnameHint")}</p>
               </div>
+              <div className="space-y-1">
+                <label className="text-sm text-muted-foreground">{t("admin.webHostnameLabel")}</label>
+                <Input
+                  value={String(form["web.hostname"] ?? "")}
+                  onChange={(e) => setField("web.hostname", e.target.value)}
+                  placeholder="mail.twcdk.com"
+                  className="font-mono"
+                />
+                <p className="text-xs text-muted-foreground">{t("admin.webHostnameHint")}</p>
+              </div>
             </CardContent>
           </Card>
 
@@ -302,6 +320,16 @@ export default function AdminConfig() {
                     {t("admin.tlsIssuer", { issuer: tlsStatus.issuer })}
                   </p>
                 )}
+                {tlsStatus?.web_hostname && (
+                  <p className="text-xs text-primary">
+                    {t("admin.httpsUrl", { host: tlsStatus.web_hostname })}
+                  </p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  {t("admin.certCovers", {
+                    domains: [tlsStatus?.hostname, tlsStatus?.web_hostname].filter(Boolean).join(", ") || "-",
+                  })}
+                </p>
                 {tlsStatus?.last_renew?.lastRenew && (
                   <p className="text-xs text-muted-foreground">
                     {t("admin.tlsLastRenew", { date: tlsStatus.last_renew.lastRenew })}

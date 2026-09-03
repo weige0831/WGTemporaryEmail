@@ -165,6 +165,7 @@ class TlsStatus(BaseModel):
     """TLS certificate status for the admin panel"""
     enabled: bool
     hostname: str
+    web_hostname: str = ""
     cert_exists: bool
     not_after: Optional[str] = None
     issuer: Optional[str] = None

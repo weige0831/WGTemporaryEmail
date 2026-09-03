@@ -162,6 +162,7 @@ export interface CleanupResult {
 export interface TlsStatus {
   enabled: boolean
   hostname: string
+  web_hostname: string
   cert_exists: boolean
   not_after: string | null
   issuer: string | null
