@@ -32,6 +32,13 @@ func (bkd *Backend) NewSession(c *smtp.Conn) (smtp.Session, error) {
 	remoteAddr := c.Conn().RemoteAddr().String()
 	hostname := c.Hostname()
 
+	// Use the latest config so hot-reloaded settings (domains, message size
+	// limit) apply to new sessions without a restart.
+	cfg := GetCurrentConfig()
+	if cfg == nil {
+		cfg = bkd.cfg
+	}
+
 	// Check if TLS is enabled
 	tlsInfo := ""
 	if tlsConn, ok := c.Conn().(*tls.Conn); ok {
@@ -41,7 +48,7 @@ func (bkd *Backend) NewSession(c *smtp.Conn) (smtp.Session, error) {
 
 	log.Printf("[%s] New connection from: %s%s", remoteAddr, hostname, tlsInfo)
 
-	return NewSession(remoteAddr, hostname, bkd.cfg, bkd.db, bkd.validator, bkd.domains), nil
+	return NewSession(remoteAddr, hostname, cfg, bkd.db, bkd.validator, cfg.GetDomainMap()), nil
 }
 
 // SMTPServer wraps the SMTP server

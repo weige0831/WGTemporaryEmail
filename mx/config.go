@@ -3,9 +3,33 @@ package main
 import (
 	"fmt"
 	"os"
+	"sync/atomic"
 
 	"gopkg.in/yaml.v3"
 )
+
+// currentConfig holds the most recently loaded config. New SMTP sessions
+// read it so config.yaml changes (e.g. domains added via the admin panel)
+// take effect without a restart.
+var currentConfig atomic.Value // stores *Config
+
+// SetCurrentConfig stores a freshly loaded config for hot reload.
+func SetCurrentConfig(cfg *Config) {
+	currentConfig.Store(cfg)
+}
+
+// GetCurrentConfig returns the latest loaded config, or nil if none is set.
+func GetCurrentConfig() *Config {
+	v := currentConfig.Load()
+	if v == nil {
+		return nil
+	}
+	cfg, ok := v.(*Config)
+	if !ok || cfg == nil {
+		return nil
+	}
+	return cfg
+}
 
 // Config holds the MX server configuration loaded from YAML
 type Config struct {

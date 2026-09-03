@@ -1,0 +1,15 @@
+# 依赖与构建产物（由 Docker 内 npm ci / npm run build 重新生成）
+node_modules
+.next
+out
+
+# 环境与缓存
+.env
+.env*.local
+npm-debug.log*
+yarn-debug.log*
+
+# 系统文件
+.git
+.DS_Store
+*.md

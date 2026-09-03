@@ -6,7 +6,7 @@ services:
     environment:
       POSTGRES_DB: tempmail
       POSTGRES_USER: tempmail
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme_insecure_default}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?请在 .env 中设置 DB_PASSWORD（运行 ./setup.sh 会自动生成）}
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./db/init:/docker-entrypoint-initdb.d:ro
@@ -29,9 +29,9 @@ services:
       CONFIG_PATH: /config/config.yaml
       API_HOST: ${API_HOST:-0.0.0.0}  # Bind to all interfaces in container by default
     volumes:
-      - ./config.yaml:/config/config.yaml:ro
-    ports:
-      - "${API_BIND:-127.0.0.1}:8000:8000"  # Bind to localhost on host by default
+      # Writable: the admin panel persists domain/config changes to this file
+      - ./config.yaml:/config/config.yaml
+    # No host port mapping - the web service (nginx) proxies /api internally
     depends_on:
       postgres:
         condition: service_healthy
@@ -67,6 +67,22 @@ services:
       timeout: 3s
       retries: 3
       start_period: 5s
+    restart: unless-stopped
+    networks:
+      - tempmail_network
+
+  # Web: nginx serving the static frontend (user panel + admin panel) and
+  # reverse-proxying /api, /docs, /redoc to the API service.
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: tempmail_web
+    ports:
+      - "${WEB_PORT:-80}:80"
+    depends_on:
+      api:
+        condition: service_healthy
     restart: unless-stopped
     networks:
       - tempmail_network

@@ -47,6 +47,16 @@ def generate_token() -> str:
     return secrets.token_urlsafe(48)
 
 
+def escape_like(term: str) -> str:
+    """
+    Escape LIKE/ILIKE wildcards in a user-provided search term.
+
+    Prevents users from injecting % or _ wildcards to alter match semantics
+    (e.g. `search=%` matching every row). Pair with `ilike(..., escape='\\')`.
+    """
+    return term.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+
 # ============================================================================
 # Address Validation
 # ============================================================================

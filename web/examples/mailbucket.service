@@ -1,0 +1,27 @@
+[Unit]
+Description=Mailbucket Frontend - Next.js Application
+Documentation=https://github.com/lm36/mailbucket
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/var/www/mailbucket
+Environment="NODE_ENV=production"
+Environment="NEXT_PUBLIC_API_URL=https://mailbucket.cc"
+ExecStart=/usr/bin/npm start -- --hostname 127.0.0.1 --port 3000
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=mailbucket
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/var/www/mailbucket/.next/cache
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

@@ -8,6 +8,7 @@ from app.database import get_db
 from app.models import Address
 from app.schemas import AddressResponse, AddressCreate, DomainListResponse
 from app.config import settings
+from app.rate_limit import ip_rate_limit
 from app.utils import (
     generate_random_email,
     generate_token,
@@ -16,6 +17,9 @@ from app.utils import (
 )
 
 router = APIRouter(prefix="/api/v1", tags=["addresses"])
+
+# Public endpoint - limit address creation to deter DB-filling abuse.
+create_address_rate_limit = ip_rate_limit(limit=10, window_seconds=60, scope="create_address")
 
 
 @router.get("/domains", response_model=DomainListResponse)
@@ -36,7 +40,11 @@ def list_domains():
 
 
 @router.post("/addresses", response_model=AddressResponse)
-def create_address(request: AddressCreate = AddressCreate(), db: Session = Depends(get_db)):
+def create_address(
+    request: AddressCreate = AddressCreate(),
+    db: Session = Depends(get_db),
+    _: None = Depends(create_address_rate_limit),
+):
     """
     Generate a new temporary email address.
 

@@ -187,9 +187,13 @@ func (db *DB) CheckDomainAllowed(domain string, allowedDomains map[string]bool) 
 
 // EnforceEmailLimit enforces max emails per address by deleting oldest
 func (db *DB) EnforceEmailLimit(addressID string) error {
-	// This is called asynchronously after storing email
-	// Get max from config - for now hardcode to 100
+	// This is called asynchronously after storing email.
+	// Read the latest config so changes to max_emails_per_address apply
+	// without restarting the MX server.
 	maxEmails := 100
+	if cfg := GetCurrentConfig(); cfg != nil && cfg.Tempmail.MaxEmailsPerAddress > 0 {
+		maxEmails = cfg.Tempmail.MaxEmailsPerAddress
+	}
 
 	result, err := db.conn.Exec(`
 		DELETE FROM emails

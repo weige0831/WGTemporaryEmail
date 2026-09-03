@@ -5,6 +5,17 @@ domains:
   - example.com
   - temp.example.com
 
+setup:
+  # First-run wizard flag. When false, visiting the web panel redirects to
+  # /setup where domains, hostname and the admin token are configured.
+  # The wizard sets this to true automatically; setup.sh writes true as well.
+  initialized: false
+
+admin:
+  # Bearer token for the admin panel (/admin) and the admin API (/api/v1/admin/*)
+  # Generate a strong random value, e.g.: openssl rand -base64 32 | tr -d "=+/" | cut -c1-32
+  token: CHANGE_THIS_ADMIN_TOKEN
+
 database:
   url: postgresql://tempmail:CHANGE_THIS_PASSWORD@postgres:5432/tempmail?sslmode=disable
   pool_size: 10
@@ -22,15 +33,18 @@ server:
 
 cors:
   # Allowed origins for CORS (Cross-Origin Resource Sharing)
-  # For development: Use ["*"] to allow all origins
-  # For production: Specify your frontend domains explicitly
+  # The integrated deployment is same-origin (nginx proxies /api), so CORS is
+  # only needed for local development. For production, list your frontend
+  # domains explicitly rather than "*".
   allow_origins:
-    # - ["*"] 
+    # - ["*"]
     - "https://example.com"
     - "https://www.example.com"
 
-  # Allow cookies and authentication headers
-  allow_credentials: true
+  # Keep false: auth uses a Bearer token (localStorage), not cookies, so
+  # credentialed cross-origin requests are never needed. Combining
+  # allow_credentials: true with a wildcard origin is unsafe.
+  allow_credentials: false
 
   # Allowed HTTP methods
   allow_methods:
@@ -56,6 +70,11 @@ tempmail:
 
   # Maximum emails per address (oldest deleted when exceeded)
   max_emails_per_address: 100
+
+  # Global storage cap in MB (total size of all stored emails incl. attachments).
+  # When exceeded, the cleanup job deletes the oldest emails until under this cap.
+  # 0 disables the cap.
+  max_storage_mb: 1024
 
   # How often cleanup job runs to delete expired addresses
   cleanup_interval_hours: 1

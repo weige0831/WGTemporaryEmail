@@ -9,11 +9,28 @@ class Config:
     """Application configuration loaded from YAML file"""
 
     def __init__(self, config_path: str):
+        self.CONFIG_PATH: str = config_path
         with open(config_path, 'r') as f:
-            config = yaml.safe_load(f)
+            config = yaml.safe_load(f) or {}
+        self._apply(config)
 
+    def _apply(self, config: dict) -> None:
+        """Apply a parsed YAML dict onto this instance.
+
+        Used both at startup and by reload_settings() for hot reload: the
+        attributes are updated in place because other modules bind the
+        instance via `from app.config import settings`.
+        """
         # Domains
         self.DOMAINS: List[str] = config.get('domains', [])
+
+        # Admin
+        admin_config = config.get('admin', {})
+        self.ADMIN_TOKEN: str = admin_config.get('token', '')
+
+        # First-run setup wizard flag
+        setup_config = config.get('setup', {})
+        self.SETUP_INITIALIZED: bool = setup_config.get('initialized', False)
 
         # Database
         db_config = config.get('database', {})
@@ -39,6 +56,9 @@ class Config:
         self.ALLOW_CUSTOM_USERNAMES: bool = tempmail_config.get('allow_custom_usernames', True)
         self.MIN_USERNAME_LENGTH: int = tempmail_config.get('min_username_length', 3)
         self.MAX_USERNAME_LENGTH: int = tempmail_config.get('max_username_length', 64)
+        # Global storage cap in MB (0 = unlimited). When total email size
+        # exceeds this, the cleanup loop deletes oldest emails first.
+        self.MAX_STORAGE_MB: int = tempmail_config.get('max_storage_mb', 1024)
         self.RESERVED_USERNAMES: List[str] = tempmail_config.get('reserved_usernames', [
             'admin', 'postmaster', 'abuse', 'noreply', 'no-reply',
             'root', 'webmaster', 'hostmaster', 'mailer-daemon',
@@ -83,13 +103,38 @@ def load_config() -> Config:
     return Config(config_path)
 
 
+def reload_settings() -> Config:
+    """Re-read config.yaml and update the global settings singleton in place.
+
+    Raises ValueError if the file is missing or the parsed config is invalid.
+    """
+    if os.getenv('TESTING'):
+        return settings
+
+    with open(settings.CONFIG_PATH, 'r') as f:
+        config = yaml.safe_load(f) or {}
+
+    if not isinstance(config, dict):
+        raise ValueError('config.yaml must be a YAML mapping')
+
+    if not config.get('domains'):
+        raise ValueError('config.yaml must contain at least one domain')
+
+    settings._apply(config)
+    return settings
+
+
 def create_test_config() -> Config:
     """Create a minimal configuration for testing"""
     # Create a mock config object without requiring a file
     config = Config.__new__(Config)
 
+    config.CONFIG_PATH = '/tmp/test-config.yaml'
+
     # Set minimal test values
     config.DOMAINS = ['tempmail.example.com']
+    config.ADMIN_TOKEN = 'test-admin-token'
+    config.SETUP_INITIALIZED = True
     config.DATABASE_URL = 'sqlite:///:memory:'
     config.DB_POOL_SIZE = 5
     config.DB_MAX_OVERFLOW = 10
@@ -106,6 +151,7 @@ def create_test_config() -> Config:
     config.ALLOW_CUSTOM_USERNAMES = True
     config.MIN_USERNAME_LENGTH = 3
     config.MAX_USERNAME_LENGTH = 64
+    config.MAX_STORAGE_MB = 0
     config.RESERVED_USERNAMES = [
         'admin', 'postmaster', 'abuse', 'noreply', 'no-reply',
         'root', 'webmaster', 'hostmaster', 'mailer-daemon',

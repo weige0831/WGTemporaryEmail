@@ -27,6 +27,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to load configuration: %v", err)
 	}
+	SetCurrentConfig(cfg)
 
 	log.Printf("Configuration loaded:")
 	log.Printf("  Domains: %v", cfg.Domains)
@@ -57,6 +58,9 @@ func main() {
 			errChan <- err
 		}
 	}()
+
+	// Watch config.yaml for hot-reloaded changes (e.g. domains from the admin panel)
+	go watchConfig(configPath)
 
 	// Wait for interrupt signal
 	sigChan := make(chan os.Signal, 1)

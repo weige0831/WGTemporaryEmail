@@ -10,7 +10,7 @@ from datetime import datetime
 from app.database import get_db
 from app.models import Email, EmailRecipient, Attachment
 from app.schemas import EmailSummary, EmailDetail, EmailListResponse, AttachmentInfo
-from app.utils import get_address_by_token
+from app.utils import get_address_by_token, escape_like
 
 router = APIRouter(prefix="/api/v1/{token}", tags=["emails"])
 
@@ -61,12 +61,12 @@ def list_emails(
         query = query.filter(EmailRecipient.is_read.is_(False))
 
     if search:
-        search_term = f"%{search}%"
+        search_term = f"%{escape_like(search)}%"
         query = query.filter(
             or_(
-                Email.subject.ilike(search_term),
-                Email.from_address.ilike(search_term),
-                Email.body_plain.ilike(search_term)
+                Email.subject.ilike(search_term, escape="\\"),
+                Email.from_address.ilike(search_term, escape="\\"),
+                Email.body_plain.ilike(search_term, escape="\\")
             )
         )
 
