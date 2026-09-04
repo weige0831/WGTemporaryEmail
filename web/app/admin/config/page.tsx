@@ -222,7 +222,11 @@ export default function AdminConfig() {
         return
       }
 
-      setNotice(t("admin.savedReloaded"))
+      if (patch.web?.hostname !== undefined) {
+        setNotice(t("admin.webHostnameUpdated"))
+      } else {
+        setNotice(t("admin.savedReloaded"))
+      }
       await fetchConfig()
     } catch (e) {
       if (e instanceof ApiError) setError(e.message)
@@ -275,6 +279,7 @@ export default function AdminConfig() {
                   className="font-mono"
                 />
                 <p className="text-xs text-muted-foreground">{t("admin.hostnameHint")}</p>
+                <p className="text-xs text-amber-600 dark:text-amber-400">{t("admin.mxHostnameNote")}</p>
               </div>
               <div className="space-y-1">
                 <label className="text-sm text-muted-foreground">{t("admin.webHostnameLabel")}</label>
@@ -323,6 +328,11 @@ export default function AdminConfig() {
                 {tlsStatus?.web_hostname && (
                   <p className="text-xs text-primary">
                     {t("admin.httpsUrl", { host: tlsStatus.web_hostname })}
+                  </p>
+                )}
+                {!tlsStatus?.web_hostname && (
+                  <p className="text-xs text-amber-600 dark:text-amber-400">
+                    {t("admin.webHostnameEmptyNote")}
                   </p>
                 )}
                 <p className="text-xs text-muted-foreground">

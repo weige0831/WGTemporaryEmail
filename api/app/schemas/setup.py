@@ -18,6 +18,7 @@ class SetupCompleteRequest(BaseModel):
     """Request body for completing the first-run setup wizard."""
     domains: List[str]
     hostname: str
+    web_hostname: Optional[str] = None
     admin_token: Optional[str] = None
     address_lifetime_hours: Optional[int] = None
     max_storage_mb: Optional[int] = None
@@ -43,6 +44,16 @@ class SetupCompleteRequest(BaseModel):
         if not _DOMAIN_RE.match(v):
             raise ValueError('邮件服务器主机名格式无效')
         return v
+
+    @field_validator('web_hostname')
+    @classmethod
+    def validate_web_hostname(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        v = v.strip().lower()
+        if v and not _DOMAIN_RE.match(v):
+            raise ValueError('面板访问域名格式无效')
+        return v or None
 
     @field_validator('admin_token')
     @classmethod

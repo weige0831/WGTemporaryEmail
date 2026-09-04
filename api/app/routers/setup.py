@@ -48,6 +48,9 @@ def complete_setup(
     config['domains'] = request.domains
     config.setdefault('server', {})['hostname'] = request.hostname
 
+    if request.web_hostname:
+        config.setdefault('web', {})['hostname'] = request.web_hostname
+
     admin_token = (request.admin_token or secrets.token_urlsafe(18)).strip()
     config.setdefault('admin', {})['token'] = admin_token
 

@@ -47,6 +47,7 @@ export default function SetupWizard() {
   const [domains, setDomains] = useState<string[]>([""])
   const [hostname, setHostname] = useState("")
   const [hostnameTouched, setHostnameTouched] = useState(false)
+  const [webHostname, setWebHostname] = useState("")
   const [adminToken, setAdminToken] = useState("")
   const [serverIp, setServerIp] = useState("")
   const [lifetime, setLifetime] = useState("24")
@@ -110,6 +111,7 @@ export default function SetupWizard() {
       const body: Record<string, unknown> = {
         domains: cleaned,
         hostname: hostname.trim().toLowerCase(),
+        web_hostname: webHostname.trim().toLowerCase() || null,
         admin_token: adminToken.trim() || null,
         address_lifetime_hours: Number(lifetime) || 24,
         max_storage_mb: maxStorage.trim() === "" ? null : Number(maxStorage),
@@ -333,6 +335,16 @@ export default function SetupWizard() {
               />
               {t("setup.allowCustom")}
             </label>
+            <div className="space-y-1">
+              <label className="text-sm text-muted-foreground">{t("setup.webHostnameLabel")}</label>
+              <Input
+                value={webHostname}
+                placeholder={t("setup.webHostnamePlaceholder")}
+                onChange={(e) => setWebHostname(e.target.value)}
+                className="font-mono"
+              />
+              <p className="text-xs text-muted-foreground">{t("setup.webHostnameHint")}</p>
+            </div>
             <div className="space-y-1">
               <label className="text-sm text-muted-foreground">{t("setup.serverIpLabel")}</label>
               <Input
