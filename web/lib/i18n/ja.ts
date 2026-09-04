@@ -46,6 +46,7 @@ export const ja: Partial<Dict> = {
     failedToDelete: "メールの削除に失敗しました。もう一度お試しください。",
     deleteEmailConfirm: "このメールを削除しますか？",
     expiredNewAddress: "{old} の有効期限が切れました。新しいアドレス：{new}",
+    expiredNow: "期限切れです。新しいアドレスを生成しています…",
   },
   about: {
     aboutTitle: "WGTemporaryEmail について",

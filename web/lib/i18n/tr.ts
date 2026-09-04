@@ -46,6 +46,7 @@ export const tr: Partial<Dict> = {
     failedToDelete: "E-posta silinemedi. Lütfen tekrar deneyin.",
     deleteEmailConfirm: "Bu e-posta silinsin mi?",
     expiredNewAddress: "{old} süresi doldu. Yeni adres: {new}",
+    expiredNow: "Süresi doldu - yeni adres oluşturuluyor...",
   },
   about: {
     aboutTitle: "WGTemporaryEmail Hakkında",

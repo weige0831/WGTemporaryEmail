@@ -46,6 +46,7 @@ export const hi: Partial<Dict> = {
     failedToDelete: "ईमेल हटाने में विफल। कृपया पुनः प्रयास करें।",
     deleteEmailConfirm: "क्या यह ईमेल हटाएँ?",
     expiredNewAddress: "{old} समाप्त हो गया। नया पता: {new}",
+    expiredNow: "समाप्त - नया पता बनाया जा रहा है...",
   },
   about: {
     aboutTitle: "WGTemporaryEmail के बारे में",

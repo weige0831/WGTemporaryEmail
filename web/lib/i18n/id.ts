@@ -46,6 +46,7 @@ export const id: Partial<Dict> = {
     failedToDelete: "Gagal menghapus email. Coba lagi.",
     deleteEmailConfirm: "Hapus email ini?",
     expiredNewAddress: "{old} telah kedaluwarsa. Alamat baru: {new}",
+    expiredNow: "Kedaluwarsa - membuat alamat baru...",
   },
   about: {
     aboutTitle: "Tentang WGTemporaryEmail",

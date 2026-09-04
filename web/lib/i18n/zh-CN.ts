@@ -46,6 +46,7 @@ export const zhCN: Partial<Dict> = {
     failedToDelete: "删除邮件失败，请重试。",
     deleteEmailConfirm: "确定删除这封邮件吗？",
     expiredNewAddress: "{old} 已过期。新地址：{new}",
+    expiredNow: "已过期，正在为你生成新地址…",
   },
   about: {
     aboutTitle: "关于 WGTemporaryEmail",

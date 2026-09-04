@@ -46,6 +46,7 @@ export const ru: Partial<Dict> = {
     failedToDelete: "Не удалось удалить письмо. Попробуйте ещё раз.",
     deleteEmailConfirm: "Удалить это письмо?",
     expiredNewAddress: "{old} истёк. Новый адрес: {new}",
+    expiredNow: "Истёк - создаём новый адрес...",
   },
   about: {
     aboutTitle: "О WGTemporaryEmail",

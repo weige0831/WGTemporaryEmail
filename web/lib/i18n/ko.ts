@@ -46,6 +46,7 @@ export const ko: Partial<Dict> = {
     failedToDelete: "이메일 삭제에 실패했습니다. 다시 시도해 주세요.",
     deleteEmailConfirm: "이 이메일을 삭제할까요?",
     expiredNewAddress: "{old} 주소가 만료되었습니다. 새 주소: {new}",
+    expiredNow: "만료됨 - 새 주소를 생성하는 중...",
   },
   about: {
     aboutTitle: "WGTemporaryEmail 소개",

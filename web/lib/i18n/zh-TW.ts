@@ -46,6 +46,7 @@ export const zhTW: Partial<Dict> = {
     failedToDelete: "刪除郵件失敗，請重試。",
     deleteEmailConfirm: "確定刪除這封郵件嗎？",
     expiredNewAddress: "{old} 已過期。新地址：{new}",
+    expiredNow: "已過期，正在為你產生新地址…",
   },
   about: {
     aboutTitle: "關於 WGTemporaryEmail",

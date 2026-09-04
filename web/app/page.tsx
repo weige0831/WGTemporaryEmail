@@ -35,6 +35,17 @@ export default function Home() {
   const [viewMode, setViewMode] = useState<"plain" | "html">("html")
   const [showNewEmailDialog, setShowNewEmailDialog] = useState(false)
   const [webHostname, setWebHostname] = useState("")
+  const [notice, setNotice] = useState<string | null>(null)
+
+  // 页面内提示条（替代生硬的 alert）
+  const showNotice = (msg: string) => {
+    setNotice(msg)
+    window.setTimeout(() => setNotice(null), 12000)
+  }
+
+  const addressExpired = (a: AddressResponse | null): boolean => {
+    return !!a && new Date(a.expires_at).getTime() <= Date.now()
+  }
 
   // 首次访问：未完成初始化向导时跳转到 /setup
   useEffect(() => {
@@ -58,6 +69,13 @@ export default function Home() {
     if (saved) {
       try {
         const parsed = JSON.parse(saved)
+        // 本地先判过期：已过期就直接清理并换新地址，避免出现负倒计时
+        if (new Date(parsed.expires_at).getTime() <= Date.now()) {
+          localStorage.removeItem("mailbucket_address")
+          createNewAddress(parsed.email)
+          fetchDomains()
+          return
+        }
         setAddress(parsed)
         fetchEmails(parsed.token)
       } catch (e) {
@@ -77,6 +95,11 @@ export default function Home() {
     if (!address || !autoRefresh) return
 
     const interval = setInterval(() => {
+      // 到期瞬间主动轮换，不等接口报错
+      if (new Date(address.expires_at).getTime() <= Date.now()) {
+        handleExpiredAddress()
+        return
+      }
       fetchEmails(address.token, true)
     }, AUTO_REFRESH_INTERVAL)
 
@@ -121,7 +144,7 @@ export default function Home() {
 
       // Show expiry message if this is an auto-rotation
       if (oldEmail) {
-        alert(t("home.expiredNewAddress", { old: oldEmail, new: data.email }))
+        showNotice(t("home.expiredNewAddress", { old: oldEmail, new: data.email }))
       }
     } catch (error: any) {
       console.error("Failed to create address", error)
@@ -153,8 +176,9 @@ export default function Home() {
       setLastRefresh(new Date())
     } catch (error: any) {
       console.error("Failed to fetch emails", error)
-      // Check if address has expired
-      if (error.status === 404 && error.detail === "Address has expired") {
+      // 地址已过期（接口返回 404）或已被后台清理（"Address not found"）：
+      // 一律按过期处理，自动换新地址
+      if (error.status === 404) {
         await handleExpiredAddress()
       }
     } finally {
@@ -173,7 +197,7 @@ export default function Home() {
     } catch (error: any) {
       console.error("Failed to fetch email detail", error)
       // Check if address has expired
-      if (error.status === 404 && error.detail === "Address has expired") {
+      if (error.status === 404) {
         await handleExpiredAddress()
       } else {
         alert(t("home.failedToLoad"))
@@ -194,7 +218,7 @@ export default function Home() {
     } catch (error: any) {
       console.error("Failed to delete email", error)
       // Check if address has expired
-      if (error.status === 404 && error.detail === "Address has expired") {
+      if (error.status === 404) {
         await handleExpiredAddress()
       } else {
         alert(t("home.failedToDelete"))
@@ -226,6 +250,19 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background">
       <DomainBanner webHostname={webHostname} />
+      {notice && (
+        <div className="bg-primary/10 border-b border-primary/20">
+          <div className="container mx-auto px-3 sm:px-4 py-2 flex items-center justify-between gap-2 text-xs sm:text-sm">
+            <p className="truncate">{notice}</p>
+            <button
+              onClick={() => setNotice(null)}
+              className="shrink-0 text-muted-foreground hover:text-foreground"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
       {/* Header */}
       <header className="border-b">
         <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4 flex items-center justify-between gap-2">
@@ -257,7 +294,9 @@ export default function Home() {
               <CardTitle className="text-lg sm:text-xl">{t("home.yourTempEmail")}</CardTitle>
               <CardDescription className="text-sm sm:text-base">
                 {address
-                  ? t("home.readyDesc", { time: getTimeUntilExpiry() })
+                  ? addressExpired(address)
+                    ? t("home.expiredNow")
+                    : t("home.readyDesc", { time: getTimeUntilExpiry() })
                   : t("home.loading")}
               </CardDescription>
             </CardHeader>
@@ -282,7 +321,11 @@ export default function Home() {
                   </div>
                   <div className="flex items-center gap-2 text-sm sm:text-base text-muted-foreground">
                     <Clock className="h-4 w-4" />
-                    <span>{t("home.expiresIn", { time: getTimeUntilExpiry() })}</span>
+                    <span>
+                      {addressExpired(address)
+                        ? t("home.expiredNow")
+                        : t("home.expiresIn", { time: getTimeUntilExpiry() })}
+                    </span>
                   </div>
                 </div>
               ) : (

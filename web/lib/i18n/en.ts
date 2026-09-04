@@ -54,6 +54,7 @@ export const en = {
     failedToDelete: "Failed to delete email. Please try again.",
     deleteEmailConfirm: "Delete this email?",
     expiredNewAddress: "{old} has expired. New address: {new}",
+    expiredNow: "Expired - generating a new address...",
   },
   about: {
     aboutTitle: "About WGTemporaryEmail",

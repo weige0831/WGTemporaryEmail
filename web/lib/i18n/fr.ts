@@ -46,6 +46,7 @@ export const fr: Partial<Dict> = {
     failedToDelete: "Échec de la suppression de l'e-mail. Veuillez réessayer.",
     deleteEmailConfirm: "Supprimer cet e-mail ?",
     expiredNewAddress: "{old} a expiré. Nouvelle adresse : {new}",
+    expiredNow: "Expiré - génération d'une nouvelle adresse...",
   },
   about: {
     aboutTitle: "À propos de WGTemporaryEmail",

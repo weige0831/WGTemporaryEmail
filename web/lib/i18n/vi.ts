@@ -46,6 +46,7 @@ export const vi: Partial<Dict> = {
     failedToDelete: "Không xóa được email. Vui lòng thử lại.",
     deleteEmailConfirm: "Xóa email này?",
     expiredNewAddress: "{old} đã hết hạn. Địa chỉ mới: {new}",
+    expiredNow: "Đã hết hạn - đang tạo địa chỉ mới...",
   },
   about: {
     aboutTitle: "Giới thiệu về WGTemporaryEmail",

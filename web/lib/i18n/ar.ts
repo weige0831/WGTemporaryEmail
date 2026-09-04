@@ -46,6 +46,7 @@ export const ar: Partial<Dict> = {
     failedToDelete: "فشل حذف الرسالة. حاول مرة أخرى.",
     deleteEmailConfirm: "هل تريد حذف هذه الرسالة؟",
     expiredNewAddress: "انتهت صلاحية {old}. العنوان الجديد: {new}",
+    expiredNow: "منتهٍ - جارٍ إنشاء عنوان جديد...",
   },
   about: {
     aboutTitle: "حول WGTemporaryEmail",
