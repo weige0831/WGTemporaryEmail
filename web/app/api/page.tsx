@@ -454,12 +454,16 @@ export default function ApiDocsPage() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b">
-        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4 flex items-center justify-between gap-2">
-          <Link href="/" className="flex items-center gap-2 shrink-0">
+        <div className="container mx-auto px-3 sm:px-4 py-2 sm:py-4 flex flex-wrap items-center gap-x-2 gap-y-1">
+          <div className="flex items-center gap-1.5 sm:gap-2 mr-auto">
             <Mail className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
-            <h1 className="text-lg sm:text-2xl font-bold">WGTemporaryEmail</h1>
-          </Link>
-          <div className="flex items-center gap-1 sm:gap-3">
+            <h1 className="text-base sm:text-2xl font-bold whitespace-nowrap">WGTemporaryEmail</h1>
+          </div>
+          <div className="flex items-center gap-1 sm:gap-2">
+            <LanguageSwitcher />
+            <ThemeToggle />
+          </div>
+          <nav className="flex items-center gap-3 sm:gap-4 order-3 w-full sm:w-auto justify-center sm:justify-end sm:order-none pt-1 sm:pt-0">
             <Link href="/about" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground whitespace-nowrap">
               {t("nav.about")}
             </Link>
@@ -469,9 +473,7 @@ export default function ApiDocsPage() {
             <Link href="/api" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground whitespace-nowrap">
               {t("nav.api")}
             </Link>
-            <LanguageSwitcher />
-            <ThemeToggle />
-          </div>
+          </nav>
         </div>
       </header>
 

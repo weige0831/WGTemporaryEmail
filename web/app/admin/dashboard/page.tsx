@@ -75,7 +75,7 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">{t("admin.dashboard")}</h1>
+        <h1 className="text-xl sm:text-2xl font-bold">{t("admin.dashboard")}</h1>
         {stats && (
           <Badge variant={stats.db_ok ? "success" : "destructive"}>
             <Database className="h-3 w-3 mr-1" />
@@ -97,7 +97,7 @@ export default function AdminDashboard() {
                   <Icon className="h-4 w-4" />
                   {c.label}
                 </div>
-                <div className="text-2xl font-bold truncate">{c.value}</div>
+                <div className="text-lg sm:text-2xl font-bold truncate">{c.value}</div>
                 {c.sub && <div className="text-xs text-muted-foreground mt-1">{c.sub}</div>}
               </CardContent>
             </Card>

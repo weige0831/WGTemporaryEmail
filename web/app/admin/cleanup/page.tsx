@@ -58,7 +58,7 @@ export default function AdminCleanup() {
 
   return (
     <div className="space-y-4 max-w-2xl">
-      <h1 className="text-2xl font-bold">{t("admin.cleanupTitle")}</h1>
+      <h1 className="text-xl sm:text-2xl font-bold">{t("admin.cleanupTitle")}</h1>
 
       <Card>
         <CardHeader>

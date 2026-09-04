@@ -80,7 +80,7 @@ export default function AdminAddresses() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold">{t("admin.addressesTitle")}</h1>
+      <h1 className="text-xl sm:text-2xl font-bold">{t("admin.addressesTitle")}</h1>
 
       <div className="flex gap-2">
         <div className="relative flex-1 max-w-md">
@@ -105,7 +105,8 @@ export default function AdminAddresses() {
 
       <Card>
         <CardContent className="p-0">
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+          <table className="w-full text-sm min-w-[720px]">
             <thead>
               <tr className="border-b text-left text-muted-foreground">
                 <th className="p-3 font-medium">{t("admin.emailCol")}</th>
@@ -162,6 +163,7 @@ export default function AdminAddresses() {
               ))}
             </tbody>
           </table>
+          </div>
         </CardContent>
       </Card>
 

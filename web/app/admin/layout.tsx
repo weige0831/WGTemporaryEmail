@@ -76,14 +76,29 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <div className="min-h-screen bg-background">
       <DomainBanner webHostname={webHostname} />
-      <div className="flex">
-        {/* 侧边导航 */}
-        <aside className="w-56 shrink-0 border-r flex flex-col min-h-screen">
-        <div className="p-4 border-b flex items-center gap-2">
-          <ShieldCheck className="h-5 w-5 text-primary" />
-          <span className="font-bold">{t("admin.adminPanel")}</span>
+      {/* 移动端顶部导航 */}
+      <div className="md:hidden border-b">
+        <div className="flex items-center justify-between px-3 py-2">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="h-5 w-5 text-primary" />
+            <span className="font-bold text-sm">{t("admin.adminPanel")}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <LanguageSwitcher />
+            <ThemeToggle />
+            <button
+              onClick={() => {
+                clearAdminToken()
+                router.replace("/admin")
+              }}
+              className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-muted-foreground hover:bg-accent"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              {t("admin.logout")}
+            </button>
+          </div>
         </div>
-        <nav className="flex-1 p-2 space-y-1">
+        <nav className="flex gap-1 overflow-x-auto px-2 pb-2">
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon
             const active = pathname.startsWith(item.href)
@@ -91,47 +106,76 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs whitespace-nowrap ${
                   active
                     ? "bg-accent text-accent-foreground font-medium"
                     : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                 }`}
               >
-                <Icon className="h-4 w-4" />
+                <Icon className="h-3.5 w-3.5" />
                 {t(item.key)}
               </Link>
             )
           })}
         </nav>
-        <div className="p-3 border-t space-y-1">
-          <Link
-            href="/"
-            className="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-          >
-            <ExternalLink className="h-4 w-4" />
-            {t("admin.userSite")}
-          </Link>
-          <button
-            onClick={() => {
-              clearAdminToken()
-              router.replace("/admin")
-            }}
-            className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-          >
-            <LogOut className="h-4 w-4" />
-            {t("admin.logout")}
-          </button>
-        </div>
-      </aside>
-
-      {/* 主区域 */}
-      <div className="flex-1 flex flex-col min-w-0">
-        <header className="border-b h-14 flex items-center justify-end px-4 gap-2">
-          <LanguageSwitcher />
-          <ThemeToggle />
-        </header>
-        <main className="flex-1 p-6 overflow-auto">{children}</main>
       </div>
+
+      <div className="flex">
+        {/* 侧边导航（桌面端） */}
+        <aside className="hidden md:flex w-56 shrink-0 border-r flex-col min-h-screen">
+          <div className="p-4 border-b flex items-center gap-2">
+            <ShieldCheck className="h-5 w-5 text-primary" />
+            <span className="font-bold">{t("admin.adminPanel")}</span>
+          </div>
+          <nav className="flex-1 p-2 space-y-1">
+            {NAV_ITEMS.map((item) => {
+              const Icon = item.icon
+              const active = pathname.startsWith(item.href)
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm ${
+                    active
+                      ? "bg-accent text-accent-foreground font-medium"
+                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  {t(item.key)}
+                </Link>
+              )
+            })}
+          </nav>
+          <div className="p-3 border-t space-y-1">
+            <Link
+              href="/"
+              className="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+            >
+              <ExternalLink className="h-4 w-4" />
+              {t("admin.userSite")}
+            </Link>
+            <button
+              onClick={() => {
+                clearAdminToken()
+                router.replace("/admin")
+              }}
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+            >
+              <LogOut className="h-4 w-4" />
+              {t("admin.logout")}
+            </button>
+          </div>
+        </aside>
+
+        {/* 主区域 */}
+        <div className="flex-1 flex flex-col min-w-0">
+          <header className="hidden md:flex border-b h-14 items-center justify-end px-4 gap-2">
+            <LanguageSwitcher />
+            <ThemeToggle />
+          </header>
+          <main className="flex-1 p-3 sm:p-6 overflow-auto">{children}</main>
+        </div>
       </div>
     </div>
   )

@@ -71,7 +71,7 @@ export default function AdminDomains() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold">{t("admin.domainsTitle")}</h1>
+      <h1 className="text-xl sm:text-2xl font-bold">{t("admin.domainsTitle")}</h1>
 
       <Card>
         <CardHeader className="pb-3">
@@ -111,7 +111,8 @@ export default function AdminDomains() {
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+          <table className="w-full text-sm min-w-[480px]">
             <thead>
               <tr className="border-b text-left text-muted-foreground">
                 <th className="p-3 font-medium">{t("admin.domainCol")}</th>
@@ -148,6 +149,7 @@ export default function AdminDomains() {
               ))}
             </tbody>
           </table>
+          </div>
         </CardContent>
       </Card>
     </div>

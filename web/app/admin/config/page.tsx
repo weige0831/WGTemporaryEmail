@@ -243,7 +243,7 @@ export default function AdminConfig() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold">{t("admin.configTitle")}</h1>
+      <h1 className="text-xl sm:text-2xl font-bold">{t("admin.configTitle")}</h1>
       <p className="text-sm text-muted-foreground">{t("admin.configHotReloadNote")}</p>
 
       {error && <p className="text-sm text-destructive">{error}</p>}
