@@ -17,10 +17,10 @@ export default function PrivacyPage() {
       {/* Header */}
       <header className="border-b">
         <div className="container mx-auto px-3 sm:px-4 py-2 sm:py-4 flex flex-wrap items-center gap-x-2 gap-y-1">
-          <div className="flex items-center gap-1.5 sm:gap-2 mr-auto">
+          <Link href="/" className="flex items-center gap-1.5 sm:gap-2 mr-auto">
             <Mail className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
             <h1 className="text-base sm:text-2xl font-bold whitespace-nowrap">WGTemporaryEmail</h1>
-          </div>
+          </Link>
           <div className="flex items-center gap-1 sm:gap-2">
             <LanguageSwitcher />
             <ThemeToggle />

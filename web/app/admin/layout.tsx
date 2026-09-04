@@ -79,10 +79,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* 移动端顶部导航 */}
       <div className="md:hidden border-b">
         <div className="flex items-center justify-between px-3 py-2">
-          <div className="flex items-center gap-2">
+          <Link href="/admin/dashboard" className="flex items-center gap-2">
             <ShieldCheck className="h-5 w-5 text-primary" />
             <span className="font-bold text-sm">{t("admin.adminPanel")}</span>
-          </div>
+          </Link>
           <div className="flex items-center gap-1">
             <LanguageSwitcher />
             <ThemeToggle />
@@ -123,10 +123,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <div className="flex">
         {/* 侧边导航（桌面端） */}
         <aside className="hidden md:flex w-56 shrink-0 border-r flex-col min-h-screen">
-          <div className="p-4 border-b flex items-center gap-2">
+          <Link href="/admin/dashboard" className="p-4 border-b flex items-center gap-2">
             <ShieldCheck className="h-5 w-5 text-primary" />
             <span className="font-bold">{t("admin.adminPanel")}</span>
-          </div>
+          </Link>
           <nav className="flex-1 p-2 space-y-1">
             {NAV_ITEMS.map((item) => {
               const Icon = item.icon
