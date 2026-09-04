@@ -292,6 +292,8 @@ export const en = {
     mxHostnameNote: "This name is used for mail routing (the DNS MX record points to it). Do not use it as the panel access address - set a proper access domain below instead.",
     webHostnameEmptyNote: "No panel access domain set yet. It is recommended to access the panel via a proper domain (e.g. mail.example.com) instead of the MX hostname.",
     webHostnameUpdated: "Saved. Remember to add the DNS A record for this domain and re-issue the certificate.",
+    allowIpAccessLabel: "Allow accessing the user panel via IP / other domains",
+    allowIpAccessHint: "When off, requests from non-official domains or IPs are redirected to the official domain. The admin panel and API always stay reachable from any address to prevent lockouts.",
     httpsUrl: "Panel HTTPS: https://{host}",
     certCovers: "Certificate covers: {domains}",
     // cleanup page

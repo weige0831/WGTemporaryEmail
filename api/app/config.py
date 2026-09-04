@@ -81,6 +81,7 @@ class Config:
         # Web panel access domain (used for the panel HTTPS certificate)
         web_config = config.get('web', {})
         self.WEB_HOSTNAME: str = web_config.get('hostname', '')
+        self.WEB_ALLOW_IP_ACCESS: bool = web_config.get('allow_ip_access', True)
 
         # Logging
         logging_config = config.get('logging', {})
@@ -175,6 +176,7 @@ def create_test_config() -> Config:
     config.TLS_CERT_FILE = '/tmp/nonexistent-cert.pem'
     config.TLS_KEY_FILE = '/tmp/nonexistent-key.pem'
     config.WEB_HOSTNAME = ''
+    config.WEB_ALLOW_IP_ACCESS = True
     config.LOG_LEVEL = 'info'
     config.LOG_FORMAT = 'json'
     config.CORS_ALLOW_ORIGINS = ['*']

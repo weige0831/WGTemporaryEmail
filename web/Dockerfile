@@ -14,7 +14,7 @@ FROM nginx:1.27-alpine
 # openssl CLI is needed to generate the self-signed placeholder certificate
 RUN apk add --no-cache openssl
 COPY --from=build /app/out /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# nginx.conf is generated at container start from config.yaml by entrypoint.sh
 COPY locations.conf /etc/nginx/locations.conf
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh

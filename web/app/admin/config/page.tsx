@@ -30,7 +30,7 @@ interface ConfigData {
   cors?: { allow_origins?: string[] }
   database?: { pool_size?: number; max_overflow?: number }
   tls?: { enabled?: boolean }
-  web?: { hostname?: string }
+  web?: { hostname?: string; allow_ip_access?: boolean }
   [key: string]: unknown
 }
 
@@ -54,6 +54,7 @@ const BOOL_FIELDS: { section: keyof ConfigData; key: string; labelKey: string }[
   { section: "validation", key: "check_dmarc", labelKey: "admin.checkDmarc" },
   { section: "validation", key: "store_results", labelKey: "admin.storeResults" },
   { section: "tls", key: "enabled", labelKey: "admin.tlsEnabledLabel" },
+  { section: "web", key: "allow_ip_access", labelKey: "admin.allowIpAccessLabel" },
 ]
 
 function getValue(config: ConfigData, section: keyof ConfigData, key: string): string | boolean {
@@ -399,18 +400,20 @@ export default function AdminConfig() {
             </CardHeader>
             <CardContent className="space-y-3">
               {BOOL_FIELDS.map((f) => (
-                <label
-                  key={`${f.section}.${f.key}`}
-                  className="flex items-center gap-2 text-sm cursor-pointer"
-                >
-                  <input
-                    type="checkbox"
-                    checked={form[`${f.section}.${f.key}`] === true}
-                    onChange={(e) => setField(`${f.section}.${f.key}`, e.target.checked)}
-                    className="h-4 w-4"
-                  />
-                  {t(f.labelKey)}
-                </label>
+                <div key={`${f.section}.${f.key}`} className="space-y-1">
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={form[`${f.section}.${f.key}`] === true}
+                      onChange={(e) => setField(`${f.section}.${f.key}`, e.target.checked)}
+                      className="h-4 w-4"
+                    />
+                    {t(f.labelKey)}
+                  </label>
+                  {f.key === "allow_ip_access" && (
+                    <p className="text-xs text-muted-foreground pl-6">{t("admin.allowIpAccessHint")}</p>
+                  )}
+                </div>
               ))}
             </CardContent>
           </Card>

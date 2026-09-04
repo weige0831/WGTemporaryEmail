@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Mail, Copy, RefreshCw, Search, Trash2, Download, Clock, CheckCircle2, XCircle, AlertCircle, Paperclip } from "lucide-react"
+import { Mail, Copy, RefreshCw, Search, Trash2, Download, Clock, CheckCircle2, XCircle, AlertCircle, AlertTriangle, Paperclip } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -251,16 +251,16 @@ export default function Home() {
     <div className="min-h-screen bg-background">
       <DomainBanner webHostname={webHostname} />
       {notice && (
-        <div className="bg-primary/10 border-b border-primary/20">
-          <div className="container mx-auto px-3 sm:px-4 py-2 flex items-center justify-between gap-2 text-xs sm:text-sm">
-            <p className="truncate">{notice}</p>
-            <button
-              onClick={() => setNotice(null)}
-              className="shrink-0 text-muted-foreground hover:text-foreground"
-            >
-              ✕
-            </button>
-          </div>
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[min(92vw,38rem)] rounded-lg border-2 border-amber-600 bg-amber-500 text-white shadow-2xl px-4 py-3 flex items-center gap-3">
+          <AlertTriangle className="h-5 w-5 shrink-0" />
+          <p className="text-sm sm:text-base font-semibold flex-1 break-all">{notice}</p>
+          <button
+            onClick={() => setNotice(null)}
+            aria-label="Close"
+            className="shrink-0 text-white/90 hover:text-white text-lg leading-none"
+          >
+            ✕
+          </button>
         </div>
       )}
       {/* Header */}

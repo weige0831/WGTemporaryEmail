@@ -90,6 +90,8 @@ services:
       # TLS certs shared with the MX (the entrypoint may write a self-signed
       # placeholder here until certbot issues the real certificate)
       - ./certs:/config/certs
+      # config.yaml drives the generated nginx server names and IP-access policy
+      - ./config.yaml:/config/config.yaml:ro
     depends_on:
       api:
         condition: service_healthy

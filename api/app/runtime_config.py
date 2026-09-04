@@ -30,7 +30,7 @@ ALLOWED_PATCH_SECTIONS = {
     'database': {'pool_size', 'max_overflow'},
     'admin': {'token'},
     'tls': {'enabled'},
-    'web': {'hostname'},
+    'web': {'hostname', 'allow_ip_access'},
 }
 
 _INT_KEYS = {
@@ -54,6 +54,7 @@ _BOOL_KEYS = {
     ('validation', 'store_results'),
     ('cors', 'allow_credentials'),
     ('tls', 'enabled'),
+    ('web', 'allow_ip_access'),
 }
 
 _LIST_KEYS = {

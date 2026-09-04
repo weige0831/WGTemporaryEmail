@@ -166,13 +166,15 @@ function getValue(dict: Partial<Dict>, path: string): unknown {
 }
 
 export function I18nProvider({ children }: { children: ReactNode }) {
-  const [lang, setLangState] = useState<string>(DEFAULT_LANG)
+  // 同步初始化语言，避免首帧渲染成英文再切换（提示条等内容会用到 t()）
+  const [lang, setLangState] = useState<string>(() => {
+    if (typeof window === "undefined") return DEFAULT_LANG
+    return detectLang()
+  })
 
   useEffect(() => {
-    const detected = detectLang()
-    setLangState(detected)
-    applyDocument(detected)
-  }, [])
+    applyDocument(lang)
+  }, [lang])
 
   const setLang = useCallback((code: string) => {
     if (!DICTS[code]) return
