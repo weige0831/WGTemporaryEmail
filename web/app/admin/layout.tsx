@@ -16,6 +16,7 @@ import {
 } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { LanguageSwitcher } from "@/components/language-switcher"
+import { DomainBanner } from "@/components/domain-banner"
 import { getAdminToken, clearAdminToken, API_URL } from "@/lib/admin-api"
 import { useI18n } from "@/lib/i18n"
 
@@ -33,6 +34,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter()
   const { t } = useI18n()
   const [ready, setReady] = useState(false)
+  const [webHostname, setWebHostname] = useState("")
 
   const isLoginPage = pathname === "/admin"
 
@@ -46,6 +48,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           router.replace("/setup")
           return
         }
+        setWebHostname(data.web_hostname || "")
       } catch {
         // 后端不可达时按已初始化处理，避免管理面板完全不可用
       }
@@ -71,9 +74,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <div className="min-h-screen bg-background flex">
-      {/* 侧边导航 */}
-      <aside className="w-56 shrink-0 border-r flex flex-col">
+    <div className="min-h-screen bg-background">
+      <DomainBanner webHostname={webHostname} />
+      <div className="flex">
+        {/* 侧边导航 */}
+        <aside className="w-56 shrink-0 border-r flex flex-col min-h-screen">
         <div className="p-4 border-b flex items-center gap-2">
           <ShieldCheck className="h-5 w-5 text-primary" />
           <span className="font-bold">{t("admin.adminPanel")}</span>
@@ -126,6 +131,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <ThemeToggle />
         </header>
         <main className="flex-1 p-6 overflow-auto">{children}</main>
+      </div>
       </div>
     </div>
   )

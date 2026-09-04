@@ -67,7 +67,7 @@ export interface EmailDetail {
 }
 
 export const api = {
-  async getSetupStatus(): Promise<{ initialized: boolean }> {
+  async getSetupStatus(): Promise<{ initialized: boolean; web_hostname?: string }> {
     const res = await fetch(`${API_URL}/api/v1/setup/status`)
     if (!res.ok) throw new Error('Failed to fetch setup status')
     return res.json()

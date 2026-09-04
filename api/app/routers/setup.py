@@ -22,8 +22,13 @@ setup_rate_limit = ip_rate_limit(limit=5, window_seconds=60, scope='setup')
 
 @router.get('/status', response_model=SetupStatus)
 def setup_status():
-    """Return whether the first-run setup wizard has been completed."""
-    return SetupStatus(initialized=settings.SETUP_INITIALIZED)
+    """Return whether the first-run setup wizard has been completed and the
+    configured panel access domain (used by the frontend to prompt users
+    accessing via the MX hostname or an IP)."""
+    return SetupStatus(
+        initialized=settings.SETUP_INITIALIZED,
+        web_hostname=settings.WEB_HOSTNAME,
+    )
 
 
 @router.post('/complete', response_model=SetupCompleteResponse)

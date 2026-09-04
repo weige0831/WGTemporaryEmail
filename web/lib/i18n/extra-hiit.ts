@@ -2,6 +2,11 @@ import type { Dict } from "./en"
 
 // हिन्दी
 export const extraHi: Partial<Dict> = {
+  banner: {
+    text: "आप अभी {host} से एक्सेस कर रहे हैं। आधिकारिक डोमेन उपयोग करने की सलाह:",
+    goto: "जाएँ",
+    dismiss: "फिर न दिखाएँ",
+  },
   admin: {
     adminPanel: "प्रबंधन पैनल",
     dashboard: "डैशबोर्ड",
@@ -270,6 +275,11 @@ export const extraHi: Partial<Dict> = {
 
 // Italiano
 export const extraIt: Partial<Dict> = {
+  banner: {
+    text: "Stai accedendo tramite {host}. Si consiglia di usare il dominio ufficiale:",
+    goto: "Vai",
+    dismiss: "Non mostrare più",
+  },
   admin: {
     adminPanel: "Pannello di amministrazione",
     dashboard: "Cruscotto",

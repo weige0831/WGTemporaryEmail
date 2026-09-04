@@ -2,6 +2,11 @@ import type { Dict } from "./en"
 
 // 简体中文 - 管理面板 / 配置向导 / API 文档
 export const extraZhCN: Partial<Dict> = {
+  banner: {
+    text: "你正在通过 {host} 访问，建议改用正式域名：",
+    goto: "前往",
+    dismiss: "不再提示",
+  },
   admin: {
     adminPanel: "管理面板",
     dashboard: "仪表盘",
@@ -270,6 +275,11 @@ export const extraZhCN: Partial<Dict> = {
 
 // 繁體中文
 export const extraZhTW: Partial<Dict> = {
+  banner: {
+    text: "你正在透過 {host} 存取，建議改用正式網域：",
+    goto: "前往",
+    dismiss: "不再提示",
+  },
   admin: {
     adminPanel: "管理面板",
     dashboard: "儀表板",

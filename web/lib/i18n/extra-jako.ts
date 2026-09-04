@@ -2,6 +2,11 @@ import type { Dict } from "./en"
 
 // 日本語 - 管理パネル / セットアップ / API
 export const extraJa: Partial<Dict> = {
+  banner: {
+    text: "現在 {host} からアクセスしています。正式なドメインのご利用を推奨します：",
+    goto: "移動",
+    dismiss: "表示しない",
+  },
   admin: {
     adminPanel: "管理パネル",
     dashboard: "ダッシュボード",
@@ -270,6 +275,11 @@ export const extraJa: Partial<Dict> = {
 
 // 한국어
 export const extraKo: Partial<Dict> = {
+  banner: {
+    text: "현재 {host}로 접속 중입니다. 정식 도메인 사용을 권장합니다:",
+    goto: "이동",
+    dismiss: "다시 표시 안 함",
+  },
   admin: {
     adminPanel: "관리 패널",
     dashboard: "대시보드",

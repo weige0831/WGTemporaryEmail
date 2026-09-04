@@ -2,6 +2,11 @@ import type { Dict } from "./en"
 
 // Deutsch
 export const extraDe: Partial<Dict> = {
+  banner: {
+    text: "Sie greifen gerade über {host} zu. Empfohlen wird die offizielle Domain:",
+    goto: "Wechseln",
+    dismiss: "Nicht mehr anzeigen",
+  },
   admin: {
     adminPanel: "Admin-Panel",
     dashboard: "Übersicht",
@@ -270,6 +275,11 @@ export const extraDe: Partial<Dict> = {
 
 // Português
 export const extraPt: Partial<Dict> = {
+  banner: {
+    text: "Você está acessando via {host}. Recomenda-se usar o domínio oficial:",
+    goto: "Ir",
+    dismiss: "Não mostrar novamente",
+  },
   admin: {
     adminPanel: "Painel de administração",
     dashboard: "Painel",

@@ -2,6 +2,11 @@ import type { Dict } from "./en"
 
 // Türkçe
 export const extraTr: Partial<Dict> = {
+  banner: {
+    text: "Şu anda {host} üzerinden erişiyorsunuz. Resmî alan adı önerilir:",
+    goto: "Git",
+    dismiss: "Bir daha gösterme",
+  },
   admin: {
     adminPanel: "Yönetim Paneli",
     dashboard: "Panel",
@@ -270,6 +275,11 @@ export const extraTr: Partial<Dict> = {
 
 // Bahasa Indonesia
 export const extraId: Partial<Dict> = {
+  banner: {
+    text: "Anda sedang mengakses lewat {host}. Disarankan memakai domain resmi:",
+    goto: "Buka",
+    dismiss: "Jangan tampilkan lagi",
+  },
   admin: {
     adminPanel: "Panel Admin",
     dashboard: "Dasbor",
@@ -538,6 +548,11 @@ export const extraId: Partial<Dict> = {
 
 // Tiếng Việt
 export const extraVi: Partial<Dict> = {
+  banner: {
+    text: "Bạn đang truy cập qua {host}. Nên dùng tên miền chính thức:",
+    goto: "Đến",
+    dismiss: "Không hiện lại",
+  },
   admin: {
     adminPanel: "Bảng quản trị",
     dashboard: "Tổng quan",

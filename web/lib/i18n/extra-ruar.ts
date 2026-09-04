@@ -2,6 +2,11 @@ import type { Dict } from "./en"
 
 // Русский
 export const extraRu: Partial<Dict> = {
+  banner: {
+    text: "Сейчас вы заходите через {host}. Рекомендуется использовать официальный домен:",
+    goto: "Перейти",
+    dismiss: "Больше не показывать",
+  },
   admin: {
     adminPanel: "Панель управления",
     dashboard: "Обзор",
@@ -270,6 +275,11 @@ export const extraRu: Partial<Dict> = {
 
 // العربية
 export const extraAr: Partial<Dict> = {
+  banner: {
+    text: "أنت تتصفح حاليًا عبر {host}. يُنصح باستخدام النطاق الرسمي:",
+    goto: "انتقال",
+    dismiss: "عدم الإظهار مجددًا",
+  },
   admin: {
     adminPanel: "لوحة الإدارة",
     dashboard: "نظرة عامة",

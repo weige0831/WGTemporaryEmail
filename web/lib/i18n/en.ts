@@ -396,6 +396,11 @@ export const en = {
     testFailed: "Request failed",
     closeResponse: "Close",
   },
+  banner: {
+    text: "You are currently accessing via {host}. Recommended address:",
+    goto: "Switch",
+    dismiss: "Dismiss",
+  },
 }
 
 export type Dict = typeof en

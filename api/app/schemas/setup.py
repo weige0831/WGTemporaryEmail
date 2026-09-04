@@ -12,6 +12,7 @@ _DOMAIN_RE = re.compile(
 
 class SetupStatus(BaseModel):
     initialized: bool
+    web_hostname: str = ""
 
 
 class SetupCompleteRequest(BaseModel):

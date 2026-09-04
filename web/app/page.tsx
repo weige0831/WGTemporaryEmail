@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { LanguageSwitcher } from "@/components/language-switcher"
+import { DomainBanner } from "@/components/domain-banner"
 import { api, type EmailSummary, type EmailDetail, type AddressResponse } from "@/lib/api"
 import { formatRelativeTime, formatBytes, copyToClipboard, sanitizeHtml } from "@/lib/utils"
 import { useI18n } from "@/lib/i18n"
@@ -33,6 +34,7 @@ export default function Home() {
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date())
   const [viewMode, setViewMode] = useState<"plain" | "html">("html")
   const [showNewEmailDialog, setShowNewEmailDialog] = useState(false)
+  const [webHostname, setWebHostname] = useState("")
 
   // 首次访问：未完成初始化向导时跳转到 /setup
   useEffect(() => {
@@ -43,6 +45,7 @@ export default function Home() {
           router.replace("/setup")
           return
         }
+        setWebHostname(status.web_hostname || "")
       } catch (e) {
         console.error("Failed to check setup status", e)
       }
@@ -222,6 +225,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background">
+      <DomainBanner webHostname={webHostname} />
       {/* Header */}
       <header className="border-b">
         <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4 flex items-center justify-between gap-2">
