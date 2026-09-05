@@ -75,6 +75,7 @@ export const zhTW: Partial<Dict> = {
     sourceTitle: "原始碼",
     sourceDesc: "歡迎 Star、Fork 與提交 Issue",
     sourceNote: "問題回報與功能建議請透過 GitHub Issues 提交。",
+    demoLabel: "示範站點",
   },
   privacy: {
     privacyTitle: "隱私政策",
@@ -91,6 +92,7 @@ export const zhTW: Partial<Dict> = {
     retentionL2: "你可以隨時在介面中手動刪除郵件",
     retentionL3: "超過單一地址郵件數上限時，最早的郵件會被自動清理",
     retentionL4: "刪除後的資料無法復原",
+    storageNote: "當全站郵件總量超過設定的儲存上限時，最舊的郵件會被自動刪除。",
     notCollectTitle: "我們不收集的資訊",
     notCollectL1: "無需註冊或登入，不要求提供姓名、真實信箱、手機號碼等任何個人資訊",
     notCollectL2: "不投放廣告，不執行任何第三方追蹤或統計分析指令碼",
@@ -100,6 +102,7 @@ export const zhTW: Partial<Dict> = {
     securityL2: "HTML 郵件在渲染前經過淨化處理，防止惡意指令碼執行",
     securityL3: "存取信箱需持有對應的隨機存取權杖，請勿將權杖洩露給他人",
     securityL4: "服務會顯示 DKIM / SPF / DMARC 檢查結果供參考",
+    tlsNote: "郵件傳輸使用 STARTTLS 加密（TLS 1.2/1.3）；網頁面板透過 HTTPS 提供服務。",
     disclaimerTitle: "使用建議與免責聲明",
     disclaimerP1:
       "臨時信箱適合接收驗證碼、測試註冊等一次性情境。請勿將其用於：重要帳號的綁定、銀行/支付等敏感服務、或接收任何你無法承受遺失的郵件——地址到期後所有郵件將被永久刪除。",

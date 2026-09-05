@@ -75,6 +75,7 @@ export const de: Partial<Dict> = {
     sourceTitle: "Quellcode",
     sourceDesc: "Stars, Forks und Issues sind willkommen",
     sourceNote: "Für Fehlerberichte und Funktionswünsche öffne bitte ein GitHub-Issue.",
+    demoLabel: "Live-Demo",
   },
   privacy: {
     privacyTitle: "Datenschutzerklärung",
@@ -91,6 +92,7 @@ export const de: Partial<Dict> = {
     retentionL2: "Du kannst E-Mails jederzeit manuell in der Oberfläche löschen",
     retentionL3: "Wird das Limit an E-Mails pro Adresse überschritten, werden die ältesten automatisch bereinigt",
     retentionL4: "Gelöschte Daten können nicht wiederhergestellt werden",
+    storageNote: "Überschreitet der gespeicherte Mail-Bestand das konfigurierte Limit, werden die ältesten E-Mails automatisch gelöscht.",
     notCollectTitle: "Was wir NICHT sammeln",
     notCollectL1: "Keine Registrierung oder Anmeldung; wir fragen niemals nach Name, echter E-Mail-Adresse, Telefonnummer oder sonstigen persönlichen Daten",
     notCollectL2: "Keine Werbung und keine Tracking- oder Analyse-Skripte von Drittanbietern",
@@ -100,6 +102,7 @@ export const de: Partial<Dict> = {
     securityL2: "HTML-E-Mails werden vor der Anzeige bereinigt, um schädliche Skripte zu verhindern",
     securityL3: "Der Zugriff auf ein Postfach erfordert das zugehörige zufällige Zugriffstoken - gib es nicht weiter",
     securityL4: "DKIM / SPF / DMARC-Prüfergebnisse werden als Referenz angezeigt",
+    tlsNote: "Der Mail-Transport wird mit STARTTLS (TLS 1.2/1.3) verschlüsselt; das Web-Panel wird über HTTPS bereitgestellt.",
     disclaimerTitle: "Nutzungshinweise und Haftungsausschluss",
     disclaimerP1:
       "Temporäre E-Mails eignen sich für einmalige Szenarien wie Bestätigungscodes und Testregistrierungen. Verwende sie nicht für: die Verknüpfung wichtiger Konten, Bank-/Zahlungs- oder andere sensible Dienste oder den Empfang von E-Mails, deren Verlust du nicht verkraften kannst - nach Ablauf der Adresse werden alle E-Mails dauerhaft gelöscht.",

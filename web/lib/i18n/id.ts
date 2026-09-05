@@ -75,6 +75,7 @@ export const id: Partial<Dict> = {
     sourceTitle: "Kode sumber",
     sourceDesc: "Bintang, fork, dan issue sangat diterima",
     sourceNote: "Untuk laporan bug dan permintaan fitur, silakan buka issue di GitHub.",
+    demoLabel: "Demo langsung",
   },
   privacy: {
     privacyTitle: "Kebijakan Privasi",
@@ -91,6 +92,7 @@ export const id: Partial<Dict> = {
     retentionL2: "Anda dapat menghapus email secara manual dari antarmuka kapan saja",
     retentionL3: "Saat batas email per alamat terlampaui, email terlama dibersihkan otomatis",
     retentionL4: "Data yang dihapus tidak dapat dipulihkan",
+    storageNote: "Saat total email tersimpan melebihi batas yang dikonfigurasi, email terlama dihapus otomatis.",
     notCollectTitle: "Yang TIDAK kami kumpulkan",
     notCollectL1: "Tanpa pendaftaran atau masuk; kami tidak pernah meminta nama, email asli, telepon, atau informasi pribadi apa pun",
     notCollectL2: "Tanpa iklan dan tanpa skrip pelacakan atau analitik pihak ketiga",
@@ -100,6 +102,7 @@ export const id: Partial<Dict> = {
     securityL2: "Email HTML dibersihkan sebelum ditampilkan untuk mencegah skrip berbahaya",
     securityL3: "Akses ke kotak masuk memerlukan token akses acak yang sesuai - jangan bagikan kepada orang lain",
     securityL4: "Hasil validasi DKIM / SPF / DMARC ditampilkan sebagai referensi",
+    tlsNote: "Transport email dienkripsi dengan STARTTLS (TLS 1.2/1.3); panel web disajikan melalui HTTPS.",
     disclaimerTitle: "Tips penggunaan dan penyangkalan",
     disclaimerP1:
       "Email sementara cocok untuk skenario sekali pakai seperti kode verifikasi dan pendaftaran uji coba. Jangan gunakan untuk: mengikat akun penting, layanan perbankan/pembayaran atau layanan sensitif lainnya, atau menerima email yang tidak boleh hilang - semua email dihapus permanen setelah alamat kedaluwarsa.",

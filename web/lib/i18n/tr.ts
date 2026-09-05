@@ -75,6 +75,7 @@ export const tr: Partial<Dict> = {
     sourceTitle: "Kaynak kodu",
     sourceDesc: "Yıldız, çatallama (fork) ve sorun bildirimi memnuniyetle karşılanır",
     sourceNote: "Hata bildirimleri ve özellik istekleri için lütfen GitHub'da bir issue açın.",
+    demoLabel: "Canlı demo",
   },
   privacy: {
     privacyTitle: "Gizlilik Politikası",
@@ -91,6 +92,7 @@ export const tr: Partial<Dict> = {
     retentionL2: "E-postaları istediğiniz zaman arayüzden elle silebilirsiniz",
     retentionL3: "Adres başına e-posta sınırı aşıldığında en eski e-postalar otomatik temizlenir",
     retentionL4: "Silinen veriler geri getirilemez",
+    storageNote: "Depolanan toplam posta, yapılandırılan sınırı aştığında en eski e-postalar otomatik silinir.",
     notCollectTitle: "Toplamadıklarımız",
     notCollectL1: "Kayıt veya giriş yok; adınızı, gerçek e-postanızı, telefonunuzu veya herhangi bir kişisel bilginizi asla istemiyoruz",
     notCollectL2: "Reklam yok, üçüncü taraf izleme veya analiz betiği yok",
@@ -100,6 +102,7 @@ export const tr: Partial<Dict> = {
     securityL2: "HTML e-postalar, kötü amaçlı betikleri önlemek için görüntülenmeden önce temizlenir",
     securityL3: "Bir gelen kutusuna erişim için ilgili rastgele erişim belirteci gerekir - başkalarıyla paylaşmayın",
     securityL4: "DKIM / SPF / DMARC doğrulama sonuçları referans olarak gösterilir",
+    tlsNote: "Posta aktarımı STARTTLS (TLS 1.2/1.3) ile şifrelenir; web paneli HTTPS üzerinden sunulur.",
     disclaimerTitle: "Kullanım ipuçları ve sorumluluk reddi",
     disclaimerP1:
       "Geçici e-posta, doğrulama kodları ve test kayıtları gibi tek seferlik senaryolar için uygundur. Şunlar için kullanmayın: önemli hesapları bağlama, bankacılık/ödeme veya diğer hassas hizmetler, ya da kaybetmeyi göze alamayacağınız e-postaları alma - adresin süresi dolduğunda tüm e-postalar kalıcı olarak silinir.",

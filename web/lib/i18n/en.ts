@@ -86,6 +86,7 @@ export const en = {
     sourceTitle: "Source Code",
     sourceDesc: "Star, fork and issues are welcome",
     sourceNote: "For bug reports and feature requests, please open a GitHub issue.",
+    demoLabel: "Live demo",
   },
   privacy: {
     privacyTitle: "Privacy Policy",
@@ -105,6 +106,7 @@ export const en = {
     retentionL2: "You can delete emails manually in the UI at any time",
     retentionL3: "When the per-address email limit is exceeded, the oldest emails are cleaned up automatically",
     retentionL4: "Deleted data cannot be recovered",
+    storageNote: "When the total stored mail exceeds the configured storage cap, the oldest emails are deleted automatically.",
     notCollectTitle: "What We Do NOT Collect",
     notCollectL1:
       "No registration or login; we never ask for your name, real email, phone number or any personal information",
@@ -116,6 +118,7 @@ export const en = {
     securityL3:
       "Accessing an inbox requires the corresponding random access token - do not share it with others",
     securityL4: "DKIM / SPF / DMARC validation results are shown for reference",
+    tlsNote: "Mail transport is encrypted with STARTTLS (TLS 1.2/1.3); the web panel is served over HTTPS.",
     disclaimerTitle: "Usage Tips and Disclaimer",
     disclaimerP1:
       "Temporary email is suitable for one-time scenarios such as verification codes and test registrations. Do not use it for: binding important accounts, banking/payment or other sensitive services, or receiving any emails you cannot afford to lose - all emails are permanently deleted after the address expires.",

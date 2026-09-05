@@ -75,6 +75,7 @@ export const it: Partial<Dict> = {
     sourceTitle: "Codice sorgente",
     sourceDesc: "Star, fork e issue sono benvenuti",
     sourceNote: "Per segnalazioni di bug e richieste di funzionalità, apri una issue su GitHub.",
+    demoLabel: "Demo live",
   },
   privacy: {
     privacyTitle: "Informativa sulla privacy",
@@ -91,6 +92,7 @@ export const it: Partial<Dict> = {
     retentionL2: "Puoi eliminare le email manualmente dall'interfaccia in qualsiasi momento",
     retentionL3: "Quando viene superato il limite di email per indirizzo, le più vecchie vengono ripulite automaticamente",
     retentionL4: "I dati eliminati non possono essere recuperati",
+    storageNote: "Quando la posta archiviata supera il limite configurato, le e-mail più vecchie vengono eliminate automaticamente.",
     notCollectTitle: "Cosa NON raccogliamo",
     notCollectL1: "Nessuna registrazione o accesso; non chiediamo mai nome, email reale, telefono o qualsiasi informazione personale",
     notCollectL2: "Nessuna pubblicità e nessuno script di tracciamento o analisi di terze parti",
@@ -100,6 +102,7 @@ export const it: Partial<Dict> = {
     securityL2: "Le email HTML vengono sanificate prima del rendering per impedire script dannosi",
     securityL3: "L'accesso a una casella richiede il corrispondente token di accesso casuale - non condividerlo con altri",
     securityL4: "I risultati di validazione DKIM / SPF / DMARC sono mostrati come riferimento",
+    tlsNote: "Il trasporto della posta è cifrato con STARTTLS (TLS 1.2/1.3); il pannello web è servito su HTTPS.",
     disclaimerTitle: "Consigli d'uso e dichiarazione di non responsabilità",
     disclaimerP1:
       "L'email temporanea è adatta a scenari monouso come codici di verifica e registrazioni di prova. Non usarla per: collegare account importanti, servizi bancari/di pagamento o altri servizi sensibili, né per ricevere email che non puoi permetterti di perdere - tutte le email vengono eliminate definitivamente alla scadenza dell'indirizzo.",

@@ -75,6 +75,7 @@ export const ko: Partial<Dict> = {
     sourceTitle: "소스 코드",
     sourceDesc: "Star, Fork, Issue를 환영합니다",
     sourceNote: "버그 신고와 기능 요청은 GitHub Issues를 통해 제출해 주세요.",
+    demoLabel: "라이브 데모",
   },
   privacy: {
     privacyTitle: "개인정보 처리방침",
@@ -91,6 +92,7 @@ export const ko: Partial<Dict> = {
     retentionL2: "언제든지 UI에서 이메일을 수동 삭제할 수 있습니다",
     retentionL3: "주소당 이메일 수 제한을 초과하면 가장 오래된 이메일이 자동 정리됩니다",
     retentionL4: "삭제된 데이터는 복구할 수 없습니다",
+    storageNote: "저장된 전체 메일이 설정된 상한을 초과하면 가장 오래된 메일부터 자동 삭제됩니다.",
     notCollectTitle: "수집하지 않는 정보",
     notCollectL1: "가입이나 로그인이 필요 없습니다. 이름, 실제 이메일, 전화번호 등 개인정보를 요구하지 않습니다",
     notCollectL2: "광고가 없으며 제3자 추적이나 분석 스크립트도 없습니다",
@@ -100,6 +102,7 @@ export const ko: Partial<Dict> = {
     securityL2: "HTML 이메일은 렌더링 전에 정화되어 악성 스크립트 실행을 방지합니다",
     securityL3: "받은 편지함 접근에는 해당 무작위 접근 토큰이 필요합니다. 타인과 공유하지 마세요",
     securityL4: "DKIM / SPF / DMARC 검증 결과를 참고용으로 표시합니다",
+    tlsNote: "메일 전송은 STARTTLS(TLS 1.2/1.3)로 암호화되며 웹 패널은 HTTPS로 제공됩니다.",
     disclaimerTitle: "사용 팁 및 면책 조항",
     disclaimerP1:
       "임시 이메일은 인증 코드, 테스트 가입 등 일회성 용도에 적합합니다. 중요한 계정 연동, 은행/결제 등 민감한 서비스, 잃어버리면 안 되는 이메일 수신에는 사용하지 마세요. 주소 만료 후 모든 이메일은 영구 삭제됩니다.",

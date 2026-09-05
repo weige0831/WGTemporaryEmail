@@ -75,6 +75,7 @@ export const pt: Partial<Dict> = {
     sourceTitle: "Código-fonte",
     sourceDesc: "Stars, forks e issues são bem-vindos",
     sourceNote: "Para relatos de bugs e pedidos de recursos, abra uma issue no GitHub.",
+    demoLabel: "Demo ao vivo",
   },
   privacy: {
     privacyTitle: "Política de Privacidade",
@@ -91,6 +92,7 @@ export const pt: Partial<Dict> = {
     retentionL2: "Você pode excluir e-mails manualmente na interface a qualquer momento",
     retentionL3: "Quando o limite de e-mails por endereço é excedido, os mais antigos são limpos automaticamente",
     retentionL4: "Dados excluídos não podem ser recuperados",
+    storageNote: "Quando o total de e-mails armazenados ultrapassa o limite configurado, os mais antigos são excluídos automaticamente.",
     notCollectTitle: "O que NÃO coletamos",
     notCollectL1: "Sem cadastro ou login; nunca pedimos seu nome, e-mail real, telefone ou qualquer informação pessoal",
     notCollectL2: "Sem anúncios e sem scripts de rastreamento ou análise de terceiros",
@@ -100,6 +102,7 @@ export const pt: Partial<Dict> = {
     securityL2: "E-mails HTML são sanitizados antes da renderização para evitar scripts maliciosos",
     securityL3: "Acessar uma caixa de entrada requer o token de acesso aleatório correspondente - não o compartilhe",
     securityL4: "Os resultados de validação DKIM / SPF / DMARC são exibidos como referência",
+    tlsNote: "O transporte de e-mail é criptografado com STARTTLS (TLS 1.2/1.3); o painel web é servido via HTTPS.",
     disclaimerTitle: "Dicas de uso e aviso legal",
     disclaimerP1:
       "O e-mail temporário é adequado para cenários de uso único, como códigos de verificação e cadastros de teste. Não o use para: vincular contas importantes, serviços bancários/de pagamento ou outros serviços sensíveis, nem para receber e-mails que você não pode perder - todos os e-mails são excluídos permanentemente após a expiração do endereço.",

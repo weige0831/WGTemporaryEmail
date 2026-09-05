@@ -75,6 +75,7 @@ export const vi: Partial<Dict> = {
     sourceTitle: "Mã nguồn",
     sourceDesc: "Hoan nghênh Star, Fork và Issue",
     sourceNote: "Để báo lỗi và yêu cầu tính năng, vui lòng mở issue trên GitHub.",
+    demoLabel: "Demo trực tiếp",
   },
   privacy: {
     privacyTitle: "Chính sách quyền riêng tư",
@@ -91,6 +92,7 @@ export const vi: Partial<Dict> = {
     retentionL2: "Bạn có thể xóa email thủ công trong giao diện bất cứ lúc nào",
     retentionL3: "Khi vượt quá giới hạn email cho mỗi địa chỉ, các email cũ nhất sẽ được dọn dẹp tự động",
     retentionL4: "Dữ liệu đã xóa không thể khôi phục",
+    storageNote: "Khi tổng dung lượng thư lưu trữ vượt giới hạn đã đặt, các thư cũ nhất sẽ tự động bị xóa.",
     notCollectTitle: "Những gì chúng tôi KHÔNG thu thập",
     notCollectL1: "Không đăng ký hay đăng nhập; chúng tôi không bao giờ yêu cầu tên, email thật, số điện thoại hay bất kỳ thông tin cá nhân nào",
     notCollectL2: "Không quảng cáo và không có tập lệnh theo dõi hay phân tích của bên thứ ba",
@@ -100,6 +102,7 @@ export const vi: Partial<Dict> = {
     securityL2: "Email HTML được làm sạch trước khi hiển thị để ngăn các tập lệnh độc hại",
     securityL3: "Truy cập hộp thư cần có mã truy cập ngẫu nhiên tương ứng - đừng chia sẻ với người khác",
     securityL4: "Kết quả xác thực DKIM / SPF / DMARC được hiển thị để tham khảo",
+    tlsNote: "Việc truyền thư được mã hóa bằng STARTTLS (TLS 1.2/1.3); bảng web được phục vụ qua HTTPS.",
     disclaimerTitle: "Mẹo sử dụng và tuyên bố miễn trừ trách nhiệm",
     disclaimerP1:
       "Email tạm thời phù hợp cho các tình huống dùng một lần như mã xác minh và đăng ký thử nghiệm. Đừng dùng cho: liên kết tài khoản quan trọng, ngân hàng/thanh toán hoặc các dịch vụ nhạy cảm khác, hoặc nhận bất kỳ email nào bạn không thể để mất - tất cả email sẽ bị xóa vĩnh viễn sau khi địa chỉ hết hạn.",

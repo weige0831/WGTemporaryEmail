@@ -75,6 +75,7 @@ export const ja: Partial<Dict> = {
     sourceTitle: "ソースコード",
     sourceDesc: "Star・Fork・Issue を歓迎します",
     sourceNote: "バグ報告や機能リクエストは GitHub Issues からお願いします。",
+    demoLabel: "ライブデモ",
   },
   privacy: {
     privacyTitle: "プライバシーポリシー",
@@ -91,6 +92,7 @@ export const ja: Partial<Dict> = {
     retentionL2: "UI からいつでもメールを手動削除できます",
     retentionL3: "アドレスごとのメール数上限を超えると、最も古いメールが自動的に削除されます",
     retentionL4: "削除されたデータは復元できません",
+    storageNote: "保存されたメールの総量が設定された上限を超えると、最も古いメールから自動的に削除されます。",
     notCollectTitle: "収集しない情報",
     notCollectL1: "登録やログインは不要。氏名、実メール、電話番号などの個人情報を求めることはありません",
     notCollectL2: "広告なし。サードパーティのトラッキングや分析スクリプトもありません",
@@ -100,6 +102,7 @@ export const ja: Partial<Dict> = {
     securityL2: "HTML メールはレンダリング前にサニタイズされ、悪意のあるスクリプトの実行を防ぎます",
     securityL3: "受信トレイへのアクセスには対応するランダムトークンが必要です。他人と共有しないでください",
     securityL4: "DKIM / SPF / DMARC の検証結果を参考として表示します",
+    tlsNote: "メール転送は STARTTLS（TLS 1.2/1.3）で暗号化され、Web パネルは HTTPS で提供されます。",
     disclaimerTitle: "利用上の注意と免責事項",
     disclaimerP1:
       "一時メールは認証コードやテスト登録などの一回限りの用途に適しています。重要なアカウントの紐付け、銀行・決済などの機密サービス、失いたくないメールの受信には使用しないでください。アドレスの有効期限後、すべてのメールは永久に削除されます。",

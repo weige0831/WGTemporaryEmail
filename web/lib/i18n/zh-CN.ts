@@ -75,6 +75,7 @@ export const zhCN: Partial<Dict> = {
     sourceTitle: "源代码",
     sourceDesc: "欢迎 Star、Fork 和提交 Issue",
     sourceNote: "问题反馈与功能建议请通过 GitHub Issues 提交。",
+    demoLabel: "示范站点",
   },
   privacy: {
     privacyTitle: "隐私政策",
@@ -91,6 +92,7 @@ export const zhCN: Partial<Dict> = {
     retentionL2: "你可以随时在界面中手动删除邮件",
     retentionL3: "超过单地址邮件数上限时，最早的邮件会被自动清理",
     retentionL4: "删除后的数据不可恢复",
+    storageNote: "当全站邮件总量超过配置的存储上限时，最旧的邮件会被自动删除。",
     notCollectTitle: "我们不收集的信息",
     notCollectL1: "无需注册或登录，不要求提供姓名、真实邮箱、手机号等任何个人信息",
     notCollectL2: "不投放广告，不运行任何第三方追踪或统计分析脚本",
@@ -100,6 +102,7 @@ export const zhCN: Partial<Dict> = {
     securityL2: "HTML 邮件在渲染前经过净化处理，防止恶意脚本执行",
     securityL3: "访问邮箱需要持有对应的随机访问令牌，请勿将令牌泄露给他人",
     securityL4: "服务会展示 DKIM / SPF / DMARC 校验结果供参考",
+    tlsNote: "邮件传输使用 STARTTLS 加密（TLS 1.2/1.3）；网页面板通过 HTTPS 提供服务。",
     disclaimerTitle: "使用建议与免责声明",
     disclaimerP1:
       "临时邮箱适合接收验证码、测试注册等一次性场景。请勿将其用于：重要账户的绑定、银行/支付等敏感服务、或接收任何你无法承受丢失的邮件——地址到期后所有邮件将被永久删除。",

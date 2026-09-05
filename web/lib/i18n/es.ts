@@ -75,6 +75,7 @@ export const es: Partial<Dict> = {
     sourceTitle: "Código fuente",
     sourceDesc: "Estrellas, forks e issues son bienvenidos",
     sourceNote: "Para informes de errores y solicitudes de funciones, abre un issue en GitHub.",
+    demoLabel: "Demo en vivo",
   },
   privacy: {
     privacyTitle: "Política de privacidad",
@@ -91,6 +92,7 @@ export const es: Partial<Dict> = {
     retentionL2: "Puedes eliminar correos manualmente en la interfaz en cualquier momento",
     retentionL3: "Cuando se supera el límite de correos por dirección, los más antiguos se limpian automáticamente",
     retentionL4: "Los datos eliminados no se pueden recuperar",
+    storageNote: "Cuando el correo almacenado supera el límite configurado, los mensajes más antiguos se eliminan automáticamente.",
     notCollectTitle: "Lo que NO recopilamos",
     notCollectL1: "Sin registro ni inicio de sesión; nunca pedimos tu nombre, correo real, teléfono ni ningún dato personal",
     notCollectL2: "Sin anuncios ni scripts de rastreo o análisis de terceros",
@@ -100,6 +102,7 @@ export const es: Partial<Dict> = {
     securityL2: "Los correos HTML se sanean antes de renderizarse para evitar scripts maliciosos",
     securityL3: "Acceder a una bandeja requiere el token de acceso aleatorio correspondiente; no lo compartas con otros",
     securityL4: "Los resultados de validación DKIM / SPF / DMARC se muestran como referencia",
+    tlsNote: "El transporte de correo se cifra con STARTTLS (TLS 1.2/1.3); el panel web se sirve por HTTPS.",
     disclaimerTitle: "Consejos de uso y exención de responsabilidad",
     disclaimerP1:
       "El correo temporal es adecuado para escenarios de un solo uso, como códigos de verificación y registros de prueba. No lo uses para: vincular cuentas importantes, banca/pagos u otros servicios sensibles, ni para recibir correos que no puedas permitirte perder: todos los correos se eliminan permanentemente cuando caduca la dirección.",

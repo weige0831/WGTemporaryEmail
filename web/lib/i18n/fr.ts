@@ -75,6 +75,7 @@ export const fr: Partial<Dict> = {
     sourceTitle: "Code source",
     sourceDesc: "Stars, forks et issues sont les bienvenus",
     sourceNote: "Pour les rapports de bugs et les demandes de fonctionnalités, ouvrez une issue GitHub.",
+    demoLabel: "Démo en ligne",
   },
   privacy: {
     privacyTitle: "Politique de confidentialité",
@@ -91,6 +92,7 @@ export const fr: Partial<Dict> = {
     retentionL2: "Vous pouvez supprimer des e-mails manuellement dans l'interface à tout moment",
     retentionL3: "Lorsque la limite d'e-mails par adresse est dépassée, les plus anciens sont nettoyés automatiquement",
     retentionL4: "Les données supprimées ne peuvent pas être récupérées",
+    storageNote: "Lorsque le courrier stocké dépasse la limite configurée, les e-mails les plus anciens sont supprimés automatiquement.",
     notCollectTitle: "Ce que nous ne collectons PAS",
     notCollectL1: "Pas d'inscription ni de connexion ; nous ne demandons jamais votre nom, votre vrai e-mail, votre téléphone ni aucune information personnelle",
     notCollectL2: "Pas de publicité ni de scripts de suivi ou d'analyse tiers",
@@ -100,6 +102,7 @@ export const fr: Partial<Dict> = {
     securityL2: "Les e-mails HTML sont assainis avant le rendu pour empêcher les scripts malveillants",
     securityL3: "L'accès à une boîte de réception nécessite le jeton d'accès aléatoire correspondant - ne le partagez pas",
     securityL4: "Les résultats de validation DKIM / SPF / DMARC sont affichés à titre indicatif",
+    tlsNote: "Le transport du courrier est chiffré avec STARTTLS (TLS 1.2/1.3) ; le panneau web est servi en HTTPS.",
     disclaimerTitle: "Conseils d'utilisation et avertissement",
     disclaimerP1:
       "L'e-mail temporaire convient aux usages ponctuels comme les codes de vérification et les inscriptions de test. Ne l'utilisez pas pour : lier des comptes importants, des services bancaires/de paiement ou autres services sensibles, ni pour recevoir des e-mails que vous ne pouvez pas vous permettre de perdre - tous les e-mails sont définitivement supprimés après l'expiration de l'adresse.",

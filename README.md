@@ -1,268 +1,132 @@
 # WGTemporaryEmail
 
-An inbound-only mail server and REST API for integrating with apps or building temp-mail sites in minutes.
+A privacy-first, self-hosted disposable temporary email service.
 
-> 本仓库：https://github.com/weige0831/WGTemporaryEmail
+**Live demo: [https://mail.twcdk.com](https://mail.twcdk.com/)** · API reference: [https://mail.twcdk.com/api](https://mail.twcdk.com/api) · Admin panel: `https://mail.twcdk.com/admin`
 
-本仓库集成了三部分，`docker compose up -d` 一键启动：
+WGTemporaryEmail is integrated from two excellent open source projects and extended into a complete, production-ready package:
 
-- **后端**：PostgreSQL + FastAPI 收信服务（`api/`）+ Go MX 收信服务器（`mx/`）
-- **用户前端**（`web/`）：基于 [mailbucket](https://github.com/Lm36/mailbucket) 的临时邮箱界面，静态导出后由 Nginx 托管
-- **管理面板**（`web/app/admin/`，中文）：统计总览、邮件/地址/域名管理、配置热更新、手动清理，见 [docs/admin-panel.md](docs/admin-panel.md)
-
-## 与源项目的关系
-
-本项目基于以下开源项目整合构建（均采用 MIT 许可证，保留原作者版权声明）：
-
-| 源项目 | 角色 | 本项目在其中的改动 |
+| Source project | Role | Extensions in this project |
 |---|---|---|
-| [Lm36/tempmail-server](https://github.com/Lm36/tempmail-server) | 收信后端（FastAPI API + Go MX + PostgreSQL） | 新增管理 API（`/api/v1/admin/*`）与管理面板、首次配置向导、配置热更新、MX 配置热重载、存储占用上限自动清理、修复 `max_emails_per_address` 无效等 bug、安全加固（速率限制、LIKE 通配符转义、依赖安全升级、移除弱默认密码） |
-| [Lm36/mailbucket](https://github.com/Lm36/mailbucket) | 用户前端（Next.js 15） | 集成进本仓库 `web/`、改为同源调用、静态导出由 Nginx 托管、新增中文管理面板 `/admin`、XSS 消毒（DOMPurify）、首次配置向导 `/setup` |
+| [Lm36/tempmail-server](https://github.com/Lm36/tempmail-server) | Backend (FastAPI API + Go MX server + PostgreSQL) | Admin API (`/api/v1/admin/*`) & admin panel, first-run setup wizard, config hot-reload, MX config hot-reload, storage cap with auto-cleanup, bug fixes (e.g. `max_emails_per_address` was hardcoded), security hardening |
+| [Lm36/mailbucket](https://github.com/Lm36/mailbucket) | User frontend (Next.js 15) | Integrated into `web/`, same-origin API calls, static export served by nginx, Chinese admin panel `/admin`, first-run wizard `/setup`, XSS sanitization (DOMPurify), 16-language i18n |
 
-感谢 [Lm36](https://github.com/Lm36) 的出色工作。
-
-## Documentation
-
-- **[API Server](docs/api-server.md)** - REST API overview and quick start
-- **[MX Server](docs/mx-server.md)** - SMTP server details
-- **[Deployment](docs/deployment.md)** - Production deployment guide
-- **[Admin Panel](docs/admin-panel.md)** - 管理面板与 /api/v1/admin/* 接口说明
-- **[Security](docs/security.md)** - 已实施的安全控制与部署安全注意事项
-- **[Interactive API Docs](https://lm36.github.io/tempmail-server)** - Full Swagger/OpenAPI documentation (auto-generated)
+All projects are MIT licensed; original copyright notices are preserved. Thanks to [Lm36](https://github.com/Lm36) for the great work.
 
 ## Features
-- **RFC Compliant MX SMTP server** - Receive mail from any email provider
-- **One-command deployment** - Setup script handles everything
-- **Web frontend included** - mailbucket 用户界面（收件箱、附件、DKIM/SPF/DMARC 徽章、暗色模式）
-- **Admin panel included** - 中文管理面板（统计、邮件/地址/域名管理、配置热更新、手动清理）
-- **Custom or random usernames** - Choose your own username or auto-generate
-- **Multi-domain support** - Configure and select from multiple domains
-- **Token-based API access** - No user authentication needed
-- **Auto-expiration** - Addresses and emails deleted after 24h (configurable)
-- **Full MIME support** - HTML, plain text, attachments
-- **Email validation** - DKIM, SPF, DMARC checking (results stored, not enforced)
-- **PostgreSQL storage** - Reliable, concurrent-safe
-- **Docker-based** - Simple deployment with Docker Compose
 
-## Quick Start
+- **RFC-compliant MX server** - receives mail from any provider on port 25
+- **User frontend** - inbox, attachments, raw email download, DKIM/SPF/DMARC badges, dark mode
+- **Admin panel** (16 languages) - statistics, email/address/domain management, hot config updates, manual cleanup
+- **First-run setup wizard** - configure domains, hostname, admin token and panel domain from the browser
+- **Let's Encrypt automation** - one-click issuance from the admin panel, automatic renewal, MX and panel HTTPS share one certificate; renewed certs apply without restarting the MX
+- **Storage control** - `max_storage_mb` cap, oldest emails are cleaned automatically; per-address email limit
+- **Access control** - bind a panel domain and block IP/other-domain access to the user site; admin panel & API always stay reachable
+- **Security** - rate limiting, XSS sanitization, SQL via ORM, constant-time token compare, non-root containers, mandatory DB password, no weak defaults
+- **16 languages** - English, 简体中文, 繁體中文, 日本語, 한국어, Español, Français, Deutsch, Português, Русский, العربية (RTL), हिन्दी, Italiano, Türkçe, Bahasa Indonesia, Tiếng Việt
 
-### Prerequisites
+## Architecture
 
-- Domain name with DNS access
-- VPS with public IP
-- Docker and Docker Compose installed
-- Git installed
+```
+Internet
+  │
+  ├─ :25  ───────────────► mx     (Go SMTP, hot-reloads config.yaml every 15s)
+  │
+  └─ :80 / :443 ────────► web    (nginx: static frontend + reverse proxy)
+       ├─ /                  user panel (mailbucket, 16 languages)
+       ├─ /admin             admin panel (16 languages)
+       ├─ /setup             first-run wizard
+       ├─ /api/* ──────────► api    (FastAPI, internal network only)
+       ├─ /docs, /openapi.json ──► api    (Swagger)
+       └─ /.well-known/acme-challenge/  (served for the certbot sidecar)
+            │
+            └──► postgres (internal only)
+```
 
-### Deploy
+- `api` and `postgres` are not published to the host; everything goes through nginx.
+- `certbot` sidecar issues and renews certificates via HTTP-01 webroot; `web` hot-reloads nginx on cert/config changes.
+
+## Deployment
+
+### Requirements
+
+- A domain with DNS access (MX record required to receive mail)
+- A VPS with a public IP; ports **25** and **80** reachable (443 for panel HTTPS)
+- Docker + Docker Compose, ~1 GB RAM (add swap on small VPS), a few GB of disk
+
+### Option A: interactive setup script
 
 ```bash
-# Clone the repository
-git clone https://github.com/lm36/tempmail-server.git
-cd tempmail-server
-
-# Run the interactive setup script
+git clone https://github.com/weige0831/WGTemporaryEmail.git
+cd WGTemporaryEmail
 ./setup.sh
-
-# The script will:
-# 1. Ask for your domains, hostname, web port
-# 2. Generate config.yaml (含管理面板令牌), .env and DNS records
-# 3. Deploy everything with Docker
 ```
 
-部署完成后：
+The script asks for your receive domains, mail hostname, web port, CORS origins, TLS options, then generates `config.yaml` (with a random admin token) and `.env`, prints the DNS records, and runs `docker compose up -d --build`.
 
-- 用户前端：`http://服务器IP/`（端口见 `.env` 的 `WEB_PORT`，默认 80）
-- 管理面板：`http://服务器IP/admin`（令牌在 `config.yaml` 的 `admin.token`）
-- API 文档：`http://服务器IP/docs`
-
-### 架构
-
-```
-外部流量
-  │
-  ├─ :25 ────────────────► mx (Go SMTP 收信，每 15s 热重载 config.yaml)
-  │
-  └─ :80 (WEB_PORT) ─────► web (nginx)
-        ├─ /            静态用户前端 (mailbucket)
-        ├─ /admin       静态管理面板（中文）
-        ├─ /api/* ─────► api (FastAPI, 内部网络)
-        └─ /docs ──────► api (Swagger)
-                            │
-                            └──► postgres (仅内部网络)
-```
-
-说明：`api` 服务不映射宿主端口，只通过 `web`（nginx）代理访问；管理面板修改配置时由 `api`
-以 root 身份改写挂载的 `config.yaml` 并热重载（详见 [docs/admin-panel.md](docs/admin-panel.md)）。
-
-## API Usage
-
-### Generate a temporary email address
+### Option B: manual setup
 
 ```bash
-# Random username (8 characters)
-curl -X POST http://localhost:8000/api/v1/addresses
-
-# Custom username
-curl -X POST http://localhost:8000/api/v1/addresses \
-  -H "Content-Type: application/json" \
-  -d '{"username": "john.doe"}'
-
-# Custom username with domain selection
-curl -X POST http://localhost:8000/api/v1/addresses \
-  -H "Content-Type: application/json" \
-  -d '{"username": "myemail", "domain": "temp.example.com"}'
-
-# Response:
-# {
-#   "email": "myemail@temp.example.com",
-#   "token": "hbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-#   "expires_at": "2025-11-18T12:00:00Z"
-# }
+git clone https://github.com/weige0831/WGTemporaryEmail.git
+cd WGTemporaryEmail
+cp config.yaml.example config.yaml
+cp .env.example .env
+# 1) edit config.yaml: domains, server.hostname, admin.token, database password
+# 2) edit .env: DB_PASSWORD (mandatory), WEB_PORT (default 80)
+mkdir -p certs
+docker compose up -d --build
 ```
 
-The "token" is used for fetching emails for and managing that address
+The first visit then opens the **setup wizard** at `/setup` (because `setup.initialized` is false by default in the example), where you fill the same values in the browser.
 
-### List available domains
+### DNS records
+
+```
+mail.your-domain.com.   IN  A    <server IP>      # mail hostname
+your-domain.com.        IN  MX  10 mail.your-domain.com.
+```
+
+Also ask your VPS provider to set the reverse DNS (PTR) of the server IP to `mail.your-domain.com`.
+
+### Enable TLS / panel HTTPS
+
+1. Admin panel → 系统配置 → 面板访问域名: fill e.g. `mail.your-domain.com`, add its DNS A record to the server
+2. TLS card → enter your email → **签发 / 续期证书** (the SAN cert covers both the mail hostname and the panel domain)
+3. Toggle `tls.enabled` on — the MX starts STARTTLS immediately (no restart)
+4. Panel HTTPS is served on 443 automatically; renewals are fully automatic
+
+### Access control
+
+Admin panel → 功能开关 → **允许通过 IP / 其他域名访问用户面板**:
+- ON (default): any host can reach the user panel
+- OFF: non-official domains and IPs are redirected to the official panel domain; `/admin`, `/api/*`, `/docs` and the ACME challenge stay reachable from any address so you can never lock yourself out
+
+### Update
 
 ```bash
-curl http://localhost:8000/api/v1/domains
-
-# Response:
-# {
-#   "domains": ["example.com", "temp.example.com"]
-# }
-```
-
-### List emails for an address
-
-```bash
-curl http://localhost:8000/api/v1/{token}/emails
-
-# Response:
-# {
-#   "emails": [
-#     {
-#       "id": "uuid",
-#       "subject": "Welcome!",
-#       "from": "sender@example.com",
-#       "received_at": "2025-11-17T10:30:00Z",
-#       "is_read": false,
-#       "has_attachments": true
-#     }
-#   ],
-#   "total": 1,
-#   "page": 1,
-#   "per_page": 50
-# }
-```
-
-### Get email details
-
-```bash
-curl http://localhost:8000/api/v1/{token}/emails/{email_id}
-
-# Response includes:
-# - Full headers
-# - Plain text body
-# - HTML body
-# - Validation results (DKIM, SPF, DMARC)
-# - Attachment list
-```
-## Configuration
-
-Configuration is managed via `config.yaml`:
-
-```yaml
-domains:
-  - example.com
-  - temp.example.com
-
-database:
-  url: postgresql://tempmail:CHANGE_THIS_PASSWORD@postgres:5432/tempmail
-  pool_size: 10
-  max_overflow: 20
-
-server:
-  api_host: 127.0.0.1
-  api_port: 8000
-  mx_port: 25
-  max_message_size_mb: 10
-  hostname: mail.example.com
-  docs_enabled: true
-
-cors:
-  allow_origins:
-    - "*"  # In production, specify your frontend domains
-  allow_credentials: true
-  allow_methods:
-    - "*"
-  allow_headers:
-    - "*"
-
-tls:
-  enabled: false
-  cert_file: /config/certs/cert.pem
-  key_file: /config/certs/key.pem
-
-tempmail:
-  address_lifetime_hours: 24
-  max_emails_per_address: 100
-  cleanup_interval_hours: 1
-  address_format: random
-  allow_custom_usernames: true
-  min_username_length: 3
-  max_username_length: 64
-  reserved_usernames:
-    - admin
-    - postmaster
-    - abuse
-    - noreply
-    - no-reply
-    - root
-    - webmaster
-    - hostmaster
-    - mailer-daemon
-    - info
-    - support
-    - security
-    - sales
-    - contact
-
-validation:
-  check_dkim: true
-  check_spf: true
-  check_dmarc: true
-  store_results: true
-```
-
-## Development
-
-### Local development
-
-```bash
-# Start services
+cd WGTemporaryEmail
+git pull
+docker compose build
 docker compose up -d
-
-# View logs
-docker compose logs -f api
-docker compose logs -f mx
-
-# Stop services
-docker compose down
 ```
 
-### Run tests
+### Uninstall
 
 ```bash
-# API tests (Python)
-cd api
-pytest -v --cov=app tests/
-
-# MX server tests (Go)
-cd mx
-go test -v -cover ./...
+docker compose down -v   # -v also deletes all mail data
 ```
+
+## Admin panel & API
+
+- Admin token: `admin.token` in `config.yaml` (generated by `setup.sh` / the setup wizard)
+- API reference with live one-click tests: `/api` (docs page), Swagger: `/docs`
+- See [docs/admin-panel.md](docs/admin-panel.md) and [docs/security.md](docs/security.md)
+
+## Multi-language documentation
+
+- [English](README.md) · [简体中文](README.zh-CN.md) · [繁體中文](README.zh-TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Português](README.pt.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [Italiano](README.it.md) · [Türkçe](README.tr.md) · [Bahasa Indonesia](README.id.md) · [Tiếng Việt](README.vi.md)
+- [Deployment guide](docs/deployment.md) ([简体中文](docs/deployment.zh-CN.md)) · [Admin panel](docs/admin-panel.md) · [Security](docs/security.md)
 
 ## License
 
-[MIT License](LICENSE)
+[MIT](LICENSE) — based on [Lm36/tempmail-server](https://github.com/Lm36/tempmail-server) and [Lm36/mailbucket](https://github.com/Lm36/mailbucket) (both MIT).

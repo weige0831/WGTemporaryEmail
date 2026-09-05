@@ -81,6 +81,7 @@ export default function PrivacyPage() {
                 <li>{t("privacy.retentionL1")}</li>
                 <li>{t("privacy.retentionL2")}</li>
                 <li>{t("privacy.retentionL3")}</li>
+                <li>{t("privacy.storageNote")}</li>
                 <li>{t("privacy.retentionL4")}</li>
               </ul>
             </CardContent>
@@ -115,6 +116,7 @@ export default function PrivacyPage() {
                 <li>{t("privacy.securityL2")}</li>
                 <li>{t("privacy.securityL3")}</li>
                 <li>{t("privacy.securityL4")}</li>
+                <li>{t("privacy.tlsNote")}</li>
               </ul>
             </CardContent>
           </Card>

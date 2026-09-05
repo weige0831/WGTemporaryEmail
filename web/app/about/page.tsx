@@ -116,11 +116,17 @@ export default function AboutPage() {
               </CardTitle>
               <CardDescription>{t("about.sourceDesc")}</CardDescription>
             </CardHeader>
-            <CardContent className="text-sm">
+            <CardContent className="text-sm space-y-2">
               <a href={REPO_URL} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-mono break-all">
                 {REPO_URL}
               </a>
-              <p className="text-muted-foreground mt-2">{t("about.sourceNote")}</p>
+              <p className="text-muted-foreground">
+                {t("about.demoLabel")}:{" "}
+                <a href="https://mail.twcdk.com/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-mono break-all">
+                  https://mail.twcdk.com/
+                </a>
+              </p>
+              <p className="text-muted-foreground">{t("about.sourceNote")}</p>
             </CardContent>
           </Card>
         </div>
