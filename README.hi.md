@@ -129,6 +129,8 @@ docker compose exec -T postgres psql -U tempmail -d tempmail < db/migrations/002
 docker compose down -v   # -v सभी मेल डेटा भी हटा देता है
 ```
 
+- स्थायी मेलबॉक्स की संख्या `tempmail.max_permanent_addresses` से सीमित की जा सकती है (0 = असीमित)।
+
 ## स्थायी मेलबॉक्स और इंटीग्रेशन API
 
 स्वतः समाप्त होने वाले अस्थायी पतों के अलावा सेवा **स्थायी मेलबॉक्स** भी देती है: पता हमेशा रहता है और मेल रखरखाव अवधि (`tempmail.permanent_email_retention_days`, डिफ़ॉल्ट 30 दिन) के बाद हटा दिए जाते हैं।

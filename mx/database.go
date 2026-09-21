@@ -8,6 +8,7 @@ import (
 	"time"
 
 	_ "github.com/lib/pq"
+	"unicode/utf8"
 )
 
 // DB wraps the database connection
@@ -67,6 +68,34 @@ func (db *DB) Close() error {
 	return db.conn.Close()
 }
 
+// sanitizeText makes an attacker-controlled string safe for a text column:
+// NUL bytes and invalid UTF-8 are rejected by PostgreSQL, and an over-long
+// value would fail the INSERT - either way the whole message would bounce with
+// a permanent 554 even though the sender is legitimate.
+func sanitizeText(value string, maxLen int) string {
+	value = strings.ReplaceAll(value, "\x00", "")
+	if !utf8.ValidString(value) {
+		value = strings.ToValidUTF8(value, "?")
+	}
+	if maxLen > 0 {
+		// Cut on a rune boundary so the result stays valid UTF-8.
+		value = truncateRunes(value, maxLen)
+	}
+	return value
+}
+
+// truncateRunes returns at most maxBytes bytes of value, without splitting a rune.
+func truncateRunes(value string, maxBytes int) string {
+	if len(value) <= maxBytes {
+		return value
+	}
+	cut := maxBytes
+	for cut > 0 && !utf8.RuneStart(value[cut]) {
+		cut--
+	}
+	return value[:cut]
+}
+
 // StoreEmail stores an email and its attachments in the database
 func (db *DB) StoreEmail(email *EmailData, attachments []AttachmentData) error {
 	tx, err := db.conn.Begin()
@@ -85,8 +114,10 @@ func (db *DB) StoreEmail(email *EmailData, attachments []AttachmentData) error {
 		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
 		RETURNING id
 	`,
-		email.MessageID, email.Subject, email.FromAddr, email.ToAddr,
-		email.RawHeaders, email.BodyPlain, email.BodyHTML, email.RawMessage,
+		sanitizeText(email.MessageID, 255), sanitizeText(email.Subject, 998),
+		sanitizeText(email.FromAddr, 255), sanitizeText(email.ToAddr, 255),
+		sanitizeText(email.RawHeaders, 0), sanitizeText(email.BodyPlain, 0),
+		sanitizeText(email.BodyHTML, 0), email.RawMessage,
 		email.SizeBytes, email.DKIMValid, email.SPFResult, email.DMARCResult,
 		email.HasAttachments, email.ReceivedAt,
 	).Scan(&emailID)
@@ -117,7 +148,8 @@ func (db *DB) StoreEmail(email *EmailData, attachments []AttachmentData) error {
 		_, err = tx.Exec(`
 			INSERT INTO attachments (email_id, filename, content_type, size_bytes, data)
 			VALUES ($1, $2, $3, $4, $5)
-		`, emailID, att.Filename, att.ContentType, att.SizeBytes, att.Data)
+		`, emailID, sanitizeText(att.Filename, 255), sanitizeText(att.ContentType, 127),
+			att.SizeBytes, att.Data)
 
 		if err != nil {
 			return fmt.Errorf("failed to insert attachment: %w", err)

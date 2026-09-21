@@ -89,6 +89,9 @@ class Config:
 
         # Email retention for permanent mailboxes (days; address itself is kept forever)
         self.PERMANENT_EMAIL_RETENTION_DAYS: int = tempmail_config.get('permanent_email_retention_days', 30)
+        # Cap on how many permanent mailboxes may exist (0 = unlimited). Keeps
+        # the public creation endpoint from filling the database forever.
+        self.MAX_PERMANENT_ADDRESSES: int = tempmail_config.get('max_permanent_addresses', 0)
 
         # Logging
         logging_config = config.get('logging', {})
@@ -196,6 +199,7 @@ def create_test_config() -> Config:
     config.WEB_ALLOW_IP_ACCESS = True
     config.INTEGRATION_API_KEY = 'test-integration-key'
     config.PERMANENT_EMAIL_RETENTION_DAYS = 30
+    config.MAX_PERMANENT_ADDRESSES = 0
     config.LOG_LEVEL = 'info'
     config.LOG_FORMAT = 'json'
     config.CORS_ALLOW_ORIGINS = ['*']

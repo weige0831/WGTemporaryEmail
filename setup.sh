@@ -71,7 +71,7 @@ cat > /etc/cron.d/wgtempemail-cleanup <<'EOF'
 SHELL=/bin/bash
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 # 每周日凌晨 4 点清理无用的 docker 资源
-0 4 * * 0 root docker system prune -f >/dev/null 2>&1 && docker builder prune -f >/dev/null 2>&1
+0 4 * * 0 root docker image prune -f >/dev/null 2>&1 && docker builder prune -f >/dev/null 2>&1
 # 每月 1 日凌晨 4:30 清理 apt 缓存
 30 4 1 * * root apt-get autoclean -y >/dev/null 2>&1
 EOF
@@ -124,7 +124,14 @@ DOMAINS_YAML=""
 for domain in "${DOMAINS_ARRAY[@]}"; do
     # Trim whitespace
     domain=$(echo "$domain" | xargs)
-    DOMAINS_YAML+="  - $domain"$'\n'
+    # Validate before writing YAML: an unquoted value containing ':' or a
+    # newline would corrupt config.yaml, and a flag-like value would later
+    # reach the certbot command line.
+    if ! echo "$domain" | grep -Eq '^[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$'; then
+        echo "❌ Invalid domain: '$domain' (expected something like example.com)"
+        exit 1
+    fi
+    DOMAINS_YAML+="  - \"$domain\""$'\n'
 done
 
 # 2. Server IP (for DNS instructions)
@@ -152,30 +159,62 @@ echo "✓ Integration API key generated (will be saved in config.yaml)"
 echo ""
 echo "Web panel port - user panel and admin panel (default: 80):"
 read -r WEB_PORT
+case "${WEB_PORT}" in
+    ''|*[!0-9]*) echo "❌ web port must be a number"; exit 1 ;;
+esac
+if [ "${WEB_PORT}" -lt 1 ]; then
+    echo "❌ web port must be >= 1"
+    exit 1
+fi
 WEB_PORT=${WEB_PORT:-80}
 
 # 4. Address lifetime
 echo ""
 echo "Address lifetime in hours (default: 24):"
 read -r ADDRESS_LIFETIME
+case "${ADDRESS_LIFETIME}" in
+    ''|*[!0-9]*) echo "❌ address lifetime (hours) must be a number"; exit 1 ;;
+esac
+if [ "${ADDRESS_LIFETIME}" -lt 1 ]; then
+    echo "❌ address lifetime (hours) must be >= 1"
+    exit 1
+fi
 ADDRESS_LIFETIME=${ADDRESS_LIFETIME:-24}
 
 # 5. Max message size
 echo ""
 echo "Maximum message size in MB (default: 10):"
 read -r MAX_MSG_SIZE
+case "${MAX_MSG_SIZE}" in
+    ''|*[!0-9]*) echo "❌ max message size (MB) must be a number"; exit 1 ;;
+esac
+if [ "${MAX_MSG_SIZE}" -lt 1 ]; then
+    echo "❌ max message size (MB) must be >= 1"
+    exit 1
+fi
 MAX_MSG_SIZE=${MAX_MSG_SIZE:-10}
 
 # 6. Max emails per address
 echo ""
 echo "Maximum emails per address (default: 100):"
 read -r MAX_EMAILS
+case "${MAX_EMAILS}" in
+    ''|*[!0-9]*) echo "❌ max emails per address must be a number"; exit 1 ;;
+esac
+if [ "${MAX_EMAILS}" -lt 1 ]; then
+    echo "❌ max emails per address must be >= 1"
+    exit 1
+fi
 MAX_EMAILS=${MAX_EMAILS:-100}
 
 # 7. Server hostname
 echo ""
 echo "Mail server hostname (e.g., mail.tempmail.com):"
 read -r HOSTNAME
+if ! echo "$HOSTNAME" | grep -Eq '^[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$'; then
+    echo "❌ Invalid hostname: '$HOSTNAME'"
+    exit 1
+fi
 
 # 8. CORS Configuration
 echo ""

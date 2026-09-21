@@ -33,12 +33,21 @@ database:
   pool_size: 10
   max_overflow: 20
 
+# NOTE: cors.*, database.pool_size/max_overflow and server.max_message_size_mb
+# are read once when the API starts. Changing them in the admin panel saves the
+# file and the panel tells you a restart is needed.
 server:
   # Bind address of the API inside the container (compose sets API_HOST=0.0.0.0)
   api_host: 127.0.0.1
   api_port: 8000
   mx_port: 25
   max_message_size_mb: 10
+
+  # MX abuse limits (0 = defaults): concurrent SMTP connections (200),
+  # accepted messages per source IP per hour (300), MIME parts per message (100)
+  max_connections: 200
+  max_messages_per_hour_per_ip: 300
+  max_mime_parts: 100
   # Mail server hostname (MX record target) - also the SAN of the TLS cert
   hostname: mail.example.com
 
@@ -106,6 +115,10 @@ tempmail:
   # Email retention for permanent mailboxes in days (the address itself is
   # kept forever; only its emails older than this are deleted)
   permanent_email_retention_days: 30
+
+  # Maximum number of permanent mailboxes that may exist (0 = unlimited).
+  # Caps how much the public creation endpoint can grow the database.
+  max_permanent_addresses: 0
 
   # Global storage cap in MB (total size of all stored emails incl. attachments).
   # When exceeded, the cleanup job deletes the oldest emails until under this cap.

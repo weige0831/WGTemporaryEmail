@@ -244,7 +244,11 @@ export const adminApi = {
     return request('/api/v1/admin/config')
   },
 
-  updateConfig(patch: Record<string, Record<string, unknown>>): Promise<{ config: Record<string, unknown>; config_path: string }> {
+  updateConfig(patch: Record<string, Record<string, unknown>>): Promise<{
+    config: Record<string, unknown>
+    config_path: string
+    restart_required?: boolean
+  }> {
     return request('/api/v1/admin/config', {
       method: 'PUT',
       body: JSON.stringify(patch),

@@ -129,6 +129,8 @@ Geçişler `db/migrations/` altındadır ve tekrar çalıştırılmaları güven
 docker compose down -v   # -v tüm posta verilerini de siler
 ```
 
+- Kalıcı posta kutusu sayısı `tempmail.max_permanent_addresses` ile sınırlanabilir (0 = sınırsız).
+
 ## Kalıcı posta kutuları ve entegrasyon API'si
 
 Otomatik süresi dolan geçici adreslerin yanında **kalıcı posta kutuları** da sunulur: adres kalıcı olarak saklanır, iletiler saklama süresi (`tempmail.permanent_email_retention_days`, varsayılan 30 gün) sonunda silinir.

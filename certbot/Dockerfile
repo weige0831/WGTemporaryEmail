@@ -1,5 +1,5 @@
 # Let's Encrypt sidecar: issues and renews certificates via HTTP-01 webroot.
-FROM certbot/certbot:latest
+FROM certbot/certbot:v5.8.0
 
 COPY entry.sh /entry.sh
 COPY renew-hook.sh /renew-hook.sh

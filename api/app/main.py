@@ -13,7 +13,7 @@ from app.database import check_db_connection
 from app.routers import addresses_router, emails_router, admin_router, setup_router, permanent_router
 from app.routers.setup import ensure_setup_key
 from app.cleanup import run_cleanup_loop
-from app.runtime_config import read_config
+from app.runtime_config import read_config, write_web_config
 
 # Configure logging
 logging.basicConfig(
@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI(
     title="Tempmail Server API",
     description="Tempmail backend API - receive and manage temporary email addresses",
-    version="1.1.1",
+    version="1.1.2",
     docs_url="/docs" if settings.DOCS_ENABLED else None,
     redoc_url="/redoc" if settings.DOCS_ENABLED else None,
     openapi_url="/openapi.json" if settings.DOCS_ENABLED else None
@@ -53,6 +53,12 @@ async def startup_event():
 
     logger.info("Tempmail Server API starting...")
 
+    # A config copied from the example still carries the placeholder password.
+    if 'CHANGE_THIS' in settings.DATABASE_URL or 'change_this' in settings.DATABASE_URL:
+        raise Exception(
+            "Database password is still the example placeholder - set a real one in config.yaml / .env"
+        )
+
     # Check database connection
     if not check_db_connection():
         logger.error("Failed to connect to database!")
@@ -75,6 +81,15 @@ async def startup_event():
             logger.warning("=" * 62)
         except Exception as e:  # never block startup on this
             logger.error("Could not prepare the setup key: %s", e)
+
+    # Publish the handful of settings nginx needs (panel hostname, IP-access
+    # policy, TLS/docs switches) into a separate file, so the web container no
+    # longer needs config.yaml with its DB password and admin token.
+    try:
+        write_web_config()
+        logger.info("Published web-config.env for the nginx container")
+    except Exception as e:
+        logger.error("Could not publish web-config.env: %s", e)
 
     # Start cleanup thread
     cleanup_thread = threading.Thread(target=run_cleanup_loop, daemon=True)

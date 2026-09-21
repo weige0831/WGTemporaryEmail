@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /admin/
+Disallow: /setup
+
+# Keep the admin panel and the setup wizard out of search engines.

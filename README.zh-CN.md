@@ -133,6 +133,7 @@ docker compose down -v   # -v 会同时删除所有邮件数据
 
 除自动过期的临时邮箱外，服务还提供**长效邮箱**：地址永久保留，邮件在保留期（`tempmail.permanent_email_retention_days`，默认 30 天）后自动删除。
 
+- 可用 `tempmail.max_permanent_addresses` 限制长效邮箱总数（0 表示不限制）。
 - **网页端**：`/mailbox` —— 自选用户名创建，保存访问令牌，之后在任何设备用令牌登录。收件箱与临时邮箱一致（搜索、自动刷新、HTML/纯文本、附件、下载原始邮件）。
 - **API（需鉴权）**：`POST /api/v1/api/addresses`，请求头 `X-API-Key: <集成密钥>`，请求体 `{"username": "...", "domain": "..."}`。
 - **集成密钥**：管理面板 → 系统配置 → **集成 API 密钥**（查看状态 / 重新生成，仅显示一次）。

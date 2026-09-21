@@ -22,11 +22,18 @@ class AddressCreate(BaseModel):
         # Remove whitespace
         v = v.strip()
 
-        # Check length
-        if len(v) < 3:
-            raise ValueError('Username must be at least 3 characters')
-        if len(v) > 64:
-            raise ValueError('Username must be at most 64 characters')
+        # Check length against the configured bounds (tempmail.min/max_username_length)
+        try:
+            from app.config import settings as _settings
+
+            min_len = int(getattr(_settings, 'MIN_USERNAME_LENGTH', 3))
+            max_len = int(getattr(_settings, 'MAX_USERNAME_LENGTH', 64))
+        except Exception:  # never fail validation because of a config hiccup
+            min_len, max_len = 3, 64
+        if len(v) < min_len:
+            raise ValueError(f'Username must be at least {min_len} characters')
+        if len(v) > max_len:
+            raise ValueError(f'Username must be at most {max_len} characters')
 
         # Check format: alphanumeric, dots, hyphens, underscores
         if not re.match(r'^[a-zA-Z0-9._-]+$', v):

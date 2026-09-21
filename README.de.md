@@ -136,6 +136,7 @@ Neben automatisch ablaufenden temporären Adressen gibt es **dauerhafte Postfäc
 - **Web**: `/mailbox` - Benutzernamen wählen, Zugriffstoken speichern und sich damit von jedem Gerät anmelden. Der Posteingang verhält sich wie der temporäre (Suche, Auto-Aktualisierung, HTML/Text, Anhänge, Rohmail-Download).
 - **API (authentifiziert)**: `POST /api/v1/api/addresses` mit Header `X-API-Key: <Integrationsschlüssel>` und Body `{"username": "...", "domain": "..."}`.
 - **Integrationsschlüssel**: Admin-Panel -> Systemkonfiguration -> **Integrations-API-Schlüssel** (Status prüfen / neu erzeugen; wird nur einmal angezeigt).
+- Die Anzahl dauerhafter Postfächer lässt sich mit `tempmail.max_permanent_addresses` begrenzen (0 = unbegrenzt).
 - Das Anlegen über die Webseite braucht keinen Schlüssel und ist pro IP begrenzt.
 
 ## Sicherung und Wiederherstellung

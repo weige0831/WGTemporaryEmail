@@ -128,6 +128,8 @@ docker compose exec -T postgres psql -U tempmail -d tempmail < db/migrations/002
 docker compose down -v   # -v also deletes all mail data
 ```
 
+- The number of permanent mailboxes can be capped with `tempmail.max_permanent_addresses` (0 = unlimited).
+
 ## Permanent mailboxes & integration API
 
 Besides auto-expiring temporary addresses the service offers **permanent mailboxes**: the address is kept forever, while its emails are deleted after the retention period (`tempmail.permanent_email_retention_days`, default 30 days).

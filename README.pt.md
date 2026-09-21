@@ -136,6 +136,7 @@ Além dos endereços temporários que expiram, o serviço oferece **caixas perma
 - **Web**: `/mailbox` - escolha um nome, guarde o token de acesso e entre com ele em qualquer dispositivo. A caixa funciona como a temporária (busca, atualização automática, HTML/texto, anexos, download do original).
 - **API (autenticada)**: `POST /api/v1/api/addresses` com o cabeçalho `X-API-Key: <chave de integração>` e corpo `{"username": "...", "domain": "..."}`.
 - **Chave de integração**: painel administrativo -> Configurações -> **Chave de API de integração** (ver status / regenerar; exibida uma única vez).
+- O número de caixas permanentes pode ser limitado com `tempmail.max_permanent_addresses` (0 = ilimitado).
 - Criar caixas pelo site não exige chave e é limitado por IP.
 
 ## Backup e restauração

@@ -15,7 +15,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app.config import reload_settings, settings
 from app.rate_limit import ip_rate_limit
-from app.runtime_config import read_config, write_config
+from app.runtime_config import read_config, write_config, write_web_config
 from app.schemas.setup import SetupCompleteRequest, SetupCompleteResponse, SetupStatus
 
 router = APIRouter(prefix='/api/v1/setup', tags=['setup'])
@@ -107,6 +107,7 @@ def complete_setup(
     write_config(config)
     try:
         reload_settings()
+        write_web_config()
     except Exception as e:
         raise HTTPException(status_code=500, detail=f'Failed to apply configuration: {e}')
 

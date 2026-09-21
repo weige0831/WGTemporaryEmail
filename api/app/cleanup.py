@@ -164,8 +164,6 @@ def run_cleanup_loop():
 
     This is meant to be run in a separate thread or process.
     """
-    interval_seconds = settings.CLEANUP_INTERVAL_HOURS * 3600
-
     logger.info(f"Starting cleanup loop (interval: {settings.CLEANUP_INTERVAL_HOURS}h)")
 
     while True:
@@ -176,7 +174,12 @@ def run_cleanup_loop():
         except Exception as e:
             logger.error(f"Cleanup loop error: {e}")
 
-        # Sleep until next run
+        # Re-read the interval every round so a change made in the admin panel
+        # takes effect without restarting the API.
+        try:
+            interval_seconds = max(1, int(settings.CLEANUP_INTERVAL_HOURS)) * 3600
+        except Exception:
+            interval_seconds = 3600
         time.sleep(interval_seconds)
 
 

@@ -4,9 +4,11 @@ import (
 	"crypto/tls"
 	"fmt"
 	"log"
+	"net"
 	"time"
 
 	"github.com/emersion/go-smtp"
+	"golang.org/x/net/netutil"
 )
 
 // Backend implements SMTP server backend
@@ -46,7 +48,7 @@ func (bkd *Backend) NewSession(c *smtp.Conn) (smtp.Session, error) {
 		tlsInfo = fmt.Sprintf(" [TLS %s]", tlsVersionString(state.Version))
 	}
 
-	log.Printf("[%s] New connection from: %s%s", remoteAddr, hostname, tlsInfo)
+	log.Printf("[%s] New connection from: %s%s", remoteAddr, sanitizeForLog(hostname), tlsInfo)
 
 	return NewSession(remoteAddr, hostname, cfg, bkd.db, bkd.validator, cfg.GetDomainMap()), nil
 }
@@ -116,12 +118,21 @@ func NewSMTPServer(cfg *Config, db *DB) (*SMTPServer, error) {
 	}, nil
 }
 
-// Start starts the SMTP server
+// Start starts the SMTP server.
+//
+// The listener is wrapped in a connection cap: go-smtp spawns one goroutine per
+// connection and re-arms the read deadline on every command, so without a limit
+// an attacker can hold thousands of sessions open indefinitely.
 func (s *SMTPServer) Start() error {
-	log.Printf("🚀 Starting SMTP MX server on %s", s.server.Addr)
+	limit := s.cfg.GetMaxConnections()
+	log.Printf("🚀 Starting SMTP MX server on %s (max %d connections)", s.server.Addr, limit)
 	log.Printf("✉️  Ready to receive emails for domains: %v", s.cfg.Domains)
 
-	if err := s.server.ListenAndServe(); err != nil {
+	listener, err := net.Listen("tcp", s.server.Addr)
+	if err != nil {
+		return fmt.Errorf("SMTP listen error: %w", err)
+	}
+	if err := s.server.Serve(netutil.LimitListener(listener, limit)); err != nil {
 		return fmt.Errorf("SMTP server error: %w", err)
 	}
 	return nil

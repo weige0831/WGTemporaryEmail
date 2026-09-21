@@ -129,6 +129,8 @@ Les migrations se trouvent dans `db/migrations/` et sont idempotentes. Elles ne 
 docker compose down -v   # -v supprime aussi toutes les données de courrier
 ```
 
+- Le nombre de boîtes permanentes peut être limité via `tempmail.max_permanent_addresses` (0 = illimité).
+
 ## Boîtes permanentes et API d'intégration
 
 En plus des adresses temporaires qui expirent, le service propose des **boîtes permanentes** : l'adresse est conservée indéfiniment et ses messages sont supprimés après la durée de rétention (`tempmail.permanent_email_retention_days`, 30 jours par défaut).

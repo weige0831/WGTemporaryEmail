@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/mail"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/emersion/go-smtp"
@@ -159,6 +160,17 @@ func (s *Session) Data(r io.Reader) error {
 
 	rawMessage := buf.Bytes()
 	log.Printf("[%s] Received message (%d bytes)", s.remoteAddr, size)
+
+	// Abuse limits, checked before the expensive parse/validation/storage work:
+	// a per-IP delivery rate and a cap on the number of MIME parts.
+	if !allowMessageFrom(s.getClientIP(), s.cfg.GetMaxMessagesPerHourIP()) {
+		log.Printf("[%s] REJECTED: per-IP message rate limit exceeded", s.remoteAddr)
+		return smtpError(451, [3]int{4, 7, 0}, "too many messages from your address, try again later")
+	}
+	if parts := countMIMEParts(rawMessage); parts > s.cfg.GetMaxMIMEParts() {
+		log.Printf("[%s] REJECTED: too many MIME parts (%d > %d)", s.remoteAddr, parts, s.cfg.GetMaxMIMEParts())
+		return smtpError(552, [3]int{5, 3, 4}, "message has too many MIME parts")
+	}
 
 	// Parse the email with MIME support
 	envelope, err := enmime.ReadEnvelope(bytes.NewReader(rawMessage))
@@ -315,4 +327,62 @@ func formatBoolPtr(b *bool) string {
 		return "true"
 	}
 	return "false"
+}
+
+// ---- per-IP message rate limiting -----------------------------------------
+
+type ipWindow struct {
+	start time.Time
+	count int
+}
+
+var (
+	ipWindowsMu sync.Mutex
+	ipWindows   = map[string]*ipWindow{}
+)
+
+// allowMessageFrom implements a fixed one-hour window per source IP. The table
+// is pruned opportunistically so it cannot grow without bound.
+func allowMessageFrom(ip string, limit int) bool {
+	if limit <= 0 {
+		return true
+	}
+	now := time.Now()
+
+	ipWindowsMu.Lock()
+	defer ipWindowsMu.Unlock()
+
+	if len(ipWindows) > 4096 {
+		for key, w := range ipWindows {
+			if now.Sub(w.start) > time.Hour {
+				delete(ipWindows, key)
+			}
+		}
+	}
+
+	w, ok := ipWindows[ip]
+	if !ok || now.Sub(w.start) > time.Hour {
+		ipWindows[ip] = &ipWindow{start: now, count: 1}
+		return true
+	}
+	if w.count >= limit {
+		return false
+	}
+	w.count++
+	return true
+}
+
+// countMIMEParts counts multipart boundary markers so parsing work is bounded
+// before the message is handed to the MIME parser.
+func countMIMEParts(raw []byte) int {
+	parts := 0
+	for _, line := range bytes.Split(raw, []byte("\n")) {
+		if len(line) > 2 && line[0] == '-' && line[1] == '-' {
+			parts++
+			if parts > 100000 {
+				break
+			}
+		}
+	}
+	return parts
 }

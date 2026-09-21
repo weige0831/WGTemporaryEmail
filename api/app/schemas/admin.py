@@ -182,3 +182,6 @@ class TlsStatus(BaseModel):
 class AdminConfigResponse(BaseModel):
     config: dict
     config_path: str
+    # True when the saved change only takes effect after restarting the
+    # containers (CORS, DB pool size, max message size).
+    restart_required: bool = False

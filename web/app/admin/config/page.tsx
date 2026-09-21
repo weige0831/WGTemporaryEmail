@@ -260,7 +260,7 @@ export default function AdminConfig() {
         return
       }
 
-      await adminApi.updateConfig(patch)
+      const saved = await adminApi.updateConfig(patch)
 
       if (tokenChanged) {
         clearAdminToken()
@@ -269,7 +269,10 @@ export default function AdminConfig() {
         return
       }
 
-      if (patch.web?.hostname !== undefined) {
+      if (saved.restart_required) {
+        // CORS / DB pool size / max message size are read once at startup.
+        setNotice(t("admin.restartRequired"))
+      } else if (patch.web?.hostname !== undefined) {
         setNotice(t("admin.webHostnameUpdated"))
       } else {
         setNotice(t("admin.savedReloaded"))

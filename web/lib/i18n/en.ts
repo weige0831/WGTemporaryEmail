@@ -281,6 +281,7 @@ export const en = {
     saving: "Saving...",
     nothingToSave: "No changes to save",
     savedReloaded: "Configuration saved and hot-reloaded (no restart needed)",
+    restartRequired: "Saved. Some changes (CORS, DB pool size, max message size) take effect after restarting the containers.",
     currentConfigTitle: "Current full config (secrets masked)",
     saveFailed: "Save failed. Please try again.",
     intMinError: "Must be an integer >= {n}",

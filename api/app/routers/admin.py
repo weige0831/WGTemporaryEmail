@@ -13,6 +13,7 @@ import os
 import re
 import secrets
 import ssl
+import subprocess
 import time
 from datetime import datetime, timedelta
 from typing import Optional
@@ -27,7 +28,14 @@ from app.config import reload_settings, settings
 from app.database import check_db_connection, get_db
 from app.models import Address, Attachment, Email, EmailRecipient
 from app.rate_limit import ip_rate_limit
-from app.runtime_config import apply_patch, mask_config, read_config, write_config
+from app.runtime_config import (
+    RESTART_REQUIRED_KEYS,
+    apply_patch,
+    mask_config,
+    read_config,
+    write_config,
+    write_web_config,
+)
 from app.utils import escape_like
 from app.schemas.admin import (
     AdminAddressDetail,
@@ -447,17 +455,27 @@ def get_config():
 
 @router.put('/config', response_model=AdminConfigResponse)
 def update_config(patch: dict):
-    """Partially update whitelisted configuration keys and hot-reload."""
+    """Partially update whitelisted configuration keys and hot-reload.
+
+    `restart_required` is set when the patch touched a value the running API
+    only reads at startup (CORS, DB pool size, max message size): the change is
+    saved, but the panel must tell the operator to restart the containers.
+    """
     current = read_config()
     try:
-        apply_patch(current, patch)
+        changed = apply_patch(current, patch)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
     _commit_config(current)
+    try:
+        write_web_config()
+    except Exception:
+        pass
     return {
         'config': mask_config(read_config()),
         'config_path': settings.CONFIG_PATH,
+        'restart_required': bool(changed & RESTART_REQUIRED_KEYS),
     }
 
 
@@ -500,10 +518,33 @@ def _read_json(path: str) -> Optional[dict]:
 
 
 def _read_cert_info() -> dict:
-    """Parse the TLS certificate file if present (stdlib only)."""
+    """Parse the TLS certificate file if present.
+
+    Prefers the openssl CLI (stable interface) and falls back to CPython's
+    private decoder, which is not guaranteed to survive a base-image upgrade.
+    Any failure degrades to an empty dict instead of erroring the endpoint.
+    """
     info: dict = {}
     if not os.path.exists(settings.TLS_CERT_FILE):
         return info
+
+    try:
+        out = subprocess.run(
+            ['openssl', 'x509', '-in', settings.TLS_CERT_FILE, '-noout', '-enddate', '-issuer'],
+            capture_output=True, text=True, timeout=5,
+        )
+        if out.returncode == 0:
+            for line in out.stdout.splitlines():
+                if line.startswith('notAfter='):
+                    info['not_after'] = line.split('=', 1)[1].strip()
+                elif line.startswith('issuer='):
+                    match = re.search(r'O\s*=\s*([^,/]+)', line)
+                    info['issuer'] = match.group(1).strip() if match else None
+            if info:
+                return info
+    except Exception:
+        pass
+
     try:
         decoded = ssl._ssl._test_decode_cert(settings.TLS_CERT_FILE)  # type: ignore[attr-defined]
         info['not_after'] = decoded.get('notAfter')

@@ -136,6 +136,7 @@ Ngoài địa chỉ tạm thời tự hết hạn, dịch vụ còn có **hộp 
 - **Web**: `/mailbox` - chọn tên, lưu token truy cập, rồi đăng nhập bằng token đó từ bất kỳ thiết bị nào. Hộp thư hoạt động như hộp tạm thời (tìm kiếm, tự làm mới, HTML/văn bản, tệp đính kèm, tải thư gốc).
 - **API (có xác thực)**: `POST /api/v1/api/addresses` với tiêu đề `X-API-Key: <khóa tích hợp>` và nội dung `{"username": "...", "domain": "..."}`.
 - **Khóa tích hợp**: bảng quản trị -> Cấu hình -> **Khóa API tích hợp** (xem trạng thái / tạo lại; chỉ hiển thị một lần).
+- Số hộp thư vĩnh viễn có thể giới hạn bằng `tempmail.max_permanent_addresses` (0 = không giới hạn).
 - Tạo hộp thư trên web không cần khóa và bị giới hạn theo IP.
 
 ## Sao lưu và phục hồi

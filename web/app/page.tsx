@@ -158,6 +158,20 @@ export default function Home() {
     }
   }
 
+  /**
+   * 判断 404 是否代表地址真的不存在。
+   * /info 是同一套令牌鉴权：它也 404 才说明地址确实没了（或已过期被清理）；
+   * 若 /info 成功或请求本身失败（网络/服务异常），保守地保留当前地址。
+   */
+  const confirmAddressGone = async (tok: string): Promise<boolean> => {
+    try {
+      await api.getAddressInfo(tok)
+      return false
+    } catch (e: any) {
+      return e?.status === 404
+    }
+  }
+
   const handleExpiredAddress = async () => {
     const oldEmail = address?.email
     if (oldEmail) {
@@ -176,9 +190,10 @@ export default function Home() {
       setLastRefresh(new Date())
     } catch (error: any) {
       console.error("Failed to fetch emails", error)
-      // 地址已过期（接口返回 404）或已被后台清理（"Address not found"）：
-      // 一律按过期处理，自动换新地址
-      if (error.status === 404) {
+      // 404 既可能是地址真的没了，也可能是代理/后端瞬间异常。先用 /info
+      // 确认一次：只有服务器明确表示这个令牌不存在时才轮换，否则保留当前
+      // 地址（避免因为一次误报丢掉已收到的邮件）。
+      if (error.status === 404 && (await confirmAddressGone(token))) {
         await handleExpiredAddress()
       }
     } finally {
@@ -196,10 +211,9 @@ export default function Home() {
       setEmails(emails.map(e => e.id === email.id ? { ...e, is_read: true } : e))
     } catch (error: any) {
       console.error("Failed to fetch email detail", error)
-      // Check if address has expired
-      if (error.status === 404) {
+      if (error.status === 404 && (await confirmAddressGone(address.token))) {
         await handleExpiredAddress()
-      } else {
+      } else if (error.status !== 404) {
         alert(t("home.failedToLoad"))
       }
     } finally {
@@ -217,10 +231,9 @@ export default function Home() {
       }
     } catch (error: any) {
       console.error("Failed to delete email", error)
-      // Check if address has expired
-      if (error.status === 404) {
+      if (error.status === 404 && (await confirmAddressGone(address.token))) {
         await handleExpiredAddress()
-      } else {
+      } else if (error.status !== 404) {
         alert(t("home.failedToDelete"))
       }
     }

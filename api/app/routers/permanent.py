@@ -44,6 +44,16 @@ def _create_permanent_address(request: PermanentAddressCreate, db: Session) -> A
                 detail=f"Domain '{domain}' is not available. Use GET /api/v1/domains to see available domains",
             )
 
+    # Optional cap: without it the public endpoint can create mailboxes (kept
+    # forever) without limit. 0 disables the cap.
+    if settings.MAX_PERMANENT_ADDRESSES > 0:
+        current = db.query(Address).filter(Address.address_type == 'permanent').count()
+        if current >= settings.MAX_PERMANENT_ADDRESSES:
+            raise HTTPException(
+                status_code=403,
+                detail='Permanent mailbox limit reached (tempmail.max_permanent_addresses)',
+            )
+
     if not settings.ALLOW_CUSTOM_USERNAMES:
         raise HTTPException(
             status_code=403,

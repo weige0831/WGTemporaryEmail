@@ -236,10 +236,13 @@ func TestConfigGetMaxMessageSize(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := &Config{
 				Server: struct {
-					APIPort      int    `yaml:"api_port"`
-					MXPort       int    `yaml:"mx_port"`
-					MaxMsgSizeMB int    `yaml:"max_message_size_mb"`
-					Hostname     string `yaml:"hostname"`
+					APIPort              int    `yaml:"api_port"`
+					MXPort               int    `yaml:"mx_port"`
+					MaxMsgSizeMB         int    `yaml:"max_message_size_mb"`
+					Hostname             string `yaml:"hostname"`
+					MaxConnections       int    `yaml:"max_connections"`
+					MaxMessagesPerHourIP int    `yaml:"max_messages_per_hour_per_ip"`
+					MaxMIMEParts         int    `yaml:"max_mime_parts"`
 				}{
 					MaxMsgSizeMB: tt.sizeMB,
 				},

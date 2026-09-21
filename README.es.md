@@ -136,6 +136,7 @@ Además de las direcciones temporales que caducan, el servicio ofrece **buzones 
 - **Web**: `/mailbox` - elige un nombre, guarda el token de acceso y entra con él desde cualquier dispositivo. La bandeja funciona como la temporal (búsqueda, autoactualización, HTML/texto, adjuntos, descarga del original).
 - **API (autenticada)**: `POST /api/v1/api/addresses` con la cabecera `X-API-Key: <clave de integración>` y el cuerpo `{"username": "...", "domain": "..."}`.
 - **Clave de integración**: panel de administración -> Configuración -> **Clave de API de integración** (ver estado / regenerar; se muestra una sola vez).
+- El número de buzones permanentes se puede limitar con `tempmail.max_permanent_addresses` (0 = sin límite).
 - Crear buzones desde la web no requiere clave y está limitado por IP.
 
 ## Copia de seguridad y restauración

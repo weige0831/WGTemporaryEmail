@@ -136,6 +136,7 @@ Oltre agli indirizzi temporanei che scadono, il servizio offre **caselle permane
 - **Web**: `/mailbox` - scegli un nome, salva il token di accesso e accedi con esso da qualsiasi dispositivo. La casella si comporta come quella temporanea (ricerca, aggiornamento automatico, HTML/testo, allegati, download del messaggio originale).
 - **API (autenticata)**: `POST /api/v1/api/addresses` con header `X-API-Key: <chiave di integrazione>` e corpo `{"username": "...", "domain": "..."}`.
 - **Chiave di integrazione**: pannello di amministrazione -> Configurazione -> **Chiave API di integrazione** (stato / rigenera; mostrata una sola volta).
+- Il numero di caselle permanenti si limita con `tempmail.max_permanent_addresses` (0 = illimitato).
 - Creare caselle dal sito non richiede chiave ed è limitato per IP.
 
 ## Backup e ripristino

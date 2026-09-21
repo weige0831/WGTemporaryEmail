@@ -136,6 +136,7 @@ Selain alamat sementara yang kedaluwarsa, layanan ini menyediakan **kotak surat 
 - **Web**: `/mailbox` - pilih nama, simpan token akses, lalu masuk dengan token itu dari perangkat mana pun. Kotak masuknya sama seperti yang sementara (pencarian, penyegaran otomatis, HTML/teks, lampiran, unduh email mentah).
 - **API (terautentikasi)**: `POST /api/v1/api/addresses` dengan header `X-API-Key: <kunci integrasi>` dan isi `{"username": "...", "domain": "..."}`.
 - **Kunci integrasi**: panel admin -> Konfigurasi -> **Kunci API integrasi** (lihat status / buat ulang; hanya ditampilkan sekali).
+- Jumlah kotak permanen dapat dibatasi dengan `tempmail.max_permanent_addresses` (0 = tanpa batas).
 - Membuat kotak lewat situs tidak perlu kunci dan dibatasi per IP.
 
 ## Cadangan dan pemulihan

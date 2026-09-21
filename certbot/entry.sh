@@ -17,8 +17,14 @@ LOG_DIR=/certbot-data/letsencrypt-logs
 WEBROOT=/certbot-data/webroot
 CERTS_OUT=/certbot-data/certs
 JOBS_DIR=/certbot-data/jobs
+# Shared with the api container, which writes nginx's small config here. This
+# container runs as root, so it prepares the directory for uid 1000.
+WEB_CONFIG_DIR=${WEB_CONFIG_DIR:-/web-config}
 
 mkdir -p "$CFG_DIR" "$WORK_DIR" "$LOG_DIR" "$WEBROOT" "$CERTS_OUT" "$JOBS_DIR"
+mkdir -p "$WEB_CONFIG_DIR" 2>/dev/null || true
+chown 1000:0 "$WEB_CONFIG_DIR" 2>/dev/null || true
+chmod 770 "$WEB_CONFIG_DIR" 2>/dev/null || true
 # The API container (uid 1000) submits jobs into $JOBS_DIR. Ownership goes to
 # that uid with group root and mode 770: writable by the API and by this
 # root-run sidecar, but not world-writable (a world-writable job queue would

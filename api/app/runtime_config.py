@@ -7,11 +7,29 @@ mount. Note: rewriting drops YAML comments - values are the source of truth.
 """
 
 import copy
+import os
 import re
+import shutil
+import threading
 
 import yaml
 
 from app.config import settings
+
+# Serializes read-modify-write cycles for config.yaml. Two concurrent PUTs
+# would otherwise lose one of the updates, and a reader (or the MX/nginx
+# watchers) could observe a half-written file.
+_CONFIG_LOCK = threading.RLock()
+
+# Sections whose values are only applied at process start: changing them is
+# persisted and picked up by nginx/the next boot, but the running API keeps the
+# old values. The panel tells the operator instead of pretending otherwise.
+RESTART_REQUIRED_KEYS = {
+    ('cors', 'allow_origins'), ('cors', 'allow_credentials'),
+    ('cors', 'allow_methods'), ('cors', 'allow_headers'),
+    ('database', 'pool_size'), ('database', 'max_overflow'),
+    ('server', 'max_message_size_mb'),
+}
 
 # Sections and keys the admin panel may update via PUT /admin/config.
 # Everything else (domains, database.url, server.api_*, server.mx_port,
@@ -24,7 +42,7 @@ ALLOWED_PATCH_SECTIONS = {
         'cleanup_interval_hours', 'address_format',
         'allow_custom_usernames', 'min_username_length',
         'max_username_length', 'reserved_usernames', 'max_storage_mb',
-        'permanent_email_retention_days',
+        'permanent_email_retention_days', 'max_permanent_addresses',
     },
     'validation': {'check_dkim', 'check_spf', 'check_dmarc', 'store_results'},
     'cors': {'allow_origins', 'allow_credentials', 'allow_methods', 'allow_headers'},
@@ -43,6 +61,7 @@ _INT_KEYS = {
     ('tempmail', 'max_username_length'),
     ('tempmail', 'max_storage_mb'),
     ('tempmail', 'permanent_email_retention_days'),
+    ('tempmail', 'max_permanent_addresses'),
     ('database', 'pool_size'),
     ('database', 'max_overflow'),
 }
@@ -75,6 +94,7 @@ _POSITIVE_INT_KEYS = {
     ('tempmail', 'min_username_length'),
     ('tempmail', 'max_username_length'),
     ('tempmail', 'permanent_email_retention_days'),
+    ('tempmail', 'max_permanent_addresses'),
     ('database', 'pool_size'),
     ('database', 'max_overflow'),
 }
@@ -109,15 +129,50 @@ def _mask_secrets(node):
 
 
 def read_config() -> dict:
-    """Read the current config.yaml as a plain dict."""
-    with open(settings.CONFIG_PATH, 'r') as f:
-        return yaml.safe_load(f) or {}
+    """Read the current config.yaml as a plain dict.
+
+    Falls back to the previous good copy (`config.yaml.bak`) when the file is
+    unreadable or corrupt, so a crash in the middle of a write cannot leave the
+    service unable to start.
+    """
+    with _CONFIG_LOCK:
+        try:
+            with open(settings.CONFIG_PATH, 'r') as f:
+                parsed = yaml.safe_load(f)
+            if isinstance(parsed, dict) and parsed:
+                return parsed
+        except (OSError, yaml.YAMLError):
+            pass
+
+        backup = settings.CONFIG_PATH + '.bak'
+        try:
+            with open(backup, 'r') as f:
+                parsed = yaml.safe_load(f)
+            if isinstance(parsed, dict) and parsed:
+                return parsed
+        except (OSError, yaml.YAMLError):
+            return {}
 
 
 def write_config(config: dict) -> None:
-    """Rewrite config.yaml in place (truncate + write)."""
-    with open(settings.CONFIG_PATH, 'w') as f:
-        yaml.safe_dump(config, f, sort_keys=False, default_flow_style=False)
+    """Rewrite config.yaml (truncate + write) with a backup of the previous content.
+
+    The file is a single-file bind mount, so it cannot be replaced by rename -
+    the mount would keep pointing at the old inode. A copy of the current
+    content is kept next to it as `config.yaml.bak` so a failed write (or a
+    crash mid-write) leaves something to recover from.
+    """
+    with _CONFIG_LOCK:
+        path = settings.CONFIG_PATH
+        try:
+            if os.path.exists(path) and os.path.getsize(path) > 0:
+                shutil.copyfile(path, path + '.bak')
+        except OSError:
+            pass
+        with open(path, 'w') as f:
+            yaml.safe_dump(config, f, sort_keys=False, default_flow_style=False)
+            f.flush()
+            os.fsync(f.fileno())
 
 
 def mask_config(config: dict) -> dict:
@@ -140,13 +195,16 @@ def mask_config(config: dict) -> dict:
     return _mask_secrets(masked)
 
 
-def apply_patch(config: dict, patch: dict) -> None:
+def apply_patch(config: dict, patch: dict) -> set:
     """Deep-merge whitelisted keys from `patch` into `config` in place.
 
-    Raises ValueError with a human-readable message for invalid keys/values.
+    Returns the set of (section, key) pairs that actually changed. Raises
+    ValueError with a human-readable message for invalid keys/values.
     """
     if not isinstance(patch, dict):
-        raise ValueError('patch 必须是对象')
+        raise ValueError('patch must be an object')
+
+    changed: set = set()
 
     for section, values in patch.items():
         if section not in ALLOWED_PATCH_SECTIONS:
@@ -195,4 +253,54 @@ def apply_patch(config: dict, patch: dict) -> None:
             if k in (('server', 'hostname'), ('web', 'hostname')) and isinstance(value, str):
                 value = value.strip().lower()
 
+            if config.get(section, {}).get(key) != value:
+                changed.add(k)
             config.setdefault(section, {})[key] = value
+
+    # Consistency: the restricted-panel mode only means anything when a panel
+    # hostname is configured. Without it nginx would serve every host (fail
+    # open) while the panel claimed access was restricted.
+    web = config.get('web', {})
+    if web.get('allow_ip_access') is False and not (web.get('hostname') or '').strip():
+        raise ValueError(
+            'web.allow_ip_access 不能在没有 web.hostname 时关闭（否则无法限制访问）'
+        )
+
+    return changed
+
+
+# Where nginx reads its settings from. Kept in a shared volume so the web
+# container never needs the full config.yaml (DB password, admin token).
+WEB_CONFIG_PATH = os.getenv('WEB_CONFIG_PATH', '/web-config/web-config.env')
+
+
+def write_web_config() -> None:
+    """Write the nginx-relevant subset of the config as KEY=value lines.
+
+    Sourcing a tiny generated file is both safer (no secrets reach the web
+    container) and more robust than the previous sed-based YAML scraping.
+    """
+    config = read_config()
+    web = config.get('web', {}) or {}
+    server = config.get('server', {}) or {}
+    tls = config.get('tls', {}) or {}
+
+    hostname = str(web.get('hostname', '') or '').strip()
+    allow_ip = web.get('allow_ip_access', True)
+    lines = [
+        '# Generated by the api container. Do not edit.',
+        f'WEB_HOSTNAME={hostname}',
+        f'ALLOW_IP={"true" if allow_ip is not False else "false"}',
+        f'TLS_ENABLED={"true" if tls.get("enabled") else "false"}',
+        f'DOCS_ENABLED={"true" if server.get("docs_enabled", True) else "false"}',
+    ]
+
+    directory = os.path.dirname(WEB_CONFIG_PATH)
+    if directory:
+        os.makedirs(directory, exist_ok=True)
+    tmp = WEB_CONFIG_PATH + '.tmp'
+    with open(tmp, 'w') as f:
+        f.write(chr(10).join(lines) + chr(10))
+        f.flush()
+        os.fsync(f.fileno())
+    os.replace(tmp, WEB_CONFIG_PATH)

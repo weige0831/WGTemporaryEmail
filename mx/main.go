@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"syscall"
 )
 
@@ -36,6 +37,13 @@ func main() {
 	log.Printf("  Max message size: %d MB", cfg.Server.MaxMsgSizeMB)
 	log.Printf("  Validation - DKIM: %v, SPF: %v, DMARC: %v",
 		cfg.Validation.CheckDKIM, cfg.Validation.CheckSPF, cfg.Validation.CheckDMARC)
+
+	// A copied example config usually still carries the placeholder password;
+	// refusing to start is friendlier than running with a known credential.
+	if strings.Contains(cfg.Database.URL, "CHANGE_THIS") ||
+		strings.Contains(cfg.Database.URL, "change_this") {
+		log.Fatalf("Database password is still the example placeholder - set a real one in config.yaml / .env")
+	}
 
 	// Connect to database
 	db, err := NewDB(cfg.Database.URL, cfg.Database.PoolSize)

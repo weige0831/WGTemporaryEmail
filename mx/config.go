@@ -42,10 +42,15 @@ type Config struct {
 	} `yaml:"database"`
 
 	Server struct {
-		APIPort      int    `yaml:"api_port"`
-		MXPort       int    `yaml:"mx_port"`
-		MaxMsgSizeMB int    `yaml:"max_message_size_mb"`
-		Hostname     string `yaml:"hostname"`
+		APIPort              int    `yaml:"api_port"`
+		MXPort               int    `yaml:"mx_port"`
+		MaxMsgSizeMB         int    `yaml:"max_message_size_mb"`
+		Hostname             string `yaml:"hostname"`
+		MaxConnections       int    `yaml:"max_connections"`
+		MaxMessagesPerHourIP int    `yaml:"max_messages_per_hour_per_ip"`
+		MaxMIMEParts         int    `yaml:"max_mime_parts"`
+		// Concurrency and abuse limits. Zero values fall back to the
+		// defaults in the getters below.
 	} `yaml:"server"`
 
 	TLS struct {
@@ -145,4 +150,32 @@ func (c *Config) GetDomainMap() map[string]bool {
 		}
 	}
 	return domains
+}
+
+// GetMaxConnections caps concurrent SMTP connections (0 -> default 200).
+// Without a cap a single host can hold thousands of idle sessions open.
+func (c *Config) GetMaxConnections() int {
+	if c.Server.MaxConnections > 0 {
+		return c.Server.MaxConnections
+	}
+	return 200
+}
+
+// GetMaxMessagesPerHourIP caps accepted messages per source IP per hour
+// (0 -> default 300). It bounds mail floods from one sender.
+func (c *Config) GetMaxMessagesPerHourIP() int {
+	if c.Server.MaxMessagesPerHourIP > 0 {
+		return c.Server.MaxMessagesPerHourIP
+	}
+	return 300
+}
+
+// GetMaxMIMEParts caps the number of MIME parts parsed from one message
+// (0 -> default 100). A message made of thousands of tiny parts costs far more
+// memory to parse than its size suggests.
+func (c *Config) GetMaxMIMEParts() int {
+	if c.Server.MaxMIMEParts > 0 {
+		return c.Server.MaxMIMEParts
+	}
+	return 100
 }
