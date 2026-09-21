@@ -116,14 +116,37 @@ Panneau admin → Interrupteurs → **Autoriser l'accès au panneau utilisateur 
 cd WGTemporaryEmail
 git pull
 docker compose build
-docker compose up -d
+docker compose up -d --force-recreate
+# apply database migrations (idempotent; only needed when upgrading an existing install)
+docker compose exec -T postgres psql -U tempmail -d tempmail < db/migrations/002_permanent_addresses.sql
 ```
+
+Les migrations se trouvent dans `db/migrations/` et sont idempotentes. Elles ne sont nécessaires que pour une installation antérieure à la fonction concernée ; une installation neuve obtient le schéma complet via `db/init/schema.sql`.
 
 ### Désinstallation
 
 ```bash
 docker compose down -v   # -v supprime aussi toutes les données de courrier
 ```
+
+## Boîtes permanentes et API d'intégration
+
+En plus des adresses temporaires qui expirent, le service propose des **boîtes permanentes** : l'adresse est conservée indéfiniment et ses messages sont supprimés après la durée de rétention (`tempmail.permanent_email_retention_days`, 30 jours par défaut).
+
+- **Web** : `/mailbox` - choisissez un identifiant, conservez le jeton d'accès, puis connectez-vous avec ce jeton depuis n'importe quel appareil. La boîte se comporte comme la temporaire (recherche, actualisation auto, HTML/texte, pièces jointes, téléchargement du message brut).
+- **API (authentifiée)** : `POST /api/v1/api/addresses` avec l'en-tête `X-API-Key: <clé d'intégration>` et le corps `{"username": "...", "domain": "..."}`.
+- **Clé d'intégration** : panneau d'administration -> Configuration -> **Clé d'API d'intégration** (état / régénération ; affichée une seule fois).
+- La création depuis le site ne demande pas de clé et est limitée par IP.
+
+## Sauvegarde et restauration
+
+- **Base de données** (adresses, messages et pièces jointes) :
+  ```bash
+  docker exec tempmail_db pg_dump -U tempmail tempmail | gzip > backup-$(date +%F).sql.gz
+  docker exec -i tempmail_db psql -U tempmail -d tempmail < backup.sql   # restaurer
+  ```
+- **Configuration** : `config.yaml` (jeton admin, mot de passe de la base, clé d'intégration) et `.env` ; conservez-en une copie, ils ne sont pas dans git.
+- **TLS** : `certs/` (`cert.pem`, `key.pem`) ; réémissibles depuis le panneau.
 
 ## Panneau d'administration et API
 
@@ -135,6 +158,10 @@ docker compose down -v   # -v supprime aussi toutes les données de courrier
 
 - [English](README.md) · [简体中文](README.zh-CN.md) · [繁體中文](README.zh-TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Português](README.pt.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [Italiano](README.it.md) · [Türkçe](README.tr.md) · [Bahasa Indonesia](README.id.md) · [Tiếng Việt](README.vi.md)
 - [Guide de déploiement](docs/deployment.md) ([简体中文](docs/deployment.zh-CN.md)) · [Panneau d'administration](docs/admin-panel.md) · [Sécurité](docs/security.md)
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md).
 
 ## Licence
 

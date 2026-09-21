@@ -22,12 +22,14 @@ EXPOSE 8000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:8000/health').raise_for_status()" || exit 1
+    CMD python -c "import requests; requests.get('http://localhost:8000/api/v1/health').raise_for_status()" || exit 1
 
 # Run as non-root user
 RUN useradd -m -u 1000 tempmail && chown -R tempmail:tempmail /app
 USER tempmail
 
 # Start application
-# API_HOST can be overridden via environment variable (defaults to 0.0.0.0 in container)
-CMD ["sh", "-c", "uvicorn app.main:app --host ${API_HOST:-0.0.0.0} --port 8000"]
+# API_HOST can be overridden via environment variable (defaults to 0.0.0.0 in container).
+# Access logging is off: mailbox tokens are part of the request path, and nginx
+# already logs every request with that segment redacted.
+CMD ["sh", "-c", "uvicorn app.main:app --host ${API_HOST:-0.0.0.0} --port 8000 --no-access-log"]

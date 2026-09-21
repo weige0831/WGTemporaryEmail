@@ -88,3 +88,11 @@ admin:
 | GET | `/api/v1/admin/config` | 查看配置（脱敏） |
 | PUT | `/api/v1/admin/config` | 热更新白名单配置 |
 | POST | `/api/v1/admin/cleanup/run` | 立即执行过期地址清理 |
+
+## 长效邮箱
+
+- 用户可在 `/mailbox` 自助创建长效邮箱（无需密钥，按 IP 限流）；外部系统用
+  `POST /api/v1/api/addresses` + `X-API-Key` 创建。
+- 地址永久保留，邮件按「系统配置 → 长效邮箱邮件保留天数」自动清理（默认 30 天，
+  配置键 `tempmail.permanent_email_retention_days`，该值可在面板修改）。
+- 地址管理页对长效邮箱显示「长效」徽章与「永不过期」，普通临时地址仍显示剩余有效期。

@@ -44,6 +44,12 @@ export default function AboutPage() {
             <Link href="/api" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground whitespace-nowrap">
               {t("nav.api")}
             </Link>
+            <Link href="/" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground whitespace-nowrap">
+              {t("nav.tempMailbox")}
+            </Link>
+            <Link href="/mailbox" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground whitespace-nowrap">
+              {t("nav.permanentMailbox")}
+            </Link>
           </nav>
         </div>
       </header>

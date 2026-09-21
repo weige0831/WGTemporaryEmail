@@ -15,6 +15,11 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    # Cap the blast radius of a runaway query or connection storm.
+    mem_limit: 384m
+    pids_limit: 256
+    security_opt:
+      - no-new-privileges:true
     logging:
       driver: json-file
       options:
@@ -22,7 +27,7 @@ services:
         max-file: "3"
     restart: unless-stopped
     networks:
-      - tempmail_network
+      - backend
 
   # FastAPI Backend
   api:
@@ -33,10 +38,11 @@ services:
     environment:
       CONFIG_PATH: /config/config.yaml
       API_HOST: ${API_HOST:-0.0.0.0}  # Bind to all interfaces in container by default
+      PYTHONDONTWRITEBYTECODE: "1"    # root filesystem is read-only
     volumes:
       # Writable: the admin panel persists domain/config changes to this file
       - ./config.yaml:/config/config.yaml
-      # TLS certs (read-only) for status display + certbot job queue (rw)
+      # TLS certs (read-only) + certbot job queue (rw)
       - ./certs:/config/certs:ro
       - certbot_data:/certbot-data
     # No host port mapping - the web service (nginx) proxies /api internally
@@ -49,14 +55,25 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
+    mem_limit: 384m
+    pids_limit: 256
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
     logging:
       driver: json-file
       options:
         max-size: "10m"
         max-file: "3"
     restart: unless-stopped
+    # Bridges both networks: nginx reaches it over frontend, the database over backend.
     networks:
-      - tempmail_network
+      - frontend
+      - backend
 
   # Go MX Server
   mx:
@@ -80,6 +97,15 @@ services:
       timeout: 3s
       retries: 3
       start_period: 5s
+    mem_limit: 256m
+    pids_limit: 256
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
     logging:
       driver: json-file
       options:
@@ -87,10 +113,10 @@ services:
         max-file: "3"
     restart: unless-stopped
     networks:
-      - tempmail_network
+      - backend
 
   # Web: nginx serving the static frontend (user panel + admin panel) and
-  # reverse-proxying /api, /docs, /redoc to the API service.
+  # reverse-proxying /api to the API service.
   web:
     build:
       context: ./web
@@ -102,22 +128,28 @@ services:
     volumes:
       # Let's Encrypt HTTP-01 challenge files (written by the certbot sidecar)
       - certbot_webroot:/var/www/certbot:ro
-      # TLS certs shared with the MX (the entrypoint may write a self-signed
-      # placeholder here until certbot issues the real certificate)
-      - ./certs:/config/certs
+      # TLS certificates, read-only: the entrypoint keeps its self-signed
+      # placeholder in an image-internal directory, so a compromised web
+      # container cannot replace the certificate the MX trusts.
+      - ./certs:/config/certs:ro
       # config.yaml drives the generated nginx server names and IP-access policy
       - ./config.yaml:/config/config.yaml:ro
     depends_on:
       api:
         condition: service_healthy
+    mem_limit: 192m
+    pids_limit: 256
+    security_opt:
+      - no-new-privileges:true
     logging:
       driver: json-file
       options:
         max-size: "10m"
         max-file: "3"
     restart: unless-stopped
+    # Frontend only: nginx proxies to the API but cannot reach the database.
     networks:
-      - tempmail_network
+      - frontend
 
   # Let's Encrypt sidecar: issues and auto-renews certificates (HTTP-01
   # webroot through the nginx container). The admin API submits jobs via the
@@ -131,6 +163,10 @@ services:
       - certbot_data:/certbot-data
       - certbot_webroot:/certbot-data/webroot
       - ./certs:/certbot-data/certs
+    mem_limit: 192m
+    pids_limit: 128
+    security_opt:
+      - no-new-privileges:true
     logging:
       driver: json-file
       options:
@@ -138,7 +174,7 @@ services:
         max-file: "3"
     restart: unless-stopped
     networks:
-      - tempmail_network
+      - backend
 
 volumes:
   postgres_data:
@@ -148,6 +184,10 @@ volumes:
   certbot_webroot:
     driver: local
 
+# Two networks so a compromised nginx (frontend) cannot reach PostgreSQL:
+# only the API bridges both.
 networks:
-  tempmail_network:
+  frontend:
+    driver: bridge
+  backend:
     driver: bridge

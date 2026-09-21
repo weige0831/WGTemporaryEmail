@@ -1,7 +1,7 @@
 import type { Dict } from "./en"
 
 export const tr: Partial<Dict> = {
-  nav: { about: "Hakkında", privacy: "Gizlilik", api: "API", permanentMailbox: "Kalıcı posta kutusu" },
+  nav: { about: "Hakkında", privacy: "Gizlilik", api: "API", permanentMailbox: "Kalıcı posta kutusu", tempMailbox: "Geçici posta kutusu" },
   home: {
     yourTempEmail: "Geçici e-postanız",
     readyDesc: "Geçici e-postanız hazır. {time} içinde otomatik olarak silinecek.",
@@ -89,6 +89,7 @@ export const tr: Partial<Dict> = {
     collectP2: "Tarayıcınız (localStorage) mevcut adresi ve belirteci saklar, böylece bir dahaki sefere kaldığınız yerden devam edebilirsiniz. Bu veriler yalnızca kendi cihazınızda kalır.",
     retentionTitle: "Veri saklama ve silme",
     retentionL1: "Adresler ve e-postalar varsayılan olarak 24 saat saklanır, ardından otomatik silinir (süre, servis yapılandırmasına göre değişebilir)",
+    permanentMailboxNote: "Kalıcı posta kutuları: adres siz silene kadar kalır ve iletileri operatörün ayarladığı saklama süresi (varsayılan 30 gün) sonunda otomatik silinir.",
     retentionL2: "E-postaları istediğiniz zaman arayüzden elle silebilirsiniz",
     retentionL3: "Adres başına e-posta sınırı aşıldığında en eski e-postalar otomatik temizlenir",
     retentionL4: "Silinen veriler geri getirilemez",

@@ -13,6 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { LanguageSwitcher } from "@/components/language-switcher"
+import { DomainBanner } from "@/components/domain-banner"
 import { api, type EmailSummary, type EmailDetail } from "@/lib/api"
 import { copyToClipboard, sanitizeHtml, formatBytes, formatRelativeTime } from "@/lib/utils"
 import { useI18n } from "@/lib/i18n"
@@ -41,6 +42,9 @@ export default function MailboxPage() {
   const [autoRefresh, setAutoRefresh] = useState(true)
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date())
   const [viewMode, setViewMode] = useState<"plain" | "html">("html")
+  // Operator-configured retention and official hostname (never hardcode 30).
+  const [retentionDays, setRetentionDays] = useState(30)
+  const [webHostname, setWebHostname] = useState("")
 
   const saveSession = (addr: string, tok: string) => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ email: addr, token: tok }))
@@ -65,6 +69,10 @@ export default function MailboxPage() {
         if (!status.initialized) {
           router.replace("/setup")
           return
+        }
+        setWebHostname(status.web_hostname || "")
+        if (status.permanent_email_retention_days) {
+          setRetentionDays(status.permanent_email_retention_days)
         }
       } catch {
         // 忽略，继续渲染
@@ -204,6 +212,7 @@ export default function MailboxPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <DomainBanner webHostname={webHostname} />
       {/* Header */}
       <header className="border-b">
         <div className="container mx-auto px-3 sm:px-4 py-2 sm:py-4 flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -250,7 +259,7 @@ export default function MailboxPage() {
                         {t("mailbox.title")}
                       </CardTitle>
                       <CardDescription className="text-sm sm:text-base">
-                        {t("mailbox.retentionNote", { days: 30 })}
+                        {t("mailbox.retentionNote", { days: retentionDays })}
                       </CardDescription>
                     </div>
                     <Button size="sm" variant="outline" onClick={logout} className="min-h-[40px]">
@@ -574,7 +583,7 @@ export default function MailboxPage() {
                       <Mail className="h-4 w-4 text-primary" />
                       {t("mailbox.createTitle")}
                     </CardTitle>
-                    <CardDescription>{t("mailbox.retentionNote", { days: 30 })}</CardDescription>
+                    <CardDescription>{t("mailbox.retentionNote", { days: retentionDays })}</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <div className="flex items-center border rounded-md bg-background min-h-[44px]">
@@ -636,6 +645,30 @@ export default function MailboxPage() {
           )}
         </div>
       </main>
+
+      {/* Footer */}
+      <footer className="border-t mt-8 sm:mt-16">
+        <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 text-center text-xs sm:text-sm text-muted-foreground">
+          <p>
+            {t("home.footerText")} •{" "}
+            <Link href="/about" className="hover:text-foreground">
+              {t("nav.about")}
+            </Link>{" "}
+            •{" "}
+            <Link href="/privacy" className="hover:text-foreground">
+              {t("nav.privacy")}
+            </Link>{" "}
+            •{" "}
+            <Link href="/api" className="hover:text-foreground">
+              {t("nav.api")}
+            </Link>{" "}
+            •{" "}
+            <Link href="/" className="hover:text-foreground">
+              {t("nav.tempMailbox")}
+            </Link>
+          </p>
+        </div>
+      </footer>
     </div>
   )
 }

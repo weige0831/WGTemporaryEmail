@@ -116,14 +116,37 @@ Admin-Panel → Funktionsschalter → **Zugriff auf den Nutzerbereich per IP / a
 cd WGTemporaryEmail
 git pull
 docker compose build
-docker compose up -d
+docker compose up -d --force-recreate
+# apply database migrations (idempotent; only needed when upgrading an existing install)
+docker compose exec -T postgres psql -U tempmail -d tempmail < db/migrations/002_permanent_addresses.sql
 ```
+
+Migrationen liegen in `db/migrations/` und sind idempotent. Sie sind nur beim Upgrade einer Installation nötig, die älter als das jeweilige Feature ist; eine Neuinstallation erhält das vollständige Schema aus `db/init/schema.sql`.
 
 ### Deinstallieren
 
 ```bash
 docker compose down -v   # -v löscht auch alle Maildaten
 ```
+
+## Dauerhafte Postfächer und Integrations-API
+
+Neben automatisch ablaufenden temporären Adressen gibt es **dauerhafte Postfächer**: Die Adresse bleibt dauerhaft erhalten, ihre E-Mails werden nach der Aufbewahrungsfrist (`tempmail.permanent_email_retention_days`, Standard 30 Tage) gelöscht.
+
+- **Web**: `/mailbox` - Benutzernamen wählen, Zugriffstoken speichern und sich damit von jedem Gerät anmelden. Der Posteingang verhält sich wie der temporäre (Suche, Auto-Aktualisierung, HTML/Text, Anhänge, Rohmail-Download).
+- **API (authentifiziert)**: `POST /api/v1/api/addresses` mit Header `X-API-Key: <Integrationsschlüssel>` und Body `{"username": "...", "domain": "..."}`.
+- **Integrationsschlüssel**: Admin-Panel -> Systemkonfiguration -> **Integrations-API-Schlüssel** (Status prüfen / neu erzeugen; wird nur einmal angezeigt).
+- Das Anlegen über die Webseite braucht keinen Schlüssel und ist pro IP begrenzt.
+
+## Sicherung und Wiederherstellung
+
+- **Datenbank** (alle Adressen, E-Mails und Anhänge):
+  ```bash
+  docker exec tempmail_db pg_dump -U tempmail tempmail | gzip > backup-$(date +%F).sql.gz
+  docker exec -i tempmail_db psql -U tempmail -d tempmail < backup.sql   # wiederherstellen
+  ```
+- **Konfiguration**: `config.yaml` (Admin-Token, DB-Passwort, Integrationsschlüssel) und `.env`; Kopien sicher aufbewahren - sie liegen nicht in git.
+- **TLS**: `certs/` (`cert.pem`, `key.pem`); bei Verlust im Panel neu ausstellbar.
 
 ## Admin-Panel und API
 
@@ -135,6 +158,10 @@ docker compose down -v   # -v löscht auch alle Maildaten
 
 - [English](README.md) · [简体中文](README.zh-CN.md) · [繁體中文](README.zh-TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Português](README.pt.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [Italiano](README.it.md) · [Türkçe](README.tr.md) · [Bahasa Indonesia](README.id.md) · [Tiếng Việt](README.vi.md)
 - [Deployment-Anleitung](docs/deployment.md) ([简体中文](docs/deployment.zh-CN.md)) · [Admin-Panel](docs/admin-panel.md) · [Sicherheit](docs/security.md)
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md).
 
 ## Lizenz
 

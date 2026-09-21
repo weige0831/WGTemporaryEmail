@@ -123,14 +123,20 @@ def cleanup_permanent_email_retention():
     try:
         db = SessionLocal()
         cutoff = datetime.utcnow() - timedelta(days=retention_days)
+        # Only the permanent mailbox's own link is removed: the same message
+        # may also sit in a temporary mailbox. Messages left with no recipient
+        # are removed right after, so both database backends behave the same
+        # (PostgreSQL additionally has a trigger doing this).
         result = db.execute(text("""
+            DELETE FROM email_recipients
+            WHERE email_id IN (SELECT id FROM emails WHERE received_at < :cutoff)
+              AND address_id IN (SELECT id FROM addresses WHERE address_type = 'permanent')
+        """), {"cutoff": cutoff})
+        db.execute(text("""
             DELETE FROM emails
             WHERE received_at < :cutoff
-              AND id IN (
-                SELECT er.email_id
-                FROM email_recipients er
-                JOIN addresses a ON a.id = er.address_id
-                WHERE a.address_type = 'permanent'
+              AND NOT EXISTS (
+                SELECT 1 FROM email_recipients er WHERE er.email_id = emails.id
               )
         """), {"cutoff": cutoff})
 
@@ -138,7 +144,7 @@ def cleanup_permanent_email_retention():
         db.commit()
 
         if deleted > 0:
-            logger.info(f"Retention cleanup: deleted {deleted} emails of permanent mailboxes older than {retention_days} days")
+            logger.info(f"Retention cleanup: removed {deleted} message(s) from permanent mailboxes older than {retention_days} days")
         return deleted
 
     except Exception as e:

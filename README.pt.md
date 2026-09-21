@@ -116,14 +116,37 @@ Painel admin → Interruptores → **Permitir acesso ao painel de usuário por I
 cd WGTemporaryEmail
 git pull
 docker compose build
-docker compose up -d
+docker compose up -d --force-recreate
+# apply database migrations (idempotent; only needed when upgrading an existing install)
+docker compose exec -T postgres psql -U tempmail -d tempmail < db/migrations/002_permanent_addresses.sql
 ```
+
+As migrações ficam em `db/migrations/` e são idempotentes. Só são necessárias ao atualizar uma instalação anterior ao recurso; uma instalação nova recebe o esquema completo de `db/init/schema.sql`.
 
 ### Desinstalar
 
 ```bash
 docker compose down -v   # -v também apaga todos os dados de e-mail
 ```
+
+## Caixas permanentes e API de integração
+
+Além dos endereços temporários que expiram, o serviço oferece **caixas permanentes**: o endereço é mantido para sempre e os e-mails são excluídos após o período de retenção (`tempmail.permanent_email_retention_days`, 30 dias por padrão).
+
+- **Web**: `/mailbox` - escolha um nome, guarde o token de acesso e entre com ele em qualquer dispositivo. A caixa funciona como a temporária (busca, atualização automática, HTML/texto, anexos, download do original).
+- **API (autenticada)**: `POST /api/v1/api/addresses` com o cabeçalho `X-API-Key: <chave de integração>` e corpo `{"username": "...", "domain": "..."}`.
+- **Chave de integração**: painel administrativo -> Configurações -> **Chave de API de integração** (ver status / regenerar; exibida uma única vez).
+- Criar caixas pelo site não exige chave e é limitado por IP.
+
+## Backup e restauração
+
+- **Banco de dados** (todos os endereços, e-mails e anexos):
+  ```bash
+  docker exec tempmail_db pg_dump -U tempmail tempmail | gzip > backup-$(date +%F).sql.gz
+  docker exec -i tempmail_db psql -U tempmail -d tempmail < backup.sql   # restaurar
+  ```
+- **Configuração**: `config.yaml` (token de admin, senha do banco, chave de integração) e `.env`; guarde cópias, eles não estão no git.
+- **TLS**: `certs/` (`cert.pem`, `key.pem`); podem ser reemitidos pelo painel.
 
 ## Painel de administração e API
 
@@ -135,6 +158,10 @@ docker compose down -v   # -v também apaga todos os dados de e-mail
 
 - [English](README.md) · [简体中文](README.zh-CN.md) · [繁體中文](README.zh-TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Português](README.pt.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [Italiano](README.it.md) · [Türkçe](README.tr.md) · [Bahasa Indonesia](README.id.md) · [Tiếng Việt](README.vi.md)
 - [Guia de implantação](docs/deployment.md) ([简体中文](docs/deployment.zh-CN.md)) · [Painel de administração](docs/admin-panel.md) · [Segurança](docs/security.md)
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md).
 
 ## Licença
 

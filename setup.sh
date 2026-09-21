@@ -5,6 +5,10 @@
 
 set -e
 
+# Install a host cron job that renews a host-issued Let's Encrypt certificate
+# and republishes it into ./certs (set to false to manage renewal yourself).
+INSTALL_RENEW_CRON="${INSTALL_RENEW_CRON:-true}"
+
 echo "╔═══════════════════════════════════════════════════════╗"
 echo "║                                                       ║"
 echo "║        Tempmail Server Setup Wizard                   ║"
@@ -342,8 +346,18 @@ EOF
 echo "✓ config.yaml created"
 
 # The api container runs as uid 1000 (non-root) and rewrites config.yaml on
-# admin hot-update, so the file must be writable by that uid.
-chown 1000:1000 config.yaml 2>/dev/null || chmod 666 config.yaml
+# admin hot-update, so the file must be writable by that uid. Mode 640 keeps
+# the admin token, DB password and integration key readable only by that user
+# and the operator's group - never world-readable, and never world-writable:
+# the file drives the generated nginx config and is reloaded on change, so
+# write access to it is effectively control of the panel.
+if [ "$(id -u)" -eq 0 ]; then
+    chown 1000:1000 config.yaml
+    chmod 640 config.yaml
+else
+    chmod 640 config.yaml 2>/dev/null || true
+    echo "NOTE: run as root (or chown 1000:1000 config.yaml) so the api container can write config.yaml"
+fi
 
 # Create .env for docker compose (secrets only)
 cat > .env <<EOF
@@ -352,11 +366,15 @@ DB_PASSWORD=${DB_PASSWORD}
 # Web panel port (nginx serving user panel + admin panel)
 WEB_PORT=${WEB_PORT}
 EOF
+chmod 600 .env  # DB password lives here
 echo "✓ .env created (contains DB password and web port)"
 
-# Create certs directory
+# Create certs directory. It must be traversable by uid 1000 (the non-root user
+# inside the mx/api containers), so it is owned by that uid with mode 750: the
+# containers can read the material while other local users cannot.
 mkdir -p certs
-chmod 755 certs  # Allow Docker container to read the directory
+chown 1000:0 certs 2>/dev/null || true
+chmod 750 certs
 
 # Generate certificates based on choice
 if [ "$CERT_TYPE" = "selfsigned" ]; then
@@ -428,32 +446,54 @@ elif [ "$CERT_TYPE" = "letsencrypt" ]; then
     fi
     echo ""
 
-    # Request certificate
-    sudo certbot certonly --standalone \
+    # Request certificate. `set -e` is active, so the failure handling must be
+    # an if-condition: a separate `if [ $? -eq 0 ]` would be dead code.
+    if sudo certbot certonly --standalone \
         -d "${HOSTNAME}" \
         --email "${LETSENCRYPT_EMAIL}" \
         --agree-tos \
         --non-interactive \
-        --preferred-challenges http
-
-    if [ $? -eq 0 ]; then
+        --preferred-challenges http; then
         # Copy certificates to our certs directory
         sudo cp "/etc/letsencrypt/live/${HOSTNAME}/fullchain.pem" certs/cert.pem
         sudo cp "/etc/letsencrypt/live/${HOSTNAME}/privkey.pem" certs/key.pem
         sudo chown $(whoami):$(whoami) certs/*.pem
-        chmod 644 certs/key.pem  # Docker container needs to read the key
+        # uid 1000 is the non-root user inside the mx/api containers.
+        chown 1000:0 certs/cert.pem certs/key.pem 2>/dev/null || true
         chmod 644 certs/cert.pem
+        chmod 640 certs/key.pem  # readable by the containers, not by every local user
 
         echo "✓ Let's Encrypt certificate obtained successfully"
         echo "  Certificate: certs/cert.pem"
         echo "  Private key: certs/key.pem"
         echo ""
-        echo "NOTE: Let's Encrypt certificates expire in 90 days."
-        echo "      Set up auto-renewal with: sudo certbot renew --quiet"
-        echo "      Consider adding to crontab: 0 0 * * * certbot renew --quiet && cp /etc/letsencrypt/live/${HOSTNAME}/*.pem /path/to/tempmail-server/certs/ && chmod 644 /path/to/tempmail-server/certs/*.pem"
+        # Without a renewal job the certificate expires silently after 90 days.
+        if [ "${INSTALL_RENEW_CRON}" = "true" ] && command -v crontab >/dev/null 2>&1; then
+            RENEW_SCRIPT="$(pwd)/renew-cert.sh"
+            printf '%s\n' \
+              '#!/bin/sh' \
+              '# Renews the host Let'\''s Encrypt certificate and republishes it for' \
+              '# the containers. Installed by setup.sh; cron runs it twice a day.' \
+              'set -e' \
+              "LINEAGE=/etc/letsencrypt/live/${HOSTNAME}" \
+              "DEST=$(pwd)/certs" \
+              'certbot renew --quiet' \
+              'cp -L "$LINEAGE/fullchain.pem" "$DEST/cert.pem"' \
+              'cp -L "$LINEAGE/privkey.pem" "$DEST/key.pem"' \
+              'chmod 644 "$DEST/cert.pem"' \
+              'chmod 640 "$DEST/key.pem"' \
+              > "$RENEW_SCRIPT"
+            chmod 750 "$RENEW_SCRIPT"
+            ( crontab -l 2>/dev/null | grep -v "$RENEW_SCRIPT"; echo "17 3,15 * * * $RENEW_SCRIPT" ) | crontab -
+            echo "✓ Renewal cron installed (twice daily): $RENEW_SCRIPT"
+        else
+            echo "NOTE: Let's Encrypt certificates expire in 90 days."
+            echo "      Add renewal yourself: sudo certbot renew --quiet"
+            echo "      then re-copy the files into $(pwd)/certs/."
+        fi
         echo ""
-        echo "NOTE: Private key is readable (644) to allow Docker container access."
-        echo "      Ensure the certs directory is not publicly accessible on the host."
+        echo "NOTE: the private key is mode 640 (owner/group only) and the certs"
+        echo "      directory is 750. Keep it off any public path."
     else
         echo "❌ Failed to obtain Let's Encrypt certificate."
         echo "   Please check:"
@@ -607,6 +647,13 @@ echo "  - MX Server:  Port 25"
 echo ""
 echo "Admin panel token (also in config.yaml admin.token):"
 echo "  ${ADMIN_TOKEN:0:8}... (generated during setup)"
+echo ""
+if grep -qE '^[[:space:]]*initialized:[[:space:]]*false' config.yaml 2>/dev/null; then
+    echo "First-run setup wizard:"
+    echo "  Open http://<server>/setup once the containers are up. The wizard"
+    echo "  additionally asks for a one-time setup key, printed at startup by"
+    echo "  the api container:  docker compose logs api | grep 'Setup key'"
+fi
 echo ""
 echo "Example API usage:"
 echo ""

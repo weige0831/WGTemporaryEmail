@@ -116,14 +116,37 @@ Panel admin → Interruptores → **Permitir acceso al panel de usuario por IP /
 cd WGTemporaryEmail
 git pull
 docker compose build
-docker compose up -d
+docker compose up -d --force-recreate
+# apply database migrations (idempotent; only needed when upgrading an existing install)
+docker compose exec -T postgres psql -U tempmail -d tempmail < db/migrations/002_permanent_addresses.sql
 ```
+
+Las migraciones están en `db/migrations/` y son idempotentes. Solo hacen falta al actualizar una instalación anterior a la función correspondiente; una instalación nueva recibe el esquema completo de `db/init/schema.sql`.
 
 ### Desinstalar
 
 ```bash
 docker compose down -v   # -v también borra todos los datos de correo
 ```
+
+## Buzones permanentes y API de integración
+
+Además de las direcciones temporales que caducan, el servicio ofrece **buzones permanentes**: la dirección se conserva siempre y sus correos se eliminan tras el periodo de retención (`tempmail.permanent_email_retention_days`, 30 días por defecto).
+
+- **Web**: `/mailbox` - elige un nombre, guarda el token de acceso y entra con él desde cualquier dispositivo. La bandeja funciona como la temporal (búsqueda, autoactualización, HTML/texto, adjuntos, descarga del original).
+- **API (autenticada)**: `POST /api/v1/api/addresses` con la cabecera `X-API-Key: <clave de integración>` y el cuerpo `{"username": "...", "domain": "..."}`.
+- **Clave de integración**: panel de administración -> Configuración -> **Clave de API de integración** (ver estado / regenerar; se muestra una sola vez).
+- Crear buzones desde la web no requiere clave y está limitado por IP.
+
+## Copia de seguridad y restauración
+
+- **Base de datos** (todas las direcciones, correos y adjuntos):
+  ```bash
+  docker exec tempmail_db pg_dump -U tempmail tempmail | gzip > backup-$(date +%F).sql.gz
+  docker exec -i tempmail_db psql -U tempmail -d tempmail < backup.sql   # restaurar
+  ```
+- **Configuración**: `config.yaml` (token de admin, contraseña de la base, clave de integración) y `.env`; guárdalos aparte, no están en git.
+- **TLS**: `certs/` (`cert.pem`, `key.pem`); se pueden reemitir desde el panel.
 
 ## Panel de administración y API
 
@@ -135,6 +158,10 @@ docker compose down -v   # -v también borra todos los datos de correo
 
 - [English](README.md) · [简体中文](README.zh-CN.md) · [繁體中文](README.zh-TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Português](README.pt.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [Italiano](README.it.md) · [Türkçe](README.tr.md) · [Bahasa Indonesia](README.id.md) · [Tiếng Việt](README.vi.md)
 - [Guía de despliegue](docs/deployment.md) ([简体中文](docs/deployment.zh-CN.md)) · [Panel de administración](docs/admin-panel.md) · [Seguridad](docs/security.md)
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md).
 
 ## Licencia
 

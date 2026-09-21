@@ -194,10 +194,12 @@ class TestAttachmentSecurity:
 
         assert response.status_code == 200
 
-        # Check filename is sanitized in header
+        # Check filename is sanitized in header: path separators replaced in
+        # the ASCII fallback, and percent-encoded in the RFC 5987 form.
         content_disp = response.headers["content-disposition"]
         assert "../" not in content_disp
-        assert ".._" in content_disp or "_.._" in content_disp  # Slashes replaced
+        assert "_.._" in content_disp  # slashes replaced in the fallback name
+        assert "filename*=UTF-8''" in content_disp
 
     def test_attachment_belongs_to_correct_email(self, client, db_session):
         """Test cannot access attachment through wrong email ID"""

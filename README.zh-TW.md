@@ -62,7 +62,7 @@ cd WGTemporaryEmail
 ./setup.sh
 ```
 
-腳本會詢問收信網域、郵件主機名稱、Web 連接埠、CORS、TLS 選項，接著產生 `config.yaml`（含隨機管理權杖）與 `.env`、列印 DNS 記錄，並執行 `docker compose up -d --build`。
+腳本會詢問收信網域、郵件主機名稱、Web 連接埠、CORS、TLS 選項，接著產生 `config.yaml`（含隨機管理權杖）與 `.env`、列印 DNS 記錄，並執行 `docker compose up -d`。
 
 ### 方式 B：手動設定
 
@@ -116,7 +116,11 @@ mail.你的網域.     IN  A    <伺服器 IP>      # 郵件主機名稱
 cd WGTemporaryEmail
 git pull
 docker compose build
-docker compose up -d
+docker compose up -d --fo
+資料庫遷移位於 `db/migrations/`，全部可重複執行。僅從舊版升級時需要；全新安裝由 `db/init/schema.sql` 建立完整結構。
+rce-recreate
+# apply database migrations (idempotent; only needed when upgrading an existing install)
+docker compose exec -T postgres psql -U tempmail -d tempmail < db/migrations/002_permanent_addresses.sql
 ```
 
 ### 解除安裝
@@ -124,6 +128,44 @@ docker compose up -d
 ```bash
 docker compose down -v   # -v 會同時刪除所有郵件資料
 ```
+
+## 長效信箱與整合 API
+
+除自動過期的臨時信箱外，服務另提供**長效信箱**：地址永久保留，郵件在保留期（`tempmail.permanent_email_retention_days`，預設 30 天）後自動刪除。
+
+- **網頁端**：`/mailbox` —— 自選使用者名稱建立，保存存取權杖，之後可在任何裝置以權杖登入。收件匣與臨時信箱一致（搜尋、自動重新整理、HTML/純文字、附件、下載原始郵件）。
+- **API（需驗證）**：`POST /api/v1/api/addresses`，標頭 `X-API-Key: <整合金鑰>`，內容 `{"username": "...", "domain": "..."}`。
+- **整合金鑰**：管理面板 → 系統設定 → **整合 API 金鑰**（查看狀態 / 重新產生，僅顯示一次）。
+- 網頁端直接建立免金鑰，依 IP 限流。
+
+## 備份與還原
+
+- **資料庫**（所有地址、郵件與附件）：
+  ```bash
+  docker exec tempmail_db pg_dump -U tempmail tempmail | gzip > backup-$(date +%F).sql.gz
+  docker exec -i tempmail_db psql -U tempmail -d tempmail < backup.sql   # 還原
+  ```
+- **設定**：`config.yaml`（管理權杖、資料庫密碼、整合金鑰）與 `.env`，請另行備份——它們不在 git 中。
+- **TLS**：`certs/`（`cert.pem`、`key.pem`），遺失可在面板重新簽發。
+
+## 長效信箱與整合 API
+
+除自動過期的臨時信箱外，服務另提供**長效信箱**：地址永久保留，郵件在保留期（`tempmail.permanent_email_retention_days`，預設 30 天）後自動刪除。
+
+- **網頁端**：`/mailbox` —— 自選使用者名稱建立，保存存取權杖，之後可在任何裝置以權杖登入。收件匣與臨時信箱一致（搜尋、自動重新整理、HTML/純文字、附件、下載原始郵件）。
+- **API（需驗證）**：`POST /api/v1/api/addresses`，標頭 `X-API-Key: <整合金鑰>`，內容 `{"username": "...", "domain": "..."}`。
+- **整合金鑰**：管理面板 → 系統設定 → **整合 API 金鑰**（查看狀態 / 重新產生，僅顯示一次）。
+- 網頁端直接建立免金鑰，依 IP 限流。
+
+## 備份與還原
+
+- **資料庫**（所有地址、郵件與附件）：
+  ```bash
+  docker exec tempmail_db pg_dump -U tempmail tempmail | gzip > backup-$(date +%F).sql.gz
+  docker exec -i tempmail_db psql -U tempmail -d tempmail < backup.sql   # 還原
+  ```
+- **設定**：`config.yaml`（管理權杖、資料庫密碼、整合金鑰）與 `.env`，請另行備份——它們不在 git 中。
+- **TLS**：`certs/`（`cert.pem`、`key.pem`），遺失可在面板重新簽發。
 
 ## 管理面板與 API
 
@@ -135,6 +177,10 @@ docker compose down -v   # -v 會同時刪除所有郵件資料
 
 - [English](README.md) · [简体中文](README.zh-CN.md) · [繁體中文](README.zh-TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Português](README.pt.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [Italiano](README.it.md) · [Türkçe](README.tr.md) · [Bahasa Indonesia](README.id.md) · [Tiếng Việt](README.vi.md)
 - [部署指南](docs/deployment.md)（[简体中文](docs/deployment.zh-CN.md)）· [管理面板](docs/admin-panel.md) · [安全說明](docs/security.md)
+
+## 更新日誌
+
+參見 [CHANGELOG.md](CHANGELOG.md)。
 
 ## 授權
 

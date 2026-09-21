@@ -118,3 +118,14 @@ docker compose down -v   # -v 会删除所有邮件数据
 - **收不到邮件**：检查 `dig MX 你的域名`、`telnet mail.你的域名 25`、`docker compose logs mx`，并确认地址存在（`POST /api/v1/addresses`）
 - **证书签发失败**：邮件主机名的 A 记录必须指向本服务器，且 80 端口公网可达；查看 `docker logs tempmail_certbot`
 - **面板出现跳转**：`web.allow_ip_access` 已关闭且你用了非正式地址——请用正式面板域名访问（管理面板从任何地址仍可用）
+
+## 升级已有安装
+
+```bash
+git pull
+docker compose exec -T postgres psql -U tempmail -d tempmail < db/migrations/002_permanent_addresses.sql
+docker compose build
+docker compose up -d --force-recreate
+```
+
+数据库迁移位于 `db/migrations/`，全部幂等可重复执行。从旧版本升级时需要执行；全新安装由 `db/init/schema.sql` 直接建好完整结构。

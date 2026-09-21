@@ -62,7 +62,7 @@ cd WGTemporaryEmail
 ./setup.sh
 ```
 
-脚本会询问收信域名、邮件主机名、Web 端口、CORS、TLS 选项，随后生成 `config.yaml`（含随机管理令牌）与 `.env`、打印 DNS 记录，并执行 `docker compose up -d --build`。
+脚本会询问收信域名、邮件主机名、Web 端口、CORS、TLS 选项，随后生成 `config.yaml`（含随机管理令牌）与 `.env`、打印 DNS 记录，并执行 `docker compose up -d`。
 
 ### 方式 B：手动配置
 
@@ -116,7 +116,11 @@ mail.你的域名.     IN  A    <服务器 IP>      # 邮件主机名
 cd WGTemporaryEmail
 git pull
 docker compose build
-docker compose up -d
+docker compose up -d --fo
+数据库迁移位于 `db/migrations/`，全部幂等可重复执行。只有从旧版本升级时才需要执行；全新安装由 `db/init/schema.sql` 建好完整结构。
+rce-recreate
+# apply database migrations (idempotent; only needed when upgrading an existing install)
+docker compose exec -T postgres psql -U tempmail -d tempmail < db/migrations/002_permanent_addresses.sql
 ```
 
 ### 卸载
@@ -124,6 +128,44 @@ docker compose up -d
 ```bash
 docker compose down -v   # -v 会同时删除所有邮件数据
 ```
+
+## 长效邮箱与集成 API
+
+除自动过期的临时邮箱外，服务还提供**长效邮箱**：地址永久保留，邮件在保留期（`tempmail.permanent_email_retention_days`，默认 30 天）后自动删除。
+
+- **网页端**：`/mailbox` —— 自选用户名创建，保存访问令牌，之后在任何设备用令牌登录。收件箱与临时邮箱一致（搜索、自动刷新、HTML/纯文本、附件、下载原始邮件）。
+- **API（需鉴权）**：`POST /api/v1/api/addresses`，请求头 `X-API-Key: <集成密钥>`，请求体 `{"username": "...", "domain": "..."}`。
+- **集成密钥**：管理面板 → 系统配置 → **集成 API 密钥**（查看状态 / 重新生成，仅显示一次）。
+- 网页端直接创建无需密钥，按 IP 限流。
+
+## 备份与恢复
+
+- **数据库**（全部地址、邮件与附件）：
+  ```bash
+  docker exec tempmail_db pg_dump -U tempmail tempmail | gzip > backup-$(date +%F).sql.gz
+  docker exec -i tempmail_db psql -U tempmail -d tempmail < backup.sql   # 恢复
+  ```
+- **配置**：`config.yaml`（管理令牌、数据库密码、集成密钥）与 `.env`，请另存备份——它们不在 git 中。
+- **TLS**：`certs/`（`cert.pem`、`key.pem`），丢失可在面板重新签发。
+
+## 长效邮箱与集成 API
+
+除自动过期的临时邮箱外，服务还提供**长效邮箱**：地址永久保留，邮件在保留期（`tempmail.permanent_email_retention_days`，默认 30 天）后自动删除。
+
+- **网页端**：`/mailbox` —— 自选用户名创建，保存访问令牌，之后在任何设备用令牌登录。收件箱与临时邮箱一致（搜索、自动刷新、HTML/纯文本、附件、下载原始邮件）。
+- **API（需鉴权）**：`POST /api/v1/api/addresses`，请求头 `X-API-Key: <集成密钥>`，请求体 `{"username": "...", "domain": "..."}`。
+- **集成密钥**：管理面板 → 系统配置 → **集成 API 密钥**（查看状态 / 重新生成，仅显示一次）。
+- 网页端直接创建无需密钥，按 IP 限流。
+
+## 备份与恢复
+
+- **数据库**（全部地址、邮件与附件）：
+  ```bash
+  docker exec tempmail_db pg_dump -U tempmail tempmail | gzip > backup-$(date +%F).sql.gz
+  docker exec -i tempmail_db psql -U tempmail -d tempmail < backup.sql   # 恢复
+  ```
+- **配置**：`config.yaml`（管理令牌、数据库密码、集成密钥）与 `.env`，请另存备份——它们不在 git 中。
+- **TLS**：`certs/`（`cert.pem`、`key.pem`），丢失可在面板重新签发。
 
 ## 管理面板与 API
 
@@ -135,6 +177,10 @@ docker compose down -v   # -v 会同时删除所有邮件数据
 
 - [English](README.md) · [简体中文](README.zh-CN.md) · [繁體中文](README.zh-TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Português](README.pt.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [Italiano](README.it.md) · [Türkçe](README.tr.md) · [Bahasa Indonesia](README.id.md) · [Tiếng Việt](README.vi.md)
 - [部署指南](docs/deployment.md)（[简体中文](docs/deployment.zh-CN.md)）· [管理面板](docs/admin-panel.md) · [安全说明](docs/security.md)
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md).
 
 ## 许可证
 

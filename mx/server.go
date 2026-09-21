@@ -55,6 +55,8 @@ func (bkd *Backend) NewSession(c *smtp.Conn) (smtp.Session, error) {
 type SMTPServer struct {
 	server *smtp.Server
 	cfg    *Config
+	// TLS state is fixed for the lifetime of the server (see ReloadTLS).
+	tlsEnabledAtStart bool
 }
 
 // NewSMTPServer creates a new SMTP server
@@ -108,8 +110,9 @@ func NewSMTPServer(cfg *Config, db *DB) (*SMTPServer, error) {
 	log.Printf("  Accepted domains: %v", cfg.Domains)
 
 	return &SMTPServer{
-		server: s,
-		cfg:    cfg,
+		server:            s,
+		cfg:               cfg,
+		tlsEnabledAtStart: cfg.TLS.Enabled,
 	}, nil
 }
 
@@ -124,16 +127,17 @@ func (s *SMTPServer) Start() error {
 	return nil
 }
 
-// ReloadTLS re-evaluates STARTTLS support after a config hot-reload: it
-// enables TLS when tls.enabled was switched on (certificates are loaded
-// lazily per handshake) and disables it when switched off.
+// ReloadTLS re-evaluates STARTTLS support after a config hot-reload.
+//
+// smtp.Server.TLSConfig is read by the library from connection goroutines and
+// is not synchronized, so this never writes it after startup - doing so was a
+// data race. Certificates are already re-read per handshake by the lazy
+// certLoader, so renewals need no reload at all; flipping tls.enabled itself
+// requires restarting the container.
 func (s *SMTPServer) ReloadTLS(cfg *Config) {
-	if cfg.TLS.Enabled && s.server.TLSConfig == nil {
-		s.server.TLSConfig = buildTLSConfig(cfg.TLS.CertFile, cfg.TLS.KeyFile)
-		log.Printf("TLS/STARTTLS enabled via config reload (cert: %s)", cfg.TLS.CertFile)
-	} else if !cfg.TLS.Enabled && s.server.TLSConfig != nil {
-		s.server.TLSConfig = nil
-		log.Printf("TLS/STARTTLS disabled via config reload")
+	if cfg.TLS.Enabled != s.tlsEnabledAtStart {
+		log.Printf("TLS setting changed (enabled=%v -> %v): restart the mx container to apply it",
+			s.tlsEnabledAtStart, cfg.TLS.Enabled)
 	}
 }
 

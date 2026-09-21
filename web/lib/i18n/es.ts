@@ -1,7 +1,7 @@
 import type { Dict } from "./en"
 
 export const es: Partial<Dict> = {
-  nav: { about: "Acerca de", privacy: "Privacidad", api: "API", permanentMailbox: "Buzón permanente" },
+  nav: { about: "Acerca de", privacy: "Privacidad", api: "API", permanentMailbox: "Buzón permanente", tempMailbox: "Correo temporal" },
   home: {
     yourTempEmail: "Tu correo temporal",
     readyDesc: "Tu correo temporal está listo. Se eliminará automáticamente en {time}.",
@@ -89,6 +89,7 @@ export const es: Partial<Dict> = {
     collectP2: "Tu navegador (localStorage) guarda la dirección y el token actuales para que puedas continuar la próxima vez. Estos datos permanecen solo en tu dispositivo.",
     retentionTitle: "Retención y eliminación de datos",
     retentionL1: "Las direcciones y correos se conservan 24 horas por defecto y luego se eliminan automáticamente (la retención puede variar según la configuración del servicio)",
+    permanentMailboxNote: "Buzones permanentes: la dirección se conserva hasta que la elimines y sus correos se borran automáticamente tras el periodo de retención configurado (30 días por defecto).",
     retentionL2: "Puedes eliminar correos manualmente en la interfaz en cualquier momento",
     retentionL3: "Cuando se supera el límite de correos por dirección, los más antiguos se limpian automáticamente",
     retentionL4: "Los datos eliminados no se pueden recuperar",

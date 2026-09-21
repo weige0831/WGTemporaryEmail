@@ -116,14 +116,37 @@ Bảng quản trị → Công tắc → **Cho phép truy cập bảng người d
 cd WGTemporaryEmail
 git pull
 docker compose build
-docker compose up -d
+docker compose up -d --force-recreate
+# apply database migrations (idempotent; only needed when upgrading an existing install)
+docker compose exec -T postgres psql -U tempmail -d tempmail < db/migrations/002_permanent_addresses.sql
 ```
+
+Các bản migration nằm trong `db/migrations/` và chạy lại vẫn an toàn. Chỉ cần khi nâng cấp bản cài đặt cũ hơn tính năng tương ứng; bản cài mới đã có đủ cấu trúc từ `db/init/schema.sql`.
 
 ### Gỡ cài đặt
 
 ```bash
 docker compose down -v   # -v cũng xóa toàn bộ dữ liệu thư
 ```
+
+## Hộp thư vĩnh viễn và API tích hợp
+
+Ngoài địa chỉ tạm thời tự hết hạn, dịch vụ còn có **hộp thư vĩnh viễn**: địa chỉ được giữ mãi mãi, còn thư sẽ bị xóa sau thời gian lưu trữ (`tempmail.permanent_email_retention_days`, mặc định 30 ngày).
+
+- **Web**: `/mailbox` - chọn tên, lưu token truy cập, rồi đăng nhập bằng token đó từ bất kỳ thiết bị nào. Hộp thư hoạt động như hộp tạm thời (tìm kiếm, tự làm mới, HTML/văn bản, tệp đính kèm, tải thư gốc).
+- **API (có xác thực)**: `POST /api/v1/api/addresses` với tiêu đề `X-API-Key: <khóa tích hợp>` và nội dung `{"username": "...", "domain": "..."}`.
+- **Khóa tích hợp**: bảng quản trị -> Cấu hình -> **Khóa API tích hợp** (xem trạng thái / tạo lại; chỉ hiển thị một lần).
+- Tạo hộp thư trên web không cần khóa và bị giới hạn theo IP.
+
+## Sao lưu và phục hồi
+
+- **Cơ sở dữ liệu** (toàn bộ địa chỉ, thư và tệp đính kèm):
+  ```bash
+  docker exec tempmail_db pg_dump -U tempmail tempmail | gzip > backup-$(date +%F).sql.gz
+  docker exec -i tempmail_db psql -U tempmail -d tempmail < backup.sql   # phục hồi
+  ```
+- **Cấu hình**: `config.yaml` (token quản trị, mật khẩu CSDL, khóa tích hợp) và `.env`; hãy sao lưu ở nơi an toàn, chúng không nằm trong git.
+- **TLS**: `certs/` (`cert.pem`, `key.pem`); có thể cấp lại từ bảng quản trị.
 
 ## Bảng quản trị và API
 
@@ -135,6 +158,10 @@ docker compose down -v   # -v cũng xóa toàn bộ dữ liệu thư
 
 - [English](README.md) · [简体中文](README.zh-CN.md) · [繁體中文](README.zh-TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Português](README.pt.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [Italiano](README.it.md) · [Türkçe](README.tr.md) · [Bahasa Indonesia](README.id.md) · [Tiếng Việt](README.vi.md)
 - [Hướng dẫn triển khai](docs/deployment.md) ([简体中文](docs/deployment.zh-CN.md)) · [Bảng quản trị](docs/admin-panel.md) · [Bảo mật](docs/security.md)
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md).
 
 ## Giấy phép
 

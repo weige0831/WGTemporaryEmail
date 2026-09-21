@@ -475,9 +475,12 @@ class TestEmailDeletion:
 
         assert response.status_code == 204
 
-        # Verify deleted from database
-        deleted = db_session.query(Email).filter(Email.id == email.id).first()
-        assert deleted is None
+        # The recipient link goes first, then the message once nothing else
+        # references it.
+        assert db_session.query(EmailRecipient).filter(
+            EmailRecipient.email_id == email.id
+        ).first() is None
+        assert db_session.query(Email).filter(Email.id == email.id).first() is None
 
     def test_delete_email_not_found(self, client, db_session):
         """Test deleting non-existent email"""

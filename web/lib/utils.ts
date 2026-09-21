@@ -1,6 +1,7 @@
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 import DOMPurify from "dompurify"
+import { currentLang } from "@/lib/i18n"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -10,21 +11,30 @@ export function cn(...inputs: ClassValue[]) {
 // DOMPurify strips scripts, event handlers, and other active content.
 export function sanitizeHtml(html: string): string {
   if (!html) return ""
+  if (typeof window === "undefined") {
+    // DOMPurify has no DOM on the server; every call site is a client
+    // component, so this only fires if one is ever rendered server-side.
+    console.warn("sanitizeHtml called without a DOM - returning empty content")
+    return ""
+  }
   try {
     return DOMPurify.sanitize(html, { USE_PROFILES: { html: true } })
-  } catch {
+  } catch (e) {
+    console.warn("Failed to sanitize email HTML", e)
     return ""
   }
 }
 
 export function formatBytes(bytes: number): string {
-  if (bytes === 0) return '0 Bytes'
+  if (bytes === 0) return '0 B'
   const k = 1024
-  const sizes = ['Bytes', 'KB', 'MB', 'GB']
+  const sizes = ['B', 'KB', 'MB', 'GB']
   const i = Math.floor(Math.log(bytes) / Math.log(k))
   return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
 }
 
+// Localized relative time ("5 minutes ago" / "5分钟前" / "5分前") via Intl,
+// so every one of the supported languages is covered without extra keys.
 export function formatRelativeTime(date: string | Date): string {
   const now = new Date()
   const past = new Date(date)
@@ -33,12 +43,17 @@ export function formatRelativeTime(date: string | Date): string {
   const diffHours = Math.floor(diffMs / 3600000)
   const diffDays = Math.floor(diffMs / 86400000)
 
-  if (diffMins < 1) return 'just now'
-  if (diffMins < 60) return `${diffMins}m ago`
-  if (diffHours < 24) return `${diffHours}h ago`
-  if (diffDays < 7) return `${diffDays}d ago`
+  try {
+    const rtf = new Intl.RelativeTimeFormat(currentLang(), { numeric: 'auto' })
+    if (diffMins < 1) return rtf.format(0, 'minute')
+    if (diffMins < 60) return rtf.format(-diffMins, 'minute')
+    if (diffHours < 24) return rtf.format(-diffHours, 'hour')
+    if (diffDays < 7) return rtf.format(-diffDays, 'day')
+  } catch {
+    // Intl 不可用时回退到本地日期
+  }
 
-  return past.toLocaleDateString()
+  return past.toLocaleDateString(currentLang())
 }
 
 export async function copyToClipboard(text: string): Promise<void> {

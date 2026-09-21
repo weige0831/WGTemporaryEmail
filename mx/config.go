@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 	"sync/atomic"
 
 	"gopkg.in/yaml.v3"
@@ -41,10 +42,10 @@ type Config struct {
 	} `yaml:"database"`
 
 	Server struct {
-		APIPort        int    `yaml:"api_port"`
-		MXPort         int    `yaml:"mx_port"`
-		MaxMsgSizeMB   int    `yaml:"max_message_size_mb"`
-		Hostname       string `yaml:"hostname"`
+		APIPort      int    `yaml:"api_port"`
+		MXPort       int    `yaml:"mx_port"`
+		MaxMsgSizeMB int    `yaml:"max_message_size_mb"`
+		Hostname     string `yaml:"hostname"`
 	} `yaml:"server"`
 
 	TLS struct {
@@ -129,11 +130,19 @@ func (c *Config) GetMaxMessageSize() int64 {
 	return int64(c.Server.MaxMsgSizeMB) * 1024 * 1024
 }
 
-// GetDomainMap returns domains as a map for fast lookup
+// GetDomainMap returns domains as a map for fast lookup.
+//
+// Entries are trimmed and lowercased so a hand-edited config ("Example.com ",
+// "Example.COM") still matches incoming RCPT domains, which are lowercased
+// before the lookup; before this, such an entry was silently unmatchable while
+// the startup log advertised the domain as accepted.
 func (c *Config) GetDomainMap() map[string]bool {
 	domains := make(map[string]bool)
 	for _, domain := range c.Domains {
-		domains[domain] = true
+		normalized := strings.ToLower(strings.TrimSpace(domain))
+		if normalized != "" {
+			domains[normalized] = true
+		}
 	}
 	return domains
 }

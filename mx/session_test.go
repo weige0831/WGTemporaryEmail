@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/emersion/go-smtp"
 	"github.com/jhillyerd/enmime"
 )
 
@@ -402,5 +403,46 @@ func TestFormatBoolPtr(t *testing.T) {
 				t.Errorf("formatBoolPtr() = %v, want %v", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestSanitizeForLog(t *testing.T) {
+	cases := map[string]string{
+		"plain subject":           "plain subject",
+		"line1\r\nINFO forged":    "line1INFO forged",
+		"ansi \x1b[31mred\x1b[0m": "ansi [31mred[0m",
+		"tab\tkept-as-space":      "tab kept-as-space",
+	}
+	for in, want := range cases {
+		if got := sanitizeForLog(in); got != want {
+			t.Errorf("sanitizeForLog(%q) = %q, want %q", in, got, want)
+		}
+	}
+	if got := sanitizeForLog(strings.Repeat("a", 300)); len(got) != 203 {
+		t.Errorf("long input not truncated: len=%d", len(got))
+	}
+}
+
+func TestSMTPErrorCodes(t *testing.T) {
+	// Permanent conditions must be 5xx so senders stop retrying, transient
+	// ones 4xx so legitimate mail is retried instead of bounced.
+	perm := smtpError(550, [3]int{5, 1, 1}, "mailbox unavailable")
+	if perm.Code != 550 || perm.EnhancedCode != (smtp.EnhancedCode{5, 1, 1}) {
+		t.Errorf("permanent error built wrong: %+v", perm)
+	}
+	transient := smtpError(451, [3]int{4, 3, 0}, "temporary server error")
+	if transient.Code != 451 {
+		t.Errorf("transient error built wrong: %+v", transient)
+	}
+}
+
+func TestGetDomainMapNormalizesEntries(t *testing.T) {
+	cfg := &Config{Domains: []string{" Example.COM ", "example.org", "", "  "}}
+	m := cfg.GetDomainMap()
+	if !m["example.com"] || !m["example.org"] {
+		t.Errorf("domains not normalized: %v", m)
+	}
+	if len(m) != 2 {
+		t.Errorf("blank entries should be dropped, got %v", m)
 	}
 }

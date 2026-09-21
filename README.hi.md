@@ -116,14 +116,37 @@ mail.आपका-डोमेन.  IN  A    <सर्वर IP>      # मे�
 cd WGTemporaryEmail
 git pull
 docker compose build
-docker compose up -d
+docker compose up -d --force-recreate
+# apply database migrations (idempotent; only needed when upgrading an existing install)
+docker compose exec -T postgres psql -U tempmail -d tempmail < db/migrations/002_permanent_addresses.sql
 ```
+
+माइग्रेशन `db/migrations/` में हैं और दोबारा चलाना सुरक्षित है। ये केवल उस इंस्टॉल को अपग्रेड करते समय चाहिए जो संबंधित सुविधा से पुराना हो; नया इंस्टॉल `db/init/schema.sql` से पूरा स्कीमा पाता है।
 
 ### अनइंस्टॉल
 
 ```bash
 docker compose down -v   # -v सभी मेल डेटा भी हटा देता है
 ```
+
+## स्थायी मेलबॉक्स और इंटीग्रेशन API
+
+स्वतः समाप्त होने वाले अस्थायी पतों के अलावा सेवा **स्थायी मेलबॉक्स** भी देती है: पता हमेशा रहता है और मेल रखरखाव अवधि (`tempmail.permanent_email_retention_days`, डिफ़ॉल्ट 30 दिन) के बाद हटा दिए जाते हैं।
+
+- **वेब**: `/mailbox` — नाम चुनें, एक्सेस टोकन सहेजें, फिर किसी भी डिवाइस से उसी टोकन से साइन इन करें। इनबॉक्स अस्थायी जैसा ही है (खोज, ऑटो-रिफ़्रेश, HTML/प्लेन, अटैचमेंट, मूल मेल डाउनलोड)।
+- **API (प्रमाणीकृत)**: `POST /api/v1/api/addresses`, हेडर `X-API-Key: <इंटीग्रेशन कुंजी>`, बॉडी `{"username": "...", "domain": "..."}`।
+- **इंटीग्रेशन कुंजी**: एडमिन पैनल → सिस्टम कॉन्फ़िग → **इंटीग्रेशन API कुंजी** (स्थिति देखें / पुनः बनाएँ; केवल एक बार दिखती है)।
+- वेबसाइट से बनाने के लिए कुंजी नहीं चाहिए और यह प्रति IP सीमित है।
+
+## बैकअप और पुनर्स्थापन
+
+- **डेटाबेस** (सभी पते, मेल और अटैचमेंट):
+  ```bash
+  docker exec tempmail_db pg_dump -U tempmail tempmail | gzip > backup-$(date +%F).sql.gz
+  docker exec -i tempmail_db psql -U tempmail -d tempmail < backup.sql   # पुनर्स्थापित करें
+  ```
+- **कॉन्फ़िगरेशन**: `config.yaml` (एडमिन टोकन, DB पासवर्ड, इंटीग्रेशन कुंजी) और `.env`; इनकी प्रतियाँ सुरक्षित रखें, ये git में नहीं हैं।
+- **TLS**: `certs/` (`cert.pem`, `key.pem`); खो जाने पर पैनल से दोबारा जारी करें।
 
 ## प्रबंधन पैनल व API
 
@@ -135,6 +158,10 @@ docker compose down -v   # -v सभी मेल डेटा भी हटा 
 
 - [English](README.md) · [简体中文](README.zh-CN.md) · [繁體中文](README.zh-TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Português](README.pt.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [Italiano](README.it.md) · [Türkçe](README.tr.md) · [Bahasa Indonesia](README.id.md) · [Tiếng Việt](README.vi.md)
 - [परिनियोजन गाइड](docs/deployment.md) ([简体中文](docs/deployment.zh-CN.md)) · [प्रबंधन पैनल](docs/admin-panel.md) · [सुरक्षा](docs/security.md)
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md).
 
 ## लाइसेंस
 

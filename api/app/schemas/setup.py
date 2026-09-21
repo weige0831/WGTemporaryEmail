@@ -13,12 +13,19 @@ _DOMAIN_RE = re.compile(
 class SetupStatus(BaseModel):
     initialized: bool
     web_hostname: str = ""
+    # True while the wizard still requires the one-time setup key printed by
+    # the server (api container log / setup.sh output).
+    setup_key_required: bool = False
+    # Retention applied to permanent mailboxes, so the UI can show the
+    # operator's real value instead of a hardcoded default.
+    permanent_email_retention_days: int = 30
 
 
 class SetupCompleteRequest(BaseModel):
     """Request body for completing the first-run setup wizard."""
     domains: List[str]
     hostname: str
+    setup_key: Optional[str] = None
     web_hostname: Optional[str] = None
     admin_token: Optional[str] = None
     address_lifetime_hours: Optional[int] = None

@@ -14,8 +14,8 @@ import yaml
 from app.config import settings
 
 # Sections and keys the admin panel may update via PUT /admin/config.
-# Everything else (domains, admin.token, database.url, server.api_*,
-# server.mx_port, server.hostname, tls.*) is managed elsewhere or
+# Everything else (domains, database.url, server.api_*, server.mx_port,
+# tempmail.permanent_email_retention_days, setup.*) is managed elsewhere or
 # intentionally read-only here.
 ALLOWED_PATCH_SECTIONS = {
     'server': {'max_message_size_mb', 'docs_enabled', 'hostname'},
@@ -24,6 +24,7 @@ ALLOWED_PATCH_SECTIONS = {
         'cleanup_interval_hours', 'address_format',
         'allow_custom_usernames', 'min_username_length',
         'max_username_length', 'reserved_usernames', 'max_storage_mb',
+        'permanent_email_retention_days',
     },
     'validation': {'check_dkim', 'check_spf', 'check_dmarc', 'store_results'},
     'cors': {'allow_origins', 'allow_credentials', 'allow_methods', 'allow_headers'},
@@ -41,6 +42,7 @@ _INT_KEYS = {
     ('tempmail', 'min_username_length'),
     ('tempmail', 'max_username_length'),
     ('tempmail', 'max_storage_mb'),
+    ('tempmail', 'permanent_email_retention_days'),
     ('database', 'pool_size'),
     ('database', 'max_overflow'),
 }
@@ -72,9 +74,38 @@ _POSITIVE_INT_KEYS = {
     ('tempmail', 'cleanup_interval_hours'),
     ('tempmail', 'min_username_length'),
     ('tempmail', 'max_username_length'),
+    ('tempmail', 'permanent_email_retention_days'),
     ('database', 'pool_size'),
     ('database', 'max_overflow'),
 }
+
+# Hostname syntax accepted for server.hostname / web.hostname. Kept in sync
+# with the validation in api/app/routers/admin.py; the values end up in the
+# generated nginx config and in the certbot command line, so anything that is
+# not a plain DNS name must be rejected here.
+_HOSTNAME_RE = re.compile(
+    r'^(?=.{1,253}$)([A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,63}$'
+)
+
+# Keys whose values are secrets: masked (and never logged) wherever the config
+# is echoed back to a client. Matching is by key name so a new secret key is
+# covered automatically.
+_SECRET_KEY_RE = re.compile(r'(password|passwd|secret|token|api_?key|private_?key)', re.I)
+
+
+def _mask_secrets(node):
+    """Recursively replace values of secret-looking keys with '***'."""
+    if isinstance(node, dict):
+        out = {}
+        for key, value in node.items():
+            if isinstance(key, str) and _SECRET_KEY_RE.search(key) and isinstance(value, (str, int, float)):
+                out[key] = '***'
+            else:
+                out[key] = _mask_secrets(value)
+        return out
+    if isinstance(node, list):
+        return [_mask_secrets(v) for v in node]
+    return node
 
 
 def read_config() -> dict:
@@ -90,7 +121,13 @@ def write_config(config: dict) -> None:
 
 
 def mask_config(config: dict) -> dict:
-    """Return a copy of the config with secrets masked."""
+    """Return a copy of the config with every secret value masked.
+
+    Masks by key name (token/api_key/secret/password/...) so newly added
+    secrets are covered without touching this function, and additionally
+    rewrites the password inside database.url, whose value is a DSN rather
+    than a bare secret.
+    """
     masked = copy.deepcopy(config)
 
     # Mask password inside database.url
@@ -100,11 +137,7 @@ def mask_config(config: dict) -> dict:
             r'://([^:/@]+):([^@]+)@', r'://\1:***@', url
         )
 
-    # Mask admin token
-    if isinstance(masked.get('admin'), dict):
-        masked['admin']['token'] = '***'
-
-    return masked
+    return _mask_secrets(masked)
 
 
 def apply_patch(config: dict, patch: dict) -> None:
@@ -140,11 +173,14 @@ def apply_patch(config: dict, patch: dict) -> None:
             ):
                 raise ValueError(f'{section}.{key} 必须是字符串列表')
             if k == ('server', 'hostname') and (
-                not isinstance(value, str) or not value.strip()
+                not isinstance(value, str) or not _HOSTNAME_RE.match(value.strip())
             ):
-                raise ValueError('server.hostname 不能为空')
-            if k == ('web', 'hostname') and not isinstance(value, str):
-                raise ValueError('web.hostname 必须是字符串（留空表示不单独配置面板域名）')
+                raise ValueError('server.hostname 必须是合法主机名（如 mx.example.com）')
+            if k == ('web', 'hostname') and (
+                not isinstance(value, str)
+                or (value.strip() and not _HOSTNAME_RE.match(value.strip()))
+            ):
+                raise ValueError('web.hostname 必须是合法主机名，或留空表示不单独配置面板域名')
             if k == ('admin', 'token') and (
                 not isinstance(value, str) or not 8 <= len(value.strip()) <= 128
             ):
@@ -155,5 +191,8 @@ def apply_patch(config: dict, patch: dict) -> None:
                 raise ValueError('min_username_length 不能大于 max_username_length')
             if k == ('tempmail', 'max_username_length') and value < config.get('tempmail', {}).get('min_username_length', 3):
                 raise ValueError('max_username_length 不能小于 min_username_length')
+
+            if k in (('server', 'hostname'), ('web', 'hostname')) and isinstance(value, str):
+                value = value.strip().lower()
 
             config.setdefault(section, {})[key] = value

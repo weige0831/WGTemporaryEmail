@@ -152,6 +152,41 @@ const I18nContext = createContext<I18nContextValue>({
   t: (key) => key,
 })
 
+// Module-level mirror of the active language, so non-React modules (API
+// client, date/time helpers) can produce localized text too. Kept in sync by
+// the provider below.
+let moduleLang: string = DEFAULT_LANG
+
+export function currentLang(): string {
+  return moduleLang
+}
+
+function interpolate(template: string, vars?: Record<string, string | number>): string {
+  let s = template
+  if (vars) {
+    for (const [k, v] of Object.entries(vars)) {
+      s = s.replaceAll(`{${k}}`, String(v))
+    }
+  }
+  return s
+}
+
+function lookup(lang: string, key: string, vars?: Record<string, string | number>): string {
+  let value = getValue(DICTS[lang] ?? {}, key)
+  if (typeof value !== "string") {
+    value = getValue(en, key)
+  }
+  return interpolate(typeof value === "string" ? value : key, vars)
+}
+
+/**
+ * Translate outside of React (module-scope helpers, error messages thrown by
+ * the API client). Inside components always use the `useI18n()` hook.
+ */
+export function translate(key: string, vars?: Record<string, string | number>): string {
+  return lookup(moduleLang, key, vars)
+}
+
 function getValue(dict: Partial<Dict>, path: string): unknown {
   const parts = path.split(".")
   let node: unknown = dict
@@ -169,15 +204,19 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   // 同步初始化语言，避免首帧渲染成英文再切换（提示条等内容会用到 t()）
   const [lang, setLangState] = useState<string>(() => {
     if (typeof window === "undefined") return DEFAULT_LANG
-    return detectLang()
+    const detected = detectLang()
+    moduleLang = detected
+    return detected
   })
 
   useEffect(() => {
+    moduleLang = lang
     applyDocument(lang)
   }, [lang])
 
   const setLang = useCallback((code: string) => {
     if (!DICTS[code]) return
+    moduleLang = code
     setLangState(code)
     try {
       localStorage.setItem(STORAGE_KEY, code)
@@ -188,19 +227,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const t = useCallback(
-    (key: string, vars?: Record<string, string | number>) => {
-      let value = getValue(DICTS[lang] ?? {}, key)
-      if (typeof value !== "string") {
-        value = getValue(en, key)
-      }
-      let s = typeof value === "string" ? value : key
-      if (vars) {
-        for (const [k, v] of Object.entries(vars)) {
-          s = s.replaceAll(`{${k}}`, String(v))
-        }
-      }
-      return s
-    },
+    (key: string, vars?: Record<string, string | number>) => lookup(lang, key, vars),
     [lang],
   )
 

@@ -58,6 +58,22 @@ const BOOL_FIELDS: { section: keyof ConfigData; key: string; labelKey: string }[
   { section: "web", key: "allow_ip_access", labelKey: "admin.allowIpAccessLabel" },
 ]
 
+// 密钥类字段一律打码后再展示：后端 /admin/config 已脱敏，这里再兜一层，
+// 避免将来接口调整时把可用的集成 API Key / 令牌直接渲染到页面上。
+const SECRET_KEY_RE = /(password|passwd|secret|token|api_?key|private_?key)/i
+
+function redactConfig(node: unknown): unknown {
+  if (Array.isArray(node)) return node.map(redactConfig)
+  if (node && typeof node === "object") {
+    const out: Record<string, unknown> = {}
+    for (const [k, v] of Object.entries(node as Record<string, unknown>)) {
+      out[k] = SECRET_KEY_RE.test(k) ? "***" : redactConfig(v)
+    }
+    return out
+  }
+  return node
+}
+
 function getValue(config: ConfigData, section: keyof ConfigData, key: string): string | boolean {
   const sec = config[section]
   if (typeof sec === "object" && sec !== null && key in sec) {
@@ -547,7 +563,7 @@ export default function AdminConfig() {
           </CardHeader>
           <CardContent>
             <pre className="text-xs font-mono bg-muted p-3 rounded-md overflow-x-auto whitespace-pre-wrap">
-              {JSON.stringify(config, null, 2)}
+              {JSON.stringify(redactConfig(config), null, 2)}
             </pre>
           </CardContent>
         </Card>

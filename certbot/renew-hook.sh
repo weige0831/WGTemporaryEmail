@@ -4,5 +4,7 @@
 set -e
 cp -L "$RENEWED_LINEAGE/fullchain.pem" /certbot-data/certs/cert.pem
 cp -L "$RENEWED_LINEAGE/privkey.pem" /certbot-data/certs/key.pem
-chmod 644 /certbot-data/certs/cert.pem /certbot-data/certs/key.pem
+chown 1000:0 /certbot-data/certs/cert.pem /certbot-data/certs/key.pem 2>/dev/null || true
+chmod 644 /certbot-data/certs/cert.pem
+chmod 640 /certbot-data/certs/key.pem
 echo "Renewed certificates copied to /certbot-data/certs"

@@ -62,7 +62,7 @@ cd WGTemporaryEmail
 ./setup.sh
 ```
 
-The script asks for your receive domains, mail hostname, web port, CORS origins, TLS options, then generates `config.yaml` (with a random admin token) and `.env`, prints the DNS records, and runs `docker compose up -d --build`.
+The script asks for your receive domains, mail hostname, web port, CORS origins, TLS options, then generates `config.yaml` (with a random admin token) and `.env`, prints the DNS records, and runs `docker compose up -d`.
 
 ### Option B: manual setup
 
@@ -115,7 +115,11 @@ Admin panel → 功能开关 → **允许通过 IP / 其他域名访问用户面
 cd WGTemporaryEmail
 git pull
 docker compose build
-docker compose up -d
+docker compose up -d --fo
+Migrations live in `db/migrations/` and are idempotent (safe to re-run). They are only required when upgrading an installation created before the matching feature; a fresh install gets the full schema from `db/init/schema.sql`.
+rce-recreate
+# apply database migrations (idempotent; only needed when upgrading an existing install)
+docker compose exec -T postgres psql -U tempmail -d tempmail < db/migrations/002_permanent_addresses.sql
 ```
 
 ### Uninstall
@@ -123,6 +127,44 @@ docker compose up -d
 ```bash
 docker compose down -v   # -v also deletes all mail data
 ```
+
+## Permanent mailboxes & integration API
+
+Besides auto-expiring temporary addresses the service offers **permanent mailboxes**: the address is kept forever, while its emails are deleted after the retention period (`tempmail.permanent_email_retention_days`, default 30 days).
+
+- **Web**: `/mailbox` - pick a username, save the access token, then sign in with that token from any device. The inbox behaves like the temporary one (search, auto-refresh, HTML/plain, attachments, raw download).
+- **API (authenticated)**: `POST /api/v1/api/addresses` with header `X-API-Key: <integration key>` and body `{"username": "...", "domain": "..."}`.
+- **Integration key**: admin panel -> System config -> **Integration API key** (check status / regenerate; shown only once).
+- Creating mailboxes on the website itself needs no key and is rate limited per IP.
+
+## Backup & restore
+
+- **Database** (all addresses, emails and attachments):
+  ```bash
+  docker exec tempmail_db pg_dump -U tempmail tempmail | gzip > backup-$(date +%F).sql.gz
+  docker exec -i tempmail_db psql -U tempmail -d tempmail < backup.sql   # restore
+  ```
+- **Configuration**: `config.yaml` (admin token, DB password, integration key) and `.env`; keep copies somewhere safe - they are not in git.
+- **TLS**: `certs/` (`cert.pem`, `key.pem`); reissuable from the panel if lost.
+
+## Permanent mailboxes & integration API
+
+Besides auto-expiring temporary addresses the service offers **permanent mailboxes**: the address is kept forever, while its emails are deleted after the retention period (`tempmail.permanent_email_retention_days`, default 30 days).
+
+- **Web**: `/mailbox` - pick a username, save the access token, then sign in with that token from any device. The inbox behaves like the temporary one (search, auto-refresh, HTML/plain, attachments, raw download).
+- **API (authenticated)**: `POST /api/v1/api/addresses` with header `X-API-Key: <integration key>` and body `{"username": "...", "domain": "..."}`.
+- **Integration key**: admin panel -> System config -> **Integration API key** (check status / regenerate; shown only once).
+- Creating mailboxes on the website itself needs no key and is rate limited per IP.
+
+## Backup & restore
+
+- **Database** (all addresses, emails and attachments):
+  ```bash
+  docker exec tempmail_db pg_dump -U tempmail tempmail | gzip > backup-$(date +%F).sql.gz
+  docker exec -i tempmail_db psql -U tempmail -d tempmail < backup.sql   # restore
+  ```
+- **Configuration**: `config.yaml` (admin token, DB password, integration key) and `.env`; keep copies somewhere safe - they are not in git.
+- **TLS**: `certs/` (`cert.pem`, `key.pem`); reissuable from the panel if lost.
 
 ## Admin panel & API
 
@@ -134,6 +176,10 @@ docker compose down -v   # -v also deletes all mail data
 
 - [English](README.md) · [简体中文](README.zh-CN.md) · [繁體中文](README.zh-TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Português](README.pt.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [Italiano](README.it.md) · [Türkçe](README.tr.md) · [Bahasa Indonesia](README.id.md) · [Tiếng Việt](README.vi.md)
 - [Deployment guide](docs/deployment.md) ([简体中文](docs/deployment.zh-CN.md)) · [Admin panel](docs/admin-panel.md) · [Security](docs/security.md)
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md).
 
 ## License
 

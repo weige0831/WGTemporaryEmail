@@ -4,7 +4,7 @@ The Tempmail Server MX server is an RFC-compliant SMTP server that receives emai
 
 ## Overview
 
-- **Language**: Go 1.21+
+- **Language**: Go 1.24+
 - **Protocol**: SMTP (RFC 5321)
 - **Port**: 25 (configurable)
 - **Features**: DKIM, SPF, DMARC validation

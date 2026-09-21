@@ -1,7 +1,7 @@
 import type { Dict } from "./en"
 
 export const ja: Partial<Dict> = {
-  nav: { about: "本サービスについて", privacy: "プライバシー", api: "API", permanentMailbox: "永続メールボックス" },
+  nav: { about: "本サービスについて", privacy: "プライバシー", api: "API", permanentMailbox: "永続メールボックス", tempMailbox: "一時メール" },
   home: {
     yourTempEmail: "あなたの一時メール",
     readyDesc: "一時メールアドレスの準備ができました。{time} 後に自動削除されます。",
@@ -89,6 +89,7 @@ export const ja: Partial<Dict> = {
     collectP2: "ブラウザ（localStorage）には現在のアドレスとトークンが保存され、次回の続きから使えます。このデータはあなたのデバイス上にのみ保存されます。",
     retentionTitle: "データの保持と削除",
     retentionL1: "アドレスとメールはデフォルトで 24 時間保持され、その後自動削除されます（保持期間はサービス設定により異なる場合があります）",
+    permanentMailboxNote: "永続メールボックス: アドレスはご自身で削除するまで保持され、メールは運営者が設定した保持期間（既定 30 日）を過ぎると自動削除されます。",
     retentionL2: "UI からいつでもメールを手動削除できます",
     retentionL3: "アドレスごとのメール数上限を超えると、最も古いメールが自動的に削除されます",
     retentionL4: "削除されたデータは復元できません",

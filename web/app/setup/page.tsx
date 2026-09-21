@@ -49,6 +49,9 @@ export default function SetupWizard() {
   const [hostnameTouched, setHostnameTouched] = useState(false)
   const [webHostname, setWebHostname] = useState("")
   const [adminToken, setAdminToken] = useState("")
+  // One-time key the server prints at startup; without it anyone who reaches
+  // an uninitialized instance could take it over.
+  const [setupKey, setSetupKey] = useState("")
   const [serverIp, setServerIp] = useState("")
   const [lifetime, setLifetime] = useState("24")
   const [maxStorage, setMaxStorage] = useState("1024")
@@ -113,6 +116,7 @@ export default function SetupWizard() {
         hostname: hostname.trim().toLowerCase(),
         web_hostname: webHostname.trim().toLowerCase() || null,
         admin_token: adminToken.trim() || null,
+        setup_key: setupKey.trim() || null,
         address_lifetime_hours: Number(lifetime) || 24,
         max_storage_mb: maxStorage.trim() === "" ? null : Number(maxStorage),
         allow_custom_usernames: allowCustom,
@@ -232,6 +236,24 @@ export default function SetupWizard() {
         {error && (
           <p className="text-sm text-destructive bg-destructive/10 rounded-md p-3">{error}</p>
         )}
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4" />
+              {t("setup.setupKeySection")}
+            </CardTitle>
+            <CardDescription>{t("setup.setupKeyDesc")}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Input
+              value={setupKey}
+              placeholder={t("setup.setupKeyPlaceholder")}
+              onChange={(e) => setSetupKey(e.target.value)}
+              className="font-mono"
+            />
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader className="pb-3">

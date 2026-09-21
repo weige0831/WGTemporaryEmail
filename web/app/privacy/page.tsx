@@ -35,6 +35,12 @@ export default function PrivacyPage() {
             <Link href="/api" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground whitespace-nowrap">
               {t("nav.api")}
             </Link>
+            <Link href="/" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground whitespace-nowrap">
+              {t("nav.tempMailbox")}
+            </Link>
+            <Link href="/mailbox" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground whitespace-nowrap">
+              {t("nav.permanentMailbox")}
+            </Link>
           </nav>
         </div>
       </header>
@@ -79,6 +85,7 @@ export default function PrivacyPage() {
             <CardContent className="text-sm">
               <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
                 <li>{t("privacy.retentionL1")}</li>
+                <li>{t("privacy.permanentMailboxNote")}</li>
                 <li>{t("privacy.retentionL2")}</li>
                 <li>{t("privacy.retentionL3")}</li>
                 <li>{t("privacy.storageNote")}</li>

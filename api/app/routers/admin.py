@@ -547,14 +547,17 @@ def tls_issue(request: TlsIssueRequest):
     the optional web panel hostname (SAN certificate, HTTP-01). Their A
     records must point to this server and port 80 must be publicly reachable.
     """
+    # Both hostnames end up on the certbot command line, so they are checked
+    # against the same strict DNS pattern used everywhere else (no spaces, no
+    # leading dashes, no option-looking values).
     hostname = settings.HOSTNAME.strip().lower()
-    if not hostname or '.' not in hostname:
+    if not hostname or not _DOMAIN_RE.match(hostname):
         raise HTTPException(status_code=400, detail='server.hostname 未配置有效的域名')
 
     domains = [hostname]
     web_hostname = settings.WEB_HOSTNAME.strip().lower()
     if web_hostname and web_hostname != hostname:
-        if '.' not in web_hostname:
+        if not _DOMAIN_RE.match(web_hostname):
             raise HTTPException(status_code=400, detail='web.hostname 格式无效')
         domains.append(web_hostname)
 
@@ -579,10 +582,9 @@ def tls_issue(request: TlsIssueRequest):
 def apikey_status():
     """Return whether an integration API key is configured (masked)."""
     key = settings.INTEGRATION_API_KEY
-    masked = ''
-    if key:
-        masked = f'{key[:4]}****{key[-4:]}' if len(key) >= 10 else '****'
-    return {'configured': bool(key), 'masked': masked}
+    # Never echo any part of the live key: the panel only needs to know
+    # whether one is configured (regenerate to obtain a new one).
+    return {'configured': bool(key), 'masked': '****' if key else ''}
 
 
 @router.post('/apikey/regenerate')

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"log"
 	"os"
 	"time"
@@ -15,22 +17,17 @@ const configReloadInterval = 15 * time.Second
 // onReload callback runs after every successful reload (used to re-evaluate
 // TLS support).
 func watchConfig(configPath string, onReload func(*Config)) {
-	var lastMod time.Time
-	var lastSize int64
-	if fi, err := os.Stat(configPath); err == nil {
-		lastMod = fi.ModTime()
-		lastSize = fi.Size()
-	}
+	lastHash := hashFile(configPath)
 
 	ticker := time.NewTicker(configReloadInterval)
 	defer ticker.Stop()
 
 	for range ticker.C {
-		fi, err := os.Stat(configPath)
-		if err != nil {
-			continue
-		}
-		if fi.ModTime().Equal(lastMod) && fi.Size() == lastSize {
+		// Content hash rather than mtime+size: a rewrite that preserves both
+		// (rsync -p, restoring a backup, editing within the same second at the
+		// same length) would otherwise never be picked up.
+		currentHash := hashFile(configPath)
+		if currentHash == "" || currentHash == lastHash {
 			continue
 		}
 
@@ -40,8 +37,7 @@ func watchConfig(configPath string, onReload func(*Config)) {
 			continue
 		}
 
-		lastMod = fi.ModTime()
-		lastSize = fi.Size()
+		lastHash = currentHash
 		SetCurrentConfig(cfg)
 		log.Printf("Config reloaded: domains=%v, max message size=%d MB",
 			cfg.Domains, cfg.Server.MaxMsgSizeMB)
@@ -50,4 +46,14 @@ func watchConfig(configPath string, onReload func(*Config)) {
 			onReload(cfg)
 		}
 	}
+}
+
+// hashFile returns a hex sha256 of the file contents, or "" when unreadable.
+func hashFile(path string) string {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return ""
+	}
+	sum := sha256.Sum256(data)
+	return hex.EncodeToString(sum[:])
 }

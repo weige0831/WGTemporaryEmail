@@ -116,14 +116,37 @@ Yönetim paneli → Özellik Anahtarları → **Kullanıcı paneline IP / diğer
 cd WGTemporaryEmail
 git pull
 docker compose build
-docker compose up -d
+docker compose up -d --force-recreate
+# apply database migrations (idempotent; only needed when upgrading an existing install)
+docker compose exec -T postgres psql -U tempmail -d tempmail < db/migrations/002_permanent_addresses.sql
 ```
+
+Geçişler `db/migrations/` altındadır ve tekrar çalıştırılmaları güvenlidir. Yalnızca ilgili özellikten eski bir kurulumu yükseltirken gerekir; yeni kurulum tam şemayı `db/init/schema.sql` ile alır.
 
 ### Kaldırma
 
 ```bash
 docker compose down -v   # -v tüm posta verilerini de siler
 ```
+
+## Kalıcı posta kutuları ve entegrasyon API'si
+
+Otomatik süresi dolan geçici adreslerin yanında **kalıcı posta kutuları** da sunulur: adres kalıcı olarak saklanır, iletiler saklama süresi (`tempmail.permanent_email_retention_days`, varsayılan 30 gün) sonunda silinir.
+
+- **Web**: `/mailbox` - bir kullanıcı adı seçin, erişim anahtarını kaydedin, sonra her cihazdan bu anahtarla giriş yapın. Gelen kutusu geçici kutudaki gibi çalışır (arama, otomatik yenileme, HTML/düz metin, ekler, ham ileti indirme).
+- **API (kimlik doğrulamalı)**: `POST /api/v1/api/addresses`, `X-API-Key: <entegrasyon anahtarı>` başlığı ve `{"username": "...", "domain": "..."}` gövdesiyle.
+- **Entegrasyon anahtarı**: yönetim paneli -> Sistem yapılandırması -> **Entegrasyon API anahtarı** (durum / yeniden üret; yalnızca bir kez gösterilir).
+- Siteden kutu oluşturmak anahtar gerektirmez ve IP başına sınırlıdır.
+
+## Yedekleme ve geri yükleme
+
+- **Veritabanı** (tüm adresler, iletiler ve ekler):
+  ```bash
+  docker exec tempmail_db pg_dump -U tempmail tempmail | gzip > backup-$(date +%F).sql.gz
+  docker exec -i tempmail_db psql -U tempmail -d tempmail < backup.sql   # geri yükle
+  ```
+- **Yapılandırma**: `config.yaml` (yönetici anahtarı, DB parolası, entegrasyon anahtarı) ve `.env`; kopyalarını güvende tutun, git'te değiller.
+- **TLS**: `certs/` (`cert.pem`, `key.pem`); kaybolursa panelden yeniden alınabilir.
 
 ## Yönetim paneli ve API
 
@@ -135,6 +158,10 @@ docker compose down -v   # -v tüm posta verilerini de siler
 
 - [English](README.md) · [简体中文](README.zh-CN.md) · [繁體中文](README.zh-TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Português](README.pt.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [Italiano](README.it.md) · [Türkçe](README.tr.md) · [Bahasa Indonesia](README.id.md) · [Tiếng Việt](README.vi.md)
 - [Kurulum kılavuzu](docs/deployment.md) ([简体中文](docs/deployment.zh-CN.md)) · [Yönetim paneli](docs/admin-panel.md) · [Güvenlik](docs/security.md)
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md).
 
 ## Lisans
 

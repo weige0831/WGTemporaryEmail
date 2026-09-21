@@ -116,14 +116,37 @@ Panel admin → Sakelar → **Izinkan akses panel pengguna via IP / domain lain*
 cd WGTemporaryEmail
 git pull
 docker compose build
-docker compose up -d
+docker compose up -d --force-recreate
+# apply database migrations (idempotent; only needed when upgrading an existing install)
+docker compose exec -T postgres psql -U tempmail -d tempmail < db/migrations/002_permanent_addresses.sql
 ```
+
+Migrasi ada di `db/migrations/` dan aman dijalankan berulang. Hanya diperlukan saat meningkatkan pemasangan yang lebih lama dari fitur terkait; pemasangan baru mendapat skema lengkap dari `db/init/schema.sql`.
 
 ### Menghapus
 
 ```bash
 docker compose down -v   # -v juga menghapus semua data email
 ```
+
+## Kotak surat permanen dan API integrasi
+
+Selain alamat sementara yang kedaluwarsa, layanan ini menyediakan **kotak surat permanen**: alamat disimpan selamanya dan emailnya dihapus setelah masa retensi (`tempmail.permanent_email_retention_days`, bawaan 30 hari).
+
+- **Web**: `/mailbox` - pilih nama, simpan token akses, lalu masuk dengan token itu dari perangkat mana pun. Kotak masuknya sama seperti yang sementara (pencarian, penyegaran otomatis, HTML/teks, lampiran, unduh email mentah).
+- **API (terautentikasi)**: `POST /api/v1/api/addresses` dengan header `X-API-Key: <kunci integrasi>` dan isi `{"username": "...", "domain": "..."}`.
+- **Kunci integrasi**: panel admin -> Konfigurasi -> **Kunci API integrasi** (lihat status / buat ulang; hanya ditampilkan sekali).
+- Membuat kotak lewat situs tidak perlu kunci dan dibatasi per IP.
+
+## Cadangan dan pemulihan
+
+- **Basis data** (semua alamat, email, dan lampiran):
+  ```bash
+  docker exec tempmail_db pg_dump -U tempmail tempmail | gzip > backup-$(date +%F).sql.gz
+  docker exec -i tempmail_db psql -U tempmail -d tempmail < backup.sql   # pulihkan
+  ```
+- **Konfigurasi**: `config.yaml` (token admin, sandi basis data, kunci integrasi) dan `.env`; simpan salinannya, keduanya tidak ada di git.
+- **TLS**: `certs/` (`cert.pem`, `key.pem`); bisa diterbitkan ulang dari panel.
 
 ## Panel admin dan API
 
@@ -135,6 +158,10 @@ docker compose down -v   # -v juga menghapus semua data email
 
 - [English](README.md) · [简体中文](README.zh-CN.md) · [繁體中文](README.zh-TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Português](README.pt.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [Italiano](README.it.md) · [Türkçe](README.tr.md) · [Bahasa Indonesia](README.id.md) · [Tiếng Việt](README.vi.md)
 - [Panduan penerapan](docs/deployment.md) ([简体中文](docs/deployment.zh-CN.md)) · [Panel admin](docs/admin-panel.md) · [Keamanan](docs/security.md)
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md).
 
 ## Lisensi
 

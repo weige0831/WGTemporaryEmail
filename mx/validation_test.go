@@ -368,32 +368,32 @@ func TestValidateSPF(t *testing.T) {
 	validator := NewValidator(cfg)
 
 	tests := []struct {
-		name      string
-		clientIP  string
-		heloName  string
-		from      string
-		wantNone  bool // DNS lookups might fail in test environment
+		name     string
+		clientIP string
+		heloName string
+		from     string
+		wantNone bool // DNS lookups might fail in test environment
 	}{
 		{
-			name:      "valid inputs",
-			clientIP:  "192.168.1.100",
-			heloName:  "client.example.com",
-			from:      "sender@example.com",
-			wantNone:  false, // example.com has SPF record
+			name:     "valid inputs",
+			clientIP: "192.168.1.100",
+			heloName: "client.example.com",
+			from:     "sender@example.com",
+			wantNone: false, // example.com has SPF record
 		},
 		{
-			name:      "invalid IP",
-			clientIP:  "invalid",
-			heloName:  "client.example.com",
-			from:      "sender@example.com",
-			wantNone:  true,
+			name:     "invalid IP",
+			clientIP: "invalid",
+			heloName: "client.example.com",
+			from:     "sender@example.com",
+			wantNone: true,
 		},
 		{
-			name:      "no domain",
-			clientIP:  "192.168.1.100",
-			heloName:  "client.example.com",
-			from:      "invalid",
-			wantNone:  true,
+			name:     "no domain",
+			clientIP: "192.168.1.100",
+			heloName: "client.example.com",
+			from:     "invalid",
+			wantNone: true,
 		},
 	}
 

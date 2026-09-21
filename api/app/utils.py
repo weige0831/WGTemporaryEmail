@@ -26,7 +26,7 @@ def generate_random_email(domain: str = None) -> str:
     """
     # Generate 8-character random string (lowercase + numbers)
     chars = string.ascii_lowercase + string.digits
-    local_part = ''.join(random.choice(chars) for _ in range(8))
+    local_part = ''.join(secrets.choice(chars) for _ in range(8))
 
     # Use provided domain or first domain from config
     if domain is None:

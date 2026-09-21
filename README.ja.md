@@ -116,7 +116,11 @@ mail.あなたのドメイン.  IN  A    <サーバーIP>      # メールホス
 cd WGTemporaryEmail
 git pull
 docker compose build
-docker compose up -d
+docker compose up -d --fo
+マイグレーションは `db/migrations/` にあり、何度実行しても安全です。該当機能より前に作成した環境を更新する場合のみ必要で、新規インストールは `db/init/schema.sql` で完全なスキーマが作られます。
+rce-recreate
+# apply database migrations (idempotent; only needed when upgrading an existing install)
+docker compose exec -T postgres psql -U tempmail -d tempmail < db/migrations/002_permanent_addresses.sql
 ```
 
 ### アンインストール
@@ -124,6 +128,44 @@ docker compose up -d
 ```bash
 docker compose down -v   # -v はすべてのメールデータも削除
 ```
+
+## 永続メールボックスと連携 API
+
+自動失効する一時アドレスに加えて、**永続メールボックス**を利用できます。アドレスは永続的に保持され、メールは保持期間（`tempmail.permanent_email_retention_days`、既定 30 日）を過ぎると削除されます。
+
+- **Web**: `/mailbox` —— ユーザー名を決めて作成し、アクセストークンを保存すれば、どの端末からでもそのトークンでログインできます。受信トレイは一時メールと同じ操作感です（検索・自動更新・HTML/テキスト・添付・生メールのダウンロード）。
+- **API（要認証）**: `POST /api/v1/api/addresses`、ヘッダー `X-API-Key: <連携キー>`、本文 `{"username": "...", "domain": "..."}`。
+- **連携キー**: 管理パネル → システム設定 → **連携 API キー**（状態確認 / 再生成、表示は一度だけ）。
+- Web 上での作成はキー不要で、IP ごとにレート制限されます。
+
+## バックアップと復元
+
+- **データベース**（全アドレス・メール・添付）:
+  ```bash
+  docker exec tempmail_db pg_dump -U tempmail tempmail | gzip > backup-$(date +%F).sql.gz
+  docker exec -i tempmail_db psql -U tempmail -d tempmail < backup.sql   # 復元
+  ```
+- **設定**: `config.yaml`（管理トークン・DB パスワード・連携キー）と `.env`。git には含まれないため別途保管してください。
+- **TLS**: `certs/`（`cert.pem`、`key.pem`）。失ってもパネルから再発行できます。
+
+## 永続メールボックスと連携 API
+
+自動失効する一時アドレスに加えて、**永続メールボックス**を利用できます。アドレスは永続的に保持され、メールは保持期間（`tempmail.permanent_email_retention_days`、既定 30 日）を過ぎると削除されます。
+
+- **Web**: `/mailbox` —— ユーザー名を決めて作成し、アクセストークンを保存すれば、どの端末からでもそのトークンでログインできます。受信トレイは一時メールと同じ操作感です（検索・自動更新・HTML/テキスト・添付・生メールのダウンロード）。
+- **API（要認証）**: `POST /api/v1/api/addresses`、ヘッダー `X-API-Key: <連携キー>`、本文 `{"username": "...", "domain": "..."}`。
+- **連携キー**: 管理パネル → システム設定 → **連携 API キー**（状態確認 / 再生成、表示は一度だけ）。
+- Web 上での作成はキー不要で、IP ごとにレート制限されます。
+
+## バックアップと復元
+
+- **データベース**（全アドレス・メール・添付）:
+  ```bash
+  docker exec tempmail_db pg_dump -U tempmail tempmail | gzip > backup-$(date +%F).sql.gz
+  docker exec -i tempmail_db psql -U tempmail -d tempmail < backup.sql   # 復元
+  ```
+- **設定**: `config.yaml`（管理トークン・DB パスワード・連携キー）と `.env`。git には含まれないため別途保管してください。
+- **TLS**: `certs/`（`cert.pem`、`key.pem`）。失ってもパネルから再発行できます。
 
 ## 管理パネルと API
 
@@ -135,6 +177,10 @@ docker compose down -v   # -v はすべてのメールデータも削除
 
 - [English](README.md) · [简体中文](README.zh-CN.md) · [繁體中文](README.zh-TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Português](README.pt.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [Italiano](README.it.md) · [Türkçe](README.tr.md) · [Bahasa Indonesia](README.id.md) · [Tiếng Việt](README.vi.md)
 - [デプロイガイド](docs/deployment.md)（[简体中文](docs/deployment.zh-CN.md)）· [管理パネル](docs/admin-panel.md) · [セキュリティ](docs/security.md)
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md).
 
 ## ライセンス
 

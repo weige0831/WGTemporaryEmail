@@ -11,7 +11,9 @@ import time
 from app.config import settings
 from app.database import check_db_connection
 from app.routers import addresses_router, emails_router, admin_router, setup_router, permanent_router
+from app.routers.setup import ensure_setup_key
 from app.cleanup import run_cleanup_loop
+from app.runtime_config import read_config
 
 # Configure logging
 logging.basicConfig(
@@ -25,7 +27,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI(
     title="Tempmail Server API",
     description="Tempmail backend API - receive and manage temporary email addresses",
-    version="1.0.0",
+    version="1.1.1",
     docs_url="/docs" if settings.DOCS_ENABLED else None,
     redoc_url="/redoc" if settings.DOCS_ENABLED else None,
     openapi_url="/openapi.json" if settings.DOCS_ENABLED else None
@@ -61,6 +63,19 @@ async def startup_event():
     logger.info(f"Address lifetime: {settings.ADDRESS_LIFETIME_HOURS}h")
     logger.info(f"CORS allowed origins: {settings.CORS_ALLOW_ORIGINS}")
 
+    # While the instance is uninitialized the setup wizard is reachable
+    # unauthenticated, so it is gated by a one-time key. Make sure one exists
+    # and print it where only someone with server access can read it.
+    if not settings.SETUP_INITIALIZED:
+        try:
+            key = ensure_setup_key(read_config())
+            logger.warning("=" * 62)
+            logger.warning("First-run setup is pending. Setup key: %s", key)
+            logger.warning("Enter it in the setup wizard (/setup) to finish initialization.")
+            logger.warning("=" * 62)
+        except Exception as e:  # never block startup on this
+            logger.error("Could not prepare the setup key: %s", e)
+
     # Start cleanup thread
     cleanup_thread = threading.Thread(target=run_cleanup_loop, daemon=True)
     cleanup_thread.start()
@@ -81,7 +96,11 @@ _health_check_cache_seconds = 5
 
 @app.get("/api/v1/health")
 def health_check():
-    """Health check endpoint for monitoring (cached for 5 seconds)"""
+    """Health check endpoint for monitoring (cached for 5 seconds).
+
+    Deliberately unauthenticated and therefore kept free of configuration
+    detail: it reports only service liveness.
+    """
     now = time.time()
 
     # Use cached result if less than 5 seconds old
@@ -95,8 +114,7 @@ def health_check():
         status_code=200 if db_ok else 503,
         content={
             "status": "healthy" if db_ok else "unhealthy",
-            "database": "connected" if db_ok else "disconnected",
-            "domains": settings.DOMAINS
+            "database": "connected" if db_ok else "disconnected"
         }
     )
 

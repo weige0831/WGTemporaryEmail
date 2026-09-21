@@ -34,7 +34,7 @@ curl http://localhost:8000/api/v1/{token}/emails/{email_id}
 
 Full API documentation with interactive examples:
 
-- **Swagger UI**: https://lm36.github.io/tempmail-server
+- **Swagger UI**: 部署实例自带的 `/docs`（如 https://mail.twcdk.com/docs）；关闭时设置 `server.docs_enabled: false`
 - **Local**: http://localhost:8000/docs (when running locally)
 
 ## Key Features
@@ -116,7 +116,7 @@ server:
 cors:
   allow_origins:
     - "*"  # In production, specify your frontend domains
-  allow_credentials: true
+  allow_credentials: false
   allow_methods:
     - "*"
   allow_headers:
@@ -147,7 +147,7 @@ Configure which origins can access your API to prevent unauthorized cross-origin
 cors:
   allow_origins:
     - "*"
-  allow_credentials: true
+  allow_credentials: false
   allow_methods:
     - "*"
   allow_headers:
@@ -160,7 +160,7 @@ cors:
   allow_origins:
     - "https://yourapp.com"
     - "https://www.yourapp.com"
-  allow_credentials: true
+  allow_credentials: false
   allow_methods:
     - "*"
   allow_headers:
@@ -174,7 +174,7 @@ cors:
     - "https://app.example.com"
     - "https://admin.example.com"
     - "http://localhost:3000"  # For local development
-  allow_credentials: true
+  allow_credentials: false
   allow_methods:
     - "*"
   allow_headers:

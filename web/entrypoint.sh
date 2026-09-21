@@ -1,42 +1,124 @@
 #!/bin/sh
-# Entrypoint: generate the nginx config from config.yaml (web hostname and
-# IP-access policy), generate a self-signed placeholder certificate when no
-# certificate exists yet, run nginx, and hot-reload on certificate or config
-# changes.
+# Entrypoint: generate the nginx config from config.yaml (web hostname,
+# IP-access policy, TLS and docs switches), serve a self-signed placeholder
+# until a real certificate exists, run nginx, and hot-reload on certificate or
+# config changes.
+#
+# Hardening notes:
+#  - /config/certs is mounted read-only, so a compromised web container cannot
+#    replace the certificate the MX serves; the placeholder lives in an
+#    image-internal directory instead.
+#  - Access logs redact mailbox tokens: the token is a full mailbox credential
+#    and would otherwise be written verbatim into every request line.
 set -e
 
+# Real certificate (shared with the MX) and the local placeholder fallback.
 CERT=/config/certs/cert.pem
 KEY=/config/certs/key.pem
+PLACEHOLDER_DIR=/etc/nginx/placeholder
+PLACEHOLDER_CERT="$PLACEHOLDER_DIR/cert.pem"
+PLACEHOLDER_KEY="$PLACEHOLDER_DIR/key.pem"
 CONFIG=/config/config.yaml
 
-mkdir -p /config/certs
+USE_PLACEHOLDER="false"
 if [ ! -f "$CERT" ] || [ ! -f "$KEY" ]; then
-  echo "No certificate found - generating self-signed placeholder for $CERT"
+  echo "No certificate found in /config/certs - generating a self-signed placeholder"
+  mkdir -p "$PLACEHOLDER_DIR"
   openssl req -x509 -newkey rsa:2048 -nodes \
-    -keyout "$KEY" -out "$CERT" -days 3650 \
+    -keyout "$PLACEHOLDER_KEY" -out "$PLACEHOLDER_CERT" -days 3650 \
     -subj "/CN=localhost" >/dev/null 2>&1
-  chmod 644 "$CERT" "$KEY"
+  chmod 600 "$PLACEHOLDER_KEY"
+  chmod 644 "$PLACEHOLDER_CERT"
+  CERT="$PLACEHOLDER_CERT"
+  KEY="$PLACEHOLDER_KEY"
+  USE_PLACEHOLDER="true"
 fi
+
+# HTTP-level directives (rate-limit zones, redacted log format) must live in
+# the http context, which is what files under conf.d are included into.
+cat > /etc/nginx/conf.d/00-http.conf <<'HTTP_EOF'
+# --- access log with mailbox tokens redacted -------------------------------
+# Request paths look like /api/v1/<token>/emails/<id>; the token segment is a
+# mailbox credential, so it never reaches the log file unchanged.
+map $request_uri $redacted_uri {
+    "~^(/api/v1/)([A-Za-z0-9_-]{20,})(/.*)$"  $1<token>$3;
+    default                                 $request_uri;
+}
+log_format redacted '$remote_addr - $remote_user [$time_local] '
+                    '"$request_method $redacted_uri $server_protocol" $status '
+                    '$body_bytes_sent "$http_referer" "$http_user_agent"';
+# The access_log itself is set per server block: a directive at http level would
+# be inherited *in addition to* the base image's unredacted one, writing every
+# request twice (once with the raw mailbox token).
+
+# --- edge rate limiting ----------------------------------------------------
+limit_req_zone $binary_remote_addr zone=api_general:10m rate=120r/m;
+limit_req_zone $binary_remote_addr zone=api_strict:10m  rate=30r/m;
+
+server_tokens off;
+HTTP_EOF
 
 LAST_WEB_HOSTNAME=""
 LAST_ALLOW_IP="true"
+LAST_TLS="false"
+LAST_DOCS="true"
 
 read_web_config() {
   WEB_HOSTNAME=""
   ALLOW_IP="true"
+  TLS_ENABLED="false"
+  DOCS_ENABLED="true"
   if [ -f "$CONFIG" ]; then
     WEB_HOSTNAME=$(sed -n '/^web:/,/^[a-zA-Z]/p' "$CONFIG" | grep -E '^[[:space:]]+hostname:' | head -1 | awk '{print $2}' | tr -d '"' | tr -d "'")
     ALLOW_IP=$(sed -n '/^web:/,/^[a-zA-Z]/p' "$CONFIG" | grep -E '^[[:space:]]+allow_ip_access:' | head -1 | awk '{print $2}' | tr -d '"' | tr -d "'")
+    TLS_ENABLED=$(sed -n '/^tls:/,/^[a-zA-Z]/p' "$CONFIG" | grep -E '^[[:space:]]+enabled:' | head -1 | awk '{print $2}' | tr -d '"' | tr -d "'")
+    DOCS_ENABLED=$(sed -n '/^server:/,/^[a-zA-Z]/p' "$CONFIG" | grep -E '^[[:space:]]+docs_enabled:' | head -1 | awk '{print $2}' | tr -d '"' | tr -d "'")
   fi
   # 防护：配置写入瞬间可能读到残缺值，非法则沿用上次有效值
   case "$WEB_HOSTNAME" in
     *[!a-zA-Z0-9.-]*) WEB_HOSTNAME="$LAST_WEB_HOSTNAME" ;;
   esac
-  if [ "$ALLOW_IP" != "true" ] && [ "$ALLOW_IP" != "false" ]; then
-    ALLOW_IP="$LAST_ALLOW_IP"
-  fi
+  [ "$ALLOW_IP" = "true" ] || [ "$ALLOW_IP" = "false" ] || ALLOW_IP="$LAST_ALLOW_IP"
+  [ "$TLS_ENABLED" = "true" ] || [ "$TLS_ENABLED" = "false" ] || TLS_ENABLED="$LAST_TLS"
+  [ "$DOCS_ENABLED" = "true" ] || [ "$DOCS_ENABLED" = "false" ] || DOCS_ENABLED="$LAST_DOCS"
   LAST_WEB_HOSTNAME="$WEB_HOSTNAME"
   LAST_ALLOW_IP="$ALLOW_IP"
+  LAST_TLS="$TLS_ENABLED"
+  LAST_DOCS="$DOCS_ENABLED"
+}
+
+# Security headers shared by every server block. HSTS is only emitted when a
+# real certificate is in use: sending it while a self-signed placeholder is
+# served would pin users to a certificate their browser rejects.
+write_security_headers() {
+  cat >> /etc/nginx/conf.d/default.conf <<'LOG_EOF'
+    access_log /var/log/nginx/access.log redacted;
+LOG_EOF
+  cat >> /etc/nginx/conf.d/default.conf <<'HDR_EOF'
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; frame-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'" always;
+HDR_EOF
+  if [ "$USE_PLACEHOLDER" = "false" ]; then
+    echo '    add_header Strict-Transport-Security "max-age=31536000" always;' >> /etc/nginx/conf.d/default.conf
+  fi
+}
+
+# HTTP -> HTTPS redirect when TLS is enabled; the ACME challenge path must
+# stay reachable over plain HTTP or renewals break.
+write_http_redirect() {
+  if [ "$TLS_ENABLED" = "true" ]; then
+    cat >> /etc/nginx/conf.d/default.conf <<'REDIR_EOF'
+    location ^~ /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+        default_type text/plain;
+    }
+    location / { return 301 https://$host$request_uri; }
+REDIR_EOF
+    return 0
+  fi
+  return 1
 }
 
 generate_conf() {
@@ -53,23 +135,33 @@ server {
     index index.html;
     gzip on;
     gzip_types text/plain text/css application/javascript application/json image/svg+xml;
+MAIN_EOF
+  if ! write_http_redirect; then
+    cat >> /etc/nginx/conf.d/default.conf <<'MAINPLAIN_EOF'
     include /etc/nginx/locations.conf;
     error_page 404 /404.html;
+MAINPLAIN_EOF
+  fi
+  cat >> /etc/nginx/conf.d/default.conf <<'MAIN2_EOF'
 }
 server {
     listen 443 ssl;
     server_name @SERVER_NAME@;
     root /usr/share/nginx/html;
     index index.html;
-    ssl_certificate /config/certs/cert.pem;
-    ssl_certificate_key /config/certs/key.pem;
+    ssl_certificate @CERT@;
+    ssl_certificate_key @KEY@;
     ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers off;
     gzip on;
     gzip_types text/plain text/css application/javascript application/json image/svg+xml;
+MAIN2_EOF
+  write_security_headers
+  cat >> /etc/nginx/conf.d/default.conf <<'MAIN3_EOF'
     include /etc/nginx/locations.conf;
     error_page 404 /404.html;
 }
-MAIN_EOF
+MAIN3_EOF
 
   # 兜底服务：IP / 其他域名
   cat >> /etc/nginx/conf.d/default.conf <<'CATCH_EOF'
@@ -79,12 +171,17 @@ server {
     server_name _;
     root /usr/share/nginx/html;
     index index.html;
-    ssl_certificate /config/certs/cert.pem;
-    ssl_certificate_key /config/certs/key.pem;
+    ssl_certificate @CERT@;
+    ssl_certificate_key @KEY@;
     ssl_protocols TLSv1.2 TLSv1.3;
     gzip on;
     gzip_types text/plain text/css application/javascript application/json image/svg+xml;
 CATCH_EOF
+  write_security_headers
+
+  if [ "$TLS_ENABLED" = "true" ]; then
+    echo '    if ($scheme = http) { return 301 https://$host$request_uri; }' >> /etc/nginx/conf.d/default.conf
+  fi
 
   if [ -n "$WEB_HOSTNAME" ] && [ "$ALLOW_IP" != "true" ]; then
     # 限制模式：仅后台 / API / 证书验证路径可用，其余重定向到正式域名
@@ -94,6 +191,8 @@ CATCH_EOF
         default_type text/plain;
     }
     location /api/ {
+        limit_req zone=api_general burst=120 nodelay;
+        limit_req_status 429;
         proxy_pass http://api:8000;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
@@ -103,6 +202,13 @@ CATCH_EOF
     }
     location = /api { try_files /api.html =404; }
     location = /api/ { return 301 /api; }
+    location ^~ /admin { try_files $uri $uri.html $uri/index.html =404; }
+    location = /setup { try_files /setup.html =404; }
+    location /_next/ { try_files $uri =404; }
+    location / { return 302 https://@WEB_HOSTNAME@$request_uri; }
+LIMIT_EOF
+    if [ "$DOCS_ENABLED" = "true" ]; then
+      cat >> /etc/nginx/conf.d/default.conf <<'LIMITDOCS_EOF'
     location /docs {
         proxy_pass http://api:8000/docs;
         proxy_set_header Host $host;
@@ -121,20 +227,44 @@ CATCH_EOF
         proxy_set_header X-Forwarded-For $remote_addr;
         proxy_set_header X-Forwarded-Proto $scheme;
     }
-    location ^~ /admin { try_files $uri $uri.html $uri/index.html =404; }
-    location = /setup { try_files /setup.html =404; }
-    location /_next/ { try_files $uri =404; }
-    location / { return 302 https://@WEB_HOSTNAME@$request_uri; }
-LIMIT_EOF
+LIMITDOCS_EOF
+    fi
   else
-    cat >> /etc/nginx/conf.d/default.conf <<'FULL_EOF'
+    if [ "$DOCS_ENABLED" = "true" ]; then
+      cat >> /etc/nginx/conf.d/default.conf <<'FULL_EOF'
     include /etc/nginx/locations.conf;
     error_page 404 /404.html;
 FULL_EOF
+    else
+      # docs_enabled: false - the same surface without the Swagger, ReDoc and
+      # OpenAPI proxy locations.
+      cat >> /etc/nginx/conf.d/default.conf <<'NODOCS_EOF'
+    location ^~ /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+        default_type text/plain;
+    }
+    location = /api { try_files /api.html =404; }
+    location = /api/ { return 301 /api; }
+    location /api/ {
+        limit_req zone=api_general burst=120 nodelay;
+        limit_req_status 429;
+        proxy_pass http://api:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+    location / {
+        rewrite ^(.+)/$ $1 permanent;
+        try_files $uri $uri.html $uri/index.html =404;
+    }
+NODOCS_EOF
+    fi
   fi
   echo "}" >> /etc/nginx/conf.d/default.conf
 
-  sed -i "s|@SERVER_NAME@|$SERVER_NAME|g; s|@WEB_HOSTNAME@|$WEB_HOSTNAME|g" /etc/nginx/conf.d/default.conf
+  sed -i "s|@SERVER_NAME@|$SERVER_NAME|g; s|@WEB_HOSTNAME@|$WEB_HOSTNAME|g; s|@CERT@|$CERT|g; s|@KEY@|$KEY|g" /etc/nginx/conf.d/default.conf
 }
 
 generate_conf

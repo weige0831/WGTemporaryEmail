@@ -1,7 +1,7 @@
 import type { Dict } from "./en"
 
 export const de: Partial<Dict> = {
-  nav: { about: "Über uns", privacy: "Datenschutz", api: "API", permanentMailbox: "Permanente Mailbox" },
+  nav: { about: "Über uns", privacy: "Datenschutz", api: "API", permanentMailbox: "Permanente Mailbox", tempMailbox: "Temporäres Postfach" },
   home: {
     yourTempEmail: "Deine temporäre E-Mail",
     readyDesc: "Deine temporäre E-Mail ist bereit. Sie wird in {time} automatisch gelöscht.",
@@ -89,6 +89,7 @@ export const de: Partial<Dict> = {
     collectP2: "Dein Browser (localStorage) speichert die aktuelle Adresse und das Token, damit du beim nächsten Mal weitermachen kannst. Diese Daten bleiben nur auf deinem Gerät.",
     retentionTitle: "Datenspeicherung und -löschung",
     retentionL1: "Adressen und E-Mails werden standardmäßig 24 Stunden aufbewahrt und dann automatisch gelöscht (die Dauer kann je nach Dienstkonfiguration variieren)",
+    permanentMailboxNote: "Dauerhafte Postfächer: Die Adresse bleibt erhalten, bis Sie sie löschen; E-Mails werden nach der konfigurierten Aufbewahrungsfrist (Standard 30 Tage) automatisch entfernt.",
     retentionL2: "Du kannst E-Mails jederzeit manuell in der Oberfläche löschen",
     retentionL3: "Wird das Limit an E-Mails pro Adresse überschritten, werden die ältesten automatisch bereinigt",
     retentionL4: "Gelöschte Daten können nicht wiederhergestellt werden",

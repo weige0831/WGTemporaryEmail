@@ -1,7 +1,7 @@
 import type { Dict } from "./en"
 
 export const zhTW: Partial<Dict> = {
-  nav: { about: "關於", privacy: "隱私", api: "API", permanentMailbox: "長效信箱" },
+  nav: { about: "關於", privacy: "隱私", api: "API", permanentMailbox: "長效信箱", tempMailbox: "臨時信箱" },
   home: {
     yourTempEmail: "你的臨時信箱",
     readyDesc: "你的臨時信箱已就緒，將在 {time} 後自動刪除。",
@@ -89,6 +89,7 @@ export const zhTW: Partial<Dict> = {
     collectP2: "你的瀏覽器本地（localStorage）會儲存目前信箱地址與權杖，以便下次開啟時繼續使用。這些資訊僅儲存在你自己的裝置上。",
     retentionTitle: "資料保留與刪除",
     retentionL1: "地址與郵件預設保留 24 小時，到期後由系統自動刪除（保留時間可能因服務設定而異）",
+    permanentMailboxNote: "長效信箱：地址會持續保留直到您自行刪除；其郵件在營運方設定的保留期（預設 30 天）後自動刪除。",
     retentionL2: "你可以隨時在介面中手動刪除郵件",
     retentionL3: "超過單一地址郵件數上限時，最早的郵件會被自動清理",
     retentionL4: "刪除後的資料無法復原",

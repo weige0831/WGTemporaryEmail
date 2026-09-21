@@ -44,6 +44,12 @@ def _create_permanent_address(request: PermanentAddressCreate, db: Session) -> A
                 detail=f"Domain '{domain}' is not available. Use GET /api/v1/domains to see available domains",
             )
 
+    if not settings.ALLOW_CUSTOM_USERNAMES:
+        raise HTTPException(
+            status_code=403,
+            detail='Custom usernames are disabled (tempmail.allow_custom_usernames is false)',
+        )
+
     username = request.username.strip().lower()
     if len(username) < settings.MIN_USERNAME_LENGTH or len(username) > settings.MAX_USERNAME_LENGTH:
         raise HTTPException(

@@ -44,9 +44,43 @@ func NewSession(remoteAddr, hostname string, cfg *Config, db SessionDB, validato
 	}
 }
 
+// sanitizeForLog strips control characters from attacker-controlled strings
+// before they reach the log. A decoded Subject (RFC 2047) or a raw MAIL FROM
+// can contain CR/LF and ANSI escapes, which would otherwise forge log lines.
+func sanitizeForLog(s string) string {
+	var b strings.Builder
+	for _, r := range s {
+		if r == '	' {
+			b.WriteRune(' ')
+			continue
+		}
+		if r < 0x20 || r == 0x7f {
+			continue
+		}
+		b.WriteRune(r)
+	}
+	out := b.String()
+	if len(out) > 200 {
+		out = out[:200] + "..."
+	}
+	return out
+}
+
+// smtpError builds a typed SMTP error so the library reports the right reply
+// code: permanent conditions (unknown mailbox, relay denied) must be 5xx so
+// senders stop retrying, transient ones (database trouble) must be 4xx so
+// legitimate mail is retried instead of bounced.
+func smtpError(code int, enhanced [3]int, msg string) *smtp.SMTPError {
+	return &smtp.SMTPError{
+		Code:         code,
+		EnhancedCode: smtp.EnhancedCode{enhanced[0], enhanced[1], enhanced[2]},
+		Message:      msg,
+	}
+}
+
 // Mail is called when the client sends MAIL FROM
 func (s *Session) Mail(from string, opts *smtp.MailOptions) error {
-	log.Printf("[%s] MAIL FROM: <%s>", s.remoteAddr, from)
+	log.Printf("[%s] MAIL FROM: <%s>", s.remoteAddr, sanitizeForLog(from))
 	s.from = from
 	s.to = nil
 	return nil
@@ -54,27 +88,27 @@ func (s *Session) Mail(from string, opts *smtp.MailOptions) error {
 
 // Rcpt is called when the client sends RCPT TO
 func (s *Session) Rcpt(to string, opts *smtp.RcptOptions) error {
-	log.Printf("[%s] RCPT TO: <%s>", s.remoteAddr, to)
+	log.Printf("[%s] RCPT TO: <%s>", s.remoteAddr, sanitizeForLog(to))
 
 	// Validate recipient address format
 	addr, err := mail.ParseAddress(to)
 	if err != nil {
 		log.Printf("[%s] REJECTED: Invalid address format: %v", s.remoteAddr, err)
-		return fmt.Errorf("invalid recipient address")
+		return smtpError(550, [3]int{5, 1, 3}, "invalid recipient address")
 	}
 
 	// Extract domain
 	parts := strings.Split(addr.Address, "@")
 	if len(parts) != 2 {
 		log.Printf("[%s] REJECTED: Invalid email format: %s", s.remoteAddr, addr.Address)
-		return fmt.Errorf("invalid email format")
+		return smtpError(550, [3]int{5, 1, 3}, "invalid email format")
 	}
 	domain := strings.ToLower(parts[1])
 
 	// Check if domain is in our allowed list
 	if !s.domains[domain] {
 		log.Printf("[%s] REJECTED: Domain not accepted: %s (allowed: %v)", s.remoteAddr, domain, s.cfg.Domains)
-		return fmt.Errorf("relay access denied for domain %s", domain)
+		return smtpError(550, [3]int{5, 7, 1}, "relay access denied")
 	}
 
 	// Normalize email address to lowercase for consistent storage
@@ -84,15 +118,23 @@ func (s *Session) Rcpt(to string, opts *smtp.RcptOptions) error {
 	exists, err := s.db.AddressExists(normalizedEmail)
 	if err != nil {
 		log.Printf("[%s] ERROR: Failed to check address existence for %s: %v", s.remoteAddr, normalizedEmail, err)
-		return fmt.Errorf("temporary server error")
+		return smtpError(451, [3]int{4, 3, 0}, "temporary server error")
 	}
 
 	if !exists {
 		log.Printf("[%s] REJECTED: Address does not exist: %s", s.remoteAddr, normalizedEmail)
-		return fmt.Errorf("mailbox unavailable")
+		return smtpError(550, [3]int{5, 1, 1}, "mailbox unavailable")
 	}
 
-	// Accept the recipient
+	// Accept the recipient. Duplicate RCPT commands for the same address are
+	// accepted once: storing the message per duplicate would multiply both the
+	// raw message and its decoded attachments in the database.
+	for _, existing := range s.to {
+		if existing == normalizedEmail {
+			log.Printf("[%s] ACCEPTED: <%s> (already queued, not stored twice)", s.remoteAddr, normalizedEmail)
+			return nil
+		}
+	}
 	s.to = append(s.to, normalizedEmail)
 	log.Printf("[%s] ACCEPTED: <%s> -> normalized as <%s> (total recipients: %d)", s.remoteAddr, addr.Address, normalizedEmail, len(s.to))
 	return nil
@@ -107,12 +149,12 @@ func (s *Session) Data(r io.Reader) error {
 	size, err := buf.ReadFrom(io.LimitReader(r, s.cfg.GetMaxMessageSize()))
 	if err != nil {
 		log.Printf("[%s] ERROR: Failed to read message: %v", s.remoteAddr, err)
-		return fmt.Errorf("error reading message")
+		return smtpError(451, [3]int{4, 3, 0}, "error reading message")
 	}
 
 	if size >= s.cfg.GetMaxMessageSize() {
 		log.Printf("[%s] REJECTED: Message too large (%d bytes, max %d)", s.remoteAddr, size, s.cfg.GetMaxMessageSize())
-		return fmt.Errorf("message too large (max %d MB)", s.cfg.Server.MaxMsgSizeMB)
+		return smtpError(552, [3]int{5, 3, 4}, fmt.Sprintf("message too large (max %d MB)", s.cfg.Server.MaxMsgSizeMB))
 	}
 
 	rawMessage := buf.Bytes()
@@ -122,7 +164,7 @@ func (s *Session) Data(r io.Reader) error {
 	envelope, err := enmime.ReadEnvelope(bytes.NewReader(rawMessage))
 	if err != nil {
 		log.Printf("[%s] ERROR: Failed to parse email: %v", s.remoteAddr, err)
-		return fmt.Errorf("error processing message")
+		return smtpError(554, [3]int{5, 6, 0}, "error processing message")
 	}
 
 	// Extract email data
@@ -145,7 +187,7 @@ func (s *Session) Data(r io.Reader) error {
 	attachments := s.extractAttachments(envelope)
 	emailData.HasAttachments = len(attachments) > 0
 
-	log.Printf("[%s] Parsed - Subject: '%s', Attachments: %d", s.remoteAddr, emailData.Subject, len(attachments))
+	log.Printf("[%s] Parsed - Subject: '%s', Attachments: %d", s.remoteAddr, sanitizeForLog(emailData.Subject), len(attachments))
 
 	// Store email for each recipient
 	for _, recipient := range s.to {
@@ -153,7 +195,7 @@ func (s *Session) Data(r io.Reader) error {
 
 		if err := s.db.StoreEmail(emailData, attachments); err != nil {
 			log.Printf("[%s] ERROR: Failed to store email for %s: %v", s.remoteAddr, recipient, err)
-			return fmt.Errorf("error storing message")
+			return smtpError(451, [3]int{4, 3, 0}, "error storing message")
 		}
 
 		log.Printf("[%s] ✓ Stored email for %s", s.remoteAddr, recipient)

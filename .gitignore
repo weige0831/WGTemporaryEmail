@@ -40,3 +40,12 @@ config.yaml
 Thumbs.db
 
 data/
+
+# TLS material and setup output: the private key must never be committed
+certs/
+generated_dns.txt
+
+# Test artifacts
+.coverage
+.pytest_cache/
+htmlcov/

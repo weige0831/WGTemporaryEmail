@@ -16,6 +16,24 @@ from fastapi import HTTPException, Request
 # A window holds monotonic timestamps of recent requests per key.
 _WINDOWS: "defaultdict[str, deque]" = defaultdict(deque)
 _LOCK = threading.Lock()
+_LAST_SWEEP = 0.0
+# Sweep at most this often, and only do the work when the table is large
+# enough for it to matter (keeps the common path O(1)).
+_SWEEP_INTERVAL_SECONDS = 60
+_SWEEP_MIN_KEYS = 512
+
+
+def _sweep_locked(now: float) -> None:
+    """Drop keys whose window is empty. Caller must hold _LOCK."""
+    global _LAST_SWEEP
+    if now - _LAST_SWEEP < _SWEEP_INTERVAL_SECONDS:
+        return
+    _LAST_SWEEP = now
+    if len(_WINDOWS) < _SWEEP_MIN_KEYS:
+        return
+    stale = [key for key, q in _WINDOWS.items() if not q or now - q[-1] >= 3600]
+    for key in stale:
+        del _WINDOWS[key]
 
 
 def _is_allowed(key: str, limit: int, window_seconds: int) -> bool:
@@ -29,13 +47,14 @@ def _is_allowed(key: str, limit: int, window_seconds: int) -> bool:
         if len(q) >= limit:
             return False
         q.append(now)
+        _sweep_locked(now)
         return True
 
 
 def get_client_ip(request: Request) -> str:
     """Resolve the client IP, trusting nginx's X-Forwarded-For override.
 
-    The web/nginx.conf sets `proxy_set_header X-Forwarded-For $remote_addr`
+    The nginx config sets `proxy_set_header X-Forwarded-For $remote_addr`
     (overwrite, not append), so the header carries the single real client IP.
     When the API is hit directly (local dev), fall back to the socket peer.
     """
@@ -61,7 +80,7 @@ def ip_rate_limit(limit: int, window_seconds: int = 60, scope: str = ""):
         if not _is_allowed(key, limit, window_seconds):
             raise HTTPException(
                 status_code=429,
-                detail="请求过于频繁，请稍后再试",
+                detail="Too many requests",
                 headers={"Retry-After": str(window_seconds)},
             )
 

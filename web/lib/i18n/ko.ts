@@ -1,7 +1,7 @@
 import type { Dict } from "./en"
 
 export const ko: Partial<Dict> = {
-  nav: { about: "소개", privacy: "개인정보", api: "API", permanentMailbox: "영구 메일함" },
+  nav: { about: "소개", privacy: "개인정보", api: "API", permanentMailbox: "영구 메일함", tempMailbox: "임시 메일함" },
   home: {
     yourTempEmail: "내 임시 이메일",
     readyDesc: "임시 이메일이 준비되었습니다. {time} 후 자동 삭제됩니다.",
@@ -89,6 +89,7 @@ export const ko: Partial<Dict> = {
     collectP2: "브라우저(localStorage)에는 현재 주소와 토큰이 저장되어 다음 방문 시 이어서 사용할 수 있습니다. 이 데이터는 사용자의 기기에만 저장됩니다.",
     retentionTitle: "데이터 보관 및 삭제",
     retentionL1: "주소와 이메일은 기본 24시간 보관 후 자동 삭제됩니다(보관 기간은 서비스 설정에 따라 다를 수 있음)",
+    permanentMailboxNote: "영구 메일함: 주소는 직접 삭제할 때까지 유지되며, 메일은 운영자가 설정한 보관 기간(기본 30일)이 지나면 자동 삭제됩니다.",
     retentionL2: "언제든지 UI에서 이메일을 수동 삭제할 수 있습니다",
     retentionL3: "주소당 이메일 수 제한을 초과하면 가장 오래된 이메일이 자동 정리됩니다",
     retentionL4: "삭제된 데이터는 복구할 수 없습니다",

@@ -1,7 +1,7 @@
 import type { Dict } from "./en"
 
 export const id: Partial<Dict> = {
-  nav: { about: "Tentang", privacy: "Privasi", api: "API", permanentMailbox: "Kotak permanen" },
+  nav: { about: "Tentang", privacy: "Privasi", api: "API", permanentMailbox: "Kotak permanen", tempMailbox: "Kotak sementara" },
   home: {
     yourTempEmail: "Email sementara Anda",
     readyDesc: "Email sementara Anda sudah siap. Akan dihapus otomatis dalam {time}.",
@@ -89,6 +89,7 @@ export const id: Partial<Dict> = {
     collectP2: "Peramban Anda (localStorage) menyimpan alamat dan token saat ini agar Anda dapat melanjutkan lain kali. Data ini hanya ada di perangkat Anda.",
     retentionTitle: "Penyimpanan dan penghapusan data",
     retentionL1: "Alamat dan email disimpan selama 24 jam secara default, lalu dihapus otomatis (durasi dapat berbeda sesuai konfigurasi layanan)",
+    permanentMailboxNote: "Kotak permanen: alamat disimpan sampai Anda menghapusnya, dan emailnya dihapus otomatis setelah masa retensi yang dikonfigurasi operator (bawaan 30 hari).",
     retentionL2: "Anda dapat menghapus email secara manual dari antarmuka kapan saja",
     retentionL3: "Saat batas email per alamat terlampaui, email terlama dibersihkan otomatis",
     retentionL4: "Data yang dihapus tidak dapat dipulihkan",

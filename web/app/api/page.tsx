@@ -18,7 +18,7 @@ type Method = "GET" | "POST" | "PUT" | "DELETE"
 
 interface ParamDef {
   name: string
-  type: "path" | "query" | "body" | "bodyText"
+  type: "path" | "query" | "body" | "bodyText" | "header"
   placeholder?: string
   defaultFrom?: "savedToken"
 }
@@ -84,6 +84,7 @@ const USER_ENDPOINTS: Endpoint[] = [
       { name: "token", type: "path", placeholder: "token", defaultFrom: "savedToken" },
       { name: "page", type: "query", placeholder: "page (default 1)" },
       { name: "per_page", type: "query", placeholder: "per_page (max 100)" },
+      { name: "unread_only", type: "query", placeholder: "unread_only (true/false)" },
       { name: "search", type: "query", placeholder: "search" },
     ],
     curl: 'curl "BASE/api/v1/{token}/emails?page=1&per_page=50&search=invoice"',
@@ -95,6 +96,7 @@ const USER_ENDPOINTS: Endpoint[] = [
     params: [
       { name: "token", type: "path", placeholder: "token", defaultFrom: "savedToken" },
       { name: "email_id", type: "path", placeholder: "email_id" },
+      { name: "mark_read", type: "query", placeholder: "mark_read (default true)" },
     ],
     curl: 'curl "BASE/api/v1/{token}/emails/{email_id}"',
   },
@@ -118,6 +120,41 @@ const USER_ENDPOINTS: Endpoint[] = [
       { name: "email_id", type: "path", placeholder: "email_id" },
     ],
     curl: 'curl "BASE/api/v1/{token}/emails/{email_id}/raw" -o message.eml',
+  },
+  {
+    method: "GET",
+    path: "/api/v1/health",
+    descKey: "api.descHealth",
+    params: [],
+    curl: 'curl "BASE/api/v1/health"',
+  },
+  {
+    method: "GET",
+    path: "/api/v1/{token}/info",
+    descKey: "api.descAddressInfo",
+    params: [{ name: "token", type: "path", placeholder: "token", defaultFrom: "savedToken" }],
+    curl: 'curl "BASE/api/v1/{token}/info"',
+  },
+  {
+    method: "POST",
+    path: "/api/v1/permanent-addresses",
+    descKey: "api.descCreatePermanent",
+    params: [
+      { name: "username", type: "body", placeholder: "username (required)" },
+      { name: "domain", type: "body", placeholder: "domain (optional)" },
+    ],
+    curl: 'curl -X POST "BASE/api/v1/permanent-addresses"',
+  },
+  {
+    method: "POST",
+    path: "/api/v1/api/addresses",
+    descKey: "api.descCreatePermanentApi",
+    params: [
+      { name: "X-API-Key", type: "header", placeholder: "integration API key (admin panel config)" },
+      { name: "username", type: "body", placeholder: "username (required)" },
+      { name: "domain", type: "body", placeholder: "domain (optional)" },
+    ],
+    curl: 'curl -X POST "BASE/api/v1/api/addresses" -H "X-API-Key: <integration key>"',
   },
   {
     method: "GET",
@@ -194,6 +231,18 @@ const ADMIN_ENDPOINTS: Endpoint[] = [
     params: [],
     curl: 'curl -X POST -H "Authorization: Bearer <admin.token>" "BASE/api/v1/admin/cleanup/run"',
   },
+  { method: "GET", path: "/api/v1/admin/tls/status", descKey: "api.descTlsStatus", params: [], curl: 'curl -H "Authorization: Bearer <admin.token>" "BASE/api/v1/admin/tls/status"' },
+  {
+    method: "POST", path: "/api/v1/admin/tls/issue", descKey: "api.descTlsIssue", destructive: true,
+    params: [{ name: "email", type: "body", placeholder: "email (Let's Encrypt contact)" }],
+    curl: 'curl -X POST -H "Authorization: Bearer <admin.token>" "BASE/api/v1/admin/tls/issue"',
+  },
+  { method: "GET", path: "/api/v1/admin/apikey/status", descKey: "api.descApiKeyStatus", params: [], curl: 'curl -H "Authorization: Bearer <admin.token>" "BASE/api/v1/admin/apikey/status"' },
+  {
+    method: "POST", path: "/api/v1/admin/apikey/regenerate", descKey: "api.descApiKeyRegenerate", destructive: true,
+    params: [],
+    curl: 'curl -X POST -H "Authorization: Bearer <admin.token>" "BASE/api/v1/admin/apikey/regenerate"',
+  },
 ]
 
 const SETUP_ENDPOINTS: Endpoint[] = [
@@ -203,6 +252,12 @@ const SETUP_ENDPOINTS: Endpoint[] = [
     params: [
       { name: "domains", type: "body", placeholder: "domains (comma separated, e.g. example.com,temp.example.com)" },
       { name: "hostname", type: "body", placeholder: "hostname (e.g. mail.example.com)" },
+      { name: "setup_key", type: "body", placeholder: "setup key (from the api container log)" },
+      { name: "web_hostname", type: "body", placeholder: "web_hostname (optional panel domain)" },
+      { name: "admin_token", type: "body", placeholder: "admin_token (optional, auto-generated)" },
+      { name: "address_lifetime_hours", type: "body", placeholder: "address_lifetime_hours (default 24)" },
+      { name: "max_storage_mb", type: "body", placeholder: "max_storage_mb (0 = unlimited)" },
+      { name: "allow_custom_usernames", type: "body", placeholder: "allow_custom_usernames (true/false)" },
     ],
     curl: 'curl -X POST "BASE/api/v1/setup/complete" \\\n  -H "Content-Type: application/json" \\\n  -d \'{"domains": ["example.com"], "hostname": "mail.example.com"}\'',
   },
@@ -267,7 +322,7 @@ export default function ApiDocsPage() {
       try {
         JSON.parse(raw)
       } catch {
-        alert("Invalid JSON")
+        alert(t("api.invalidJson"))
         return null
       }
       return raw
@@ -279,6 +334,12 @@ export default function ApiDocsPage() {
       if (!v) continue
       if (f.name === "domains") {
         body[f.name] = v.split(",").map((s) => s.trim()).filter(Boolean)
+      } else if (f.name === "allow_custom_usernames") {
+        body[f.name] = v === "true"
+      } else if (f.name === "address_lifetime_hours" || f.name === "max_storage_mb") {
+        const n = Number(v)
+        if (Number.isNaN(n)) continue
+        body[f.name] = n
       } else {
         body[f.name] = v
       }
@@ -299,6 +360,15 @@ export default function ApiDocsPage() {
       const headers: Record<string, string> = { "Content-Type": "application/json" }
       if (ep.path.startsWith("/api/v1/admin")) {
         headers.Authorization = `Bearer ${adminToken.trim()}`
+      }
+      // Header parameters (e.g. the integration X-API-Key) are sent verbatim.
+      for (const h of ep.params.filter((x) => x.type === "header")) {
+        const v = getParam(ep, h.name).trim()
+        if (!v) {
+          alert(t("api.fillParams"))
+          return
+        }
+        headers[h.name] = v
       }
       const res = await fetch(url, {
         method: ep.method,
@@ -472,6 +542,12 @@ export default function ApiDocsPage() {
             </Link>
             <Link href="/api" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground whitespace-nowrap">
               {t("nav.api")}
+            </Link>
+            <Link href="/" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground whitespace-nowrap">
+              {t("nav.tempMailbox")}
+            </Link>
+            <Link href="/mailbox" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground whitespace-nowrap">
+              {t("nav.permanentMailbox")}
             </Link>
           </nav>
         </div>

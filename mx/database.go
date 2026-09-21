@@ -147,8 +147,11 @@ func (db *DB) getAddress(tx *sql.Tx, email string) (string, error) {
 
 	// Find existing address using normalized email
 	var addressID string
+	// Same expiry rule as AddressExists: never store into an address that is
+	// already expired (the cleanup loop is about to delete it).
 	err := tx.QueryRow(`
-		SELECT id FROM addresses WHERE email = $1
+		SELECT id FROM addresses
+		WHERE email = $1 AND (expires_at IS NULL OR expires_at > NOW())
 	`, normalizedEmail).Scan(&addressID)
 
 	if err == sql.ErrNoRows {
@@ -162,15 +165,21 @@ func (db *DB) getAddress(tx *sql.Tx, email string) (string, error) {
 	return addressID, nil
 }
 
-
 // AddressExists checks if an email address exists in the database
 func (db *DB) AddressExists(email string) (bool, error) {
 	// Normalize email to lowercase for case-insensitive matching
 	normalizedEmail := strings.ToLower(email)
 
 	var exists bool
+	// Expired temporary addresses no longer accept mail: the cleanup loop
+	// deletes them on the next pass, so accepting mail for one delivers into a
+	// row that is about to vanish. Permanent mailboxes (expires_at IS NULL)
+	// never expire.
 	err := db.conn.QueryRow(`
-		SELECT EXISTS(SELECT 1 FROM addresses WHERE email = $1)
+		SELECT EXISTS(
+			SELECT 1 FROM addresses
+			WHERE email = $1 AND (expires_at IS NULL OR expires_at > NOW())
+		)
 	`, normalizedEmail).Scan(&exists)
 
 	if err != nil {
@@ -195,16 +204,27 @@ func (db *DB) EnforceEmailLimit(addressID string) error {
 		maxEmails = cfg.Tempmail.MaxEmailsPerAddress
 	}
 
+	// Only this mailbox's recipient links are dropped, and only messages left
+	// without any recipient afterwards: deleting the shared emails row would
+	// also delete the copy another mailbox received.
 	result, err := db.conn.Exec(`
-		DELETE FROM emails
-		WHERE id IN (
-			SELECT e.id
-			FROM emails e
-			JOIN email_recipients er ON er.email_id = e.id
-			WHERE er.address_id = $1
-			ORDER BY e.received_at DESC
-			OFFSET $2
+		WITH removed AS (
+			DELETE FROM email_recipients
+			WHERE id IN (
+				SELECT er.id
+				FROM email_recipients er
+				JOIN emails e ON e.id = er.email_id
+				WHERE er.address_id = $1
+				ORDER BY e.received_at DESC
+				OFFSET $2
+			)
+			RETURNING email_id
 		)
+		DELETE FROM emails
+		WHERE id IN (SELECT email_id FROM removed)
+		  AND NOT EXISTS (
+			SELECT 1 FROM email_recipients er WHERE er.email_id = emails.id
+		  )
 	`, addressID, maxEmails)
 
 	if err != nil {

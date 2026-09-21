@@ -116,14 +116,37 @@ mail.내도메인.  IN  A    <서버 IP>      # 메일 호스트명
 cd WGTemporaryEmail
 git pull
 docker compose build
-docker compose up -d
+docker compose up -d --force-recreate
+# apply database migrations (idempotent; only needed when upgrading an existing install)
+docker compose exec -T postgres psql -U tempmail -d tempmail < db/migrations/002_permanent_addresses.sql
 ```
+
+마이그레이션은 `db/migrations/`에 있으며 여러 번 실행해도 안전합니다. 해당 기능 이전에 만든 설치를 업그레이드할 때만 필요하고, 새 설치에는 `db/init/schema.sql`이 전체 스키마를 만듭니다.
 
 ### 제거
 
 ```bash
 docker compose down -v   # -v는 모든 메일 데이터도 삭제
 ```
+
+## 영구 메일함과 연동 API
+
+자동 만료되는 임시 주소 외에 **영구 메일함**을 제공합니다. 주소는 영구 보존되고 메일은 보관 기간(`tempmail.permanent_email_retention_days`, 기본 30일)이 지나면 삭제됩니다.
+
+- **웹**: `/mailbox` —— 사용자 이름을 정해 만들고 액세스 토큰을 저장하면 어느 기기에서든 그 토큰으로 로그인할 수 있습니다. 받은편지함은 임시 메일함과 동일합니다(검색, 자동 새로고침, HTML/텍스트, 첨부, 원본 다운로드).
+- **API(인증 필요)**: `POST /api/v1/api/addresses`, 헤더 `X-API-Key: <연동 키>`, 본문 `{"username": "...", "domain": "..."}`.
+- **연동 키**: 관리 패널 → 시스템 설정 → **연동 API 키**(상태 확인 / 재생성, 한 번만 표시).
+- 웹에서 직접 만드는 것은 키가 필요 없고 IP별로 속도 제한됩니다.
+
+## 백업 및 복원
+
+- **데이터베이스**(모든 주소, 메일, 첨부):
+  ```bash
+  docker exec tempmail_db pg_dump -U tempmail tempmail | gzip > backup-$(date +%F).sql.gz
+  docker exec -i tempmail_db psql -U tempmail -d tempmail < backup.sql   # 복원
+  ```
+- **설정**: `config.yaml`(관리 토큰, DB 비밀번호, 연동 키)과 `.env`. git에 없으므로 따로 보관하세요.
+- **TLS**: `certs/`(`cert.pem`, `key.pem`). 분실 시 패널에서 재발급할 수 있습니다.
 
 ## 관리 패널과 API
 
@@ -135,6 +158,10 @@ docker compose down -v   # -v는 모든 메일 데이터도 삭제
 
 - [English](README.md) · [简体中文](README.zh-CN.md) · [繁體中文](README.zh-TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Português](README.pt.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [Italiano](README.it.md) · [Türkçe](README.tr.md) · [Bahasa Indonesia](README.id.md) · [Tiếng Việt](README.vi.md)
 - [배포 가이드](docs/deployment.md)([简体中文](docs/deployment.zh-CN.md)) · [관리 패널](docs/admin-panel.md) · [보안](docs/security.md)
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md).
 
 ## 라이선스
 

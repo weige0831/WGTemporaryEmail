@@ -116,14 +116,37 @@ mail.نطاقك.  IN  A    <عنوان IP الخادم>      # اسم مضيف �
 cd WGTemporaryEmail
 git pull
 docker compose build
-docker compose up -d
+docker compose up -d --force-recreate
+# apply database migrations (idempotent; only needed when upgrading an existing install)
+docker compose exec -T postgres psql -U tempmail -d tempmail < db/migrations/002_permanent_addresses.sql
 ```
+
+توجد الترحيلات في `db/migrations/` وهي آمنة للتكرار. لا تلزم إلا عند ترقية تثبيت أقدم من الميزة المعنية؛ التثبيت الجديد يحصل على المخطط الكامل من `db/init/schema.sql`.
 
 ### إلغاء التثبيت
 
 ```bash
 docker compose down -v   # -v يحذف أيضًا كل بيانات البريد
 ```
+
+## صناديق البريد الدائمة وواجهة التكامل
+
+إلى جانب العناوين المؤقتة التي تنتهي تلقائيًا، يوفّر الخدمة **صناديق دائمة**: يبقى العنوان إلى الأبد وتُحذف رسائله بعد مدة الاحتفاظ (`tempmail.permanent_email_retention_days`، الافتراضي 30 يومًا).
+
+- **الويب**: `/mailbox` — اختر اسمًا، واحفظ رمز الوصول، ثم سجّل الدخول به من أي جهاز. يعمل الصندوق مثل المؤقت (بحث، تحديث تلقائي، HTML/نص، مرفقات، تنزيل الرسالة الأصلية).
+- **API (بمصادقة)**: `POST /api/v1/api/addresses` مع الترويسة `X-API-Key: <مفتاح التكامل>` والجسم `{"username": "...", "domain": "..."}`.
+- **مفتاح التكامل**: لوحة الإدارة ← الإعدادات ← **مفتاح API للتكامل** (عرض الحالة / إعادة التوليد؛ يُعرض مرة واحدة).
+- الإنشاء من الموقع لا يحتاج مفتاحًا ويخضع لحدّ لكل عنوان IP.
+
+## النسخ الاحتياطي والاستعادة
+
+- **قاعدة البيانات** (كل العناوين والرسائل والمرفقات):
+  ```bash
+  docker exec tempmail_db pg_dump -U tempmail tempmail | gzip > backup-$(date +%F).sql.gz
+  docker exec -i tempmail_db psql -U tempmail -d tempmail < backup.sql   # استعادة
+  ```
+- **الإعدادات**: `config.yaml` (رمز الإدارة، كلمة مرور قاعدة البيانات، مفتاح التكامل) و`.env`؛ احفظ نسخًا منها فهي ليست في git.
+- **TLS**: `certs/` (`cert.pem`، `key.pem`)؛ يمكن إعادة إصدارها من اللوحة.
 
 ## لوحة الإدارة و API
 
@@ -135,6 +158,10 @@ docker compose down -v   # -v يحذف أيضًا كل بيانات البريد
 
 - [English](README.md) · [简体中文](README.zh-CN.md) · [繁體中文](README.zh-TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Português](README.pt.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [Italiano](README.it.md) · [Türkçe](README.tr.md) · [Bahasa Indonesia](README.id.md) · [Tiếng Việt](README.vi.md)
 - [دليل النشر](docs/deployment.md) ([简体中文](docs/deployment.zh-CN.md)) · [لوحة الإدارة](docs/admin-panel.md) · [الأمان](docs/security.md)
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md).
 
 ## الترخيص
 

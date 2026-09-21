@@ -1,4 +1,8 @@
 // 管理面板 API 客户端：统一携带 Bearer 令牌，401 时清除本地令牌
+// 错误文案走 i18n（translate），避免 16 种语言的面板里混入固定中文。
+
+import { currentLang, translate } from '@/lib/i18n'
+import { formatBytes } from '@/lib/utils'
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL || ''
 
@@ -38,15 +42,21 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
   if (res.status === 401) {
     clearAdminToken()
-    throw new ApiError(401, '登录已失效，请重新登录')
+    throw new ApiError(401, translate('admin.sessionExpired'))
   }
 
   if (!res.ok) {
-    let detail = `请求失败 (${res.status})`
+    // 4xx 一般是后端返回的具体校验信息（如主机名格式），原样展示更有用；
+    // 其余（限流、服务端错误）用本地化文案，避免出现固定中文。
+    let detail = translate('admin.requestFailed', { status: res.status })
     try {
       const data = await res.json()
-      if (data.detail) {
-        detail = typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail)
+      if (typeof data.detail === 'string' && res.status >= 400 && res.status < 500 && res.status !== 429) {
+        detail = data.detail
+      } else if (res.status === 429) {
+        detail = translate('admin.tooManyRequests')
+      } else if (res.status >= 500) {
+        detail = translate('admin.serverError')
       }
     } catch {
       // 忽略解析失败，使用默认错误信息
@@ -271,22 +281,18 @@ export function formatDateTime(value: string | null | undefined): string {
   if (!value) return '-'
   const d = new Date(value)
   if (isNaN(d.getTime())) return '-'
-  return d.toLocaleString('zh-CN', { hour12: false })
-}
-
-export function formatBytesZh(bytes: number): string {
-  if (!bytes || bytes <= 0) return '0 B'
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
-  const i = Math.min(Math.floor(Math.log(bytes) / Math.log(k)), sizes.length - 1)
-  return `${(bytes / Math.pow(k, i)).toFixed(i === 0 ? 0 : 1)} ${sizes[i]}`
+  // Follow the language the panel is currently displayed in.
+  return d.toLocaleString(currentLang(), { hour12: false })
 }
 
 export function formatUptime(seconds: number): string {
   const d = Math.floor(seconds / 86400)
   const h = Math.floor((seconds % 86400) / 3600)
   const m = Math.floor((seconds % 3600) / 60)
-  if (d > 0) return `${d} 天 ${h} 小时`
-  if (h > 0) return `${h} 小时 ${m} 分钟`
-  return `${m} 分钟`
+  if (d > 0) return translate('admin.uptimeDaysHours', { d, h })
+  if (h > 0) return translate('admin.uptimeHoursMinutes', { h, m })
+  return translate('admin.uptimeMinutes', { m })
 }
+
+// Backwards-compatible alias: the shared formatter is language-neutral.
+export const formatBytesZh = formatBytes

@@ -126,10 +126,13 @@ class PermanentAddressResponse(BaseModel):
     token: str
     address_type: str = 'permanent'
     created_at: datetime
+    # Always null for permanent mailboxes; present so clients do not have to
+    # special-case the missing field.
+    expires_at: Optional[datetime] = None
 
-    @field_serializer('created_at')
+    @field_serializer('created_at', 'expires_at')
     def serialize_dt(self, dt: datetime, _info):
-        return dt.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
+        return dt.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z' if dt else None
 
     class Config:
         from_attributes = True

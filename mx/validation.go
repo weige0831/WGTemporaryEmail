@@ -2,14 +2,42 @@ package main
 
 import (
 	"bytes"
+	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net"
 	"strings"
+	"time"
 
 	"github.com/emersion/go-msgauth/dkim"
 	"golang.org/x/net/publicsuffix"
 )
+
+const (
+	// A message may carry hundreds of DKIM-Signature headers; each one costs a
+	// goroutine and a DNS lookup in the library, so verification is bounded.
+	maxDKIMVerifications = 3
+	// Per-lookup DNS budget. Senders control the domains that get looked up,
+	// so an unbounded lookup would let one message stall the session.
+	dnsLookupTimeout = 3 * time.Second
+)
+
+// dnsResolver is used for every validation lookup so the context deadline is
+// honoured (the pure-Go resolver is required for that).
+var dnsResolver = &net.Resolver{PreferGo: true}
+
+func lookupTXT(ctx context.Context, name string) ([]string, error) {
+	ctx, cancel := context.WithTimeout(ctx, dnsLookupTimeout)
+	defer cancel()
+	return dnsResolver.LookupTXT(ctx, name)
+}
+
+// lookupTXTBounded is the plain-domain form used by go-msgauth, which does not
+// pass a context.
+func lookupTXTBounded(domain string) ([]string, error) {
+	return lookupTXT(context.Background(), domain)
+}
 
 // Validator handles email validation (DKIM, SPF, DMARC)
 type Validator struct {
@@ -55,11 +83,23 @@ func (v *Validator) ValidateEmail(rawMessage []byte, from string, clientIP strin
 	return result
 }
 
-// validateDKIM checks DKIM signatures
+// validateDKIM checks DKIM signatures.
+//
+// Verification is capped (maxDKIMVerifications) and every DNS lookup runs
+// under a deadline: without both, a single message full of DKIM-Signature
+// headers would spawn one goroutine and one attacker-directed DNS query per
+// header.
 func (v *Validator) validateDKIM(rawMessage []byte) bool {
-	verifications, err := dkim.Verify(bytes.NewReader(rawMessage))
+	verifications, err := dkim.VerifyWithOptions(bytes.NewReader(rawMessage), &dkim.VerifyOptions{
+		MaxVerifications: maxDKIMVerifications,
+		LookupTXT:        lookupTXTBounded,
+	})
 	if err != nil {
-		log.Printf("DKIM: No signatures found - %v", err)
+		if errors.Is(err, dkim.ErrTooManySignatures) {
+			log.Printf("DKIM: too many signatures (limit %d) - treating as unverified", maxDKIMVerifications)
+		} else {
+			log.Printf("DKIM: No signatures found - %v", err)
+		}
 		return false
 	}
 
@@ -143,7 +183,7 @@ func (v *Validator) validateDMARC(domain string, spfResult string, dkimValid *bo
 
 // lookupSPFRecord retrieves SPF record from DNS
 func lookupSPFRecord(domain string) (string, error) {
-	txtRecords, err := net.LookupTXT(domain)
+	txtRecords, err := lookupTXT(context.Background(), domain)
 	if err != nil {
 		return "", fmt.Errorf("DNS lookup failed: %w", err)
 	}
@@ -212,7 +252,7 @@ func lookupDMARCRecord(domain string) (string, error) {
 	// Try exact domain first
 	dmarcDomain := "_dmarc." + domain
 
-	txtRecords, err := net.LookupTXT(dmarcDomain)
+	txtRecords, err := lookupTXT(context.Background(), dmarcDomain)
 	if err == nil {
 		// Find DMARC record (starts with "v=DMARC1")
 		for _, record := range txtRecords {
@@ -230,7 +270,7 @@ func lookupDMARCRecord(domain string) (string, error) {
 		log.Printf("DMARC: No policy for %s, checking organizational domain %s", domain, orgDomain)
 
 		orgDmarcDomain := "_dmarc." + orgDomain
-		txtRecords, err := net.LookupTXT(orgDmarcDomain)
+		txtRecords, err := lookupTXT(context.Background(), orgDmarcDomain)
 		if err == nil {
 			for _, record := range txtRecords {
 				if strings.HasPrefix(record, "v=DMARC1") {

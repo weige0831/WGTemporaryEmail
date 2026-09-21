@@ -1,7 +1,7 @@
 import type { Dict } from "./en"
 
 export const pt: Partial<Dict> = {
-  nav: { about: "Sobre", privacy: "Privacidade", api: "API", permanentMailbox: "Caixa permanente" },
+  nav: { about: "Sobre", privacy: "Privacidade", api: "API", permanentMailbox: "Caixa permanente", tempMailbox: "Caixa temporária" },
   home: {
     yourTempEmail: "Seu e-mail temporário",
     readyDesc: "Seu e-mail temporário está pronto. Ele será excluído automaticamente em {time}.",
@@ -89,6 +89,7 @@ export const pt: Partial<Dict> = {
     collectP2: "Seu navegador (localStorage) guarda o endereço e o token atuais para você continuar na próxima vez. Esses dados permanecem apenas no seu dispositivo.",
     retentionTitle: "Retenção e exclusão de dados",
     retentionL1: "Endereços e e-mails são mantidos por 24 horas por padrão e depois excluídos automaticamente (a retenção pode variar conforme a configuração do serviço)",
+    permanentMailboxNote: "Caixas permanentes: o endereço é mantido até você excluí-lo e os e-mails são removidos automaticamente após o período de retenção configurado (30 dias por padrão).",
     retentionL2: "Você pode excluir e-mails manualmente na interface a qualquer momento",
     retentionL3: "Quando o limite de e-mails por endereço é excedido, os mais antigos são limpos automaticamente",
     retentionL4: "Dados excluídos não podem ser recuperados",

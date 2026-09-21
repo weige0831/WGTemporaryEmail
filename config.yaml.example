@@ -11,6 +11,12 @@ setup:
   # The wizard sets this to true automatically; setup.sh writes true as well.
   initialized: false
 
+  # One-time key required by the wizard while initialized is false. The API
+  # generates it on first start and prints it in the container log
+  # (docker compose logs api | grep "Setup key"); setup.sh shows it too.
+  # Leave empty to have it generated; it is never reused after setup.
+  key: ""
+
 admin:
   # Bearer token for the admin panel (/admin) and the admin API (/api/v1/admin/*)
   # Generate a strong random value, e.g.: openssl rand -base64 32 | tr -d "=+/" | cut -c1-32
@@ -28,14 +34,28 @@ database:
   max_overflow: 20
 
 server:
+  # Bind address of the API inside the container (compose sets API_HOST=0.0.0.0)
   api_host: 127.0.0.1
   api_port: 8000
   mx_port: 25
   max_message_size_mb: 10
+  # Mail server hostname (MX record target) - also the SAN of the TLS cert
   hostname: mail.example.com
 
-  # Enable FastAPI interactive documentation endpoints (/docs, /redoc, /openapi.json)
+  # Enable FastAPI interactive documentation endpoints (/docs, /redoc,
+  # /openapi.json). When false, nginx answers 404 for them instead of proxying.
   docs_enabled: true
+
+web:
+  # Panel access domain (A record for the web UI). When set and
+  # allow_ip_access is false, requests from other hostnames/IPs are redirected
+  # here instead of being served the panel.
+  hostname: mail.example.com
+
+  # Allow reaching the panel by IP address or any other hostname.
+  # false = only web.hostname above (admin/API/ACME paths always stay reachable
+  # so a wrong setting cannot lock you out).
+  allow_ip_access: true
 
 cors:
   # Allowed origins for CORS (Cross-Origin Resource Sharing)
@@ -69,6 +89,12 @@ tls:
   # Handled by setup.sh
   cert_file: /config/certs/cert.pem
   key_file: /config/certs/key.pem
+
+logging:
+  # Python log level for the api container (debug|info|warning|error)
+  level: info
+  # Reserved for structured logging; the container currently logs plain text
+  format: json
 
 tempmail:
   # How long before addresses expire and are deleted (all emails deleted too)

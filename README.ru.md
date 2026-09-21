@@ -116,14 +116,37 @@ mail.ваш-домен.  IN  A    <IP сервера>      # имя хоста �
 cd WGTemporaryEmail
 git pull
 docker compose build
-docker compose up -d
+docker compose up -d --force-recreate
+# apply database migrations (idempotent; only needed when upgrading an existing install)
+docker compose exec -T postgres psql -U tempmail -d tempmail < db/migrations/002_permanent_addresses.sql
 ```
+
+Миграции лежат в `db/migrations/` и идемпотентны. Они нужны только при обновлении установки, созданной до появления соответствующей функции; новая установка получает полную схему из `db/init/schema.sql`.
 
 ### Удаление
 
 ```bash
 docker compose down -v   # -v также удаляет все данные почты
 ```
+
+## Постоянные ящики и API интеграции
+
+Помимо временных адресов с автоистечением есть **постоянные ящики**: адрес сохраняется навсегда, а письма удаляются по истечении срока хранения (`tempmail.permanent_email_retention_days`, по умолчанию 30 дней).
+
+- **Веб**: `/mailbox` — выберите имя, сохраните токен доступа и входите с ним с любого устройства. Ящик работает как временный (поиск, автообновление, HTML/текст, вложения, скачивание оригинала).
+- **API (с авторизацией)**: `POST /api/v1/api/addresses`, заголовок `X-API-Key: <ключ интеграции>`, тело `{"username": "...", "domain": "..."}`.
+- **Ключ интеграции**: панель администратора → Конфигурация → **Ключ API интеграции** (статус / перегенерация; показывается один раз).
+- Создание через сайт не требует ключа и ограничено по IP.
+
+## Резервное копирование и восстановление
+
+- **База данных** (все адреса, письма и вложения):
+  ```bash
+  docker exec tempmail_db pg_dump -U tempmail tempmail | gzip > backup-$(date +%F).sql.gz
+  docker exec -i tempmail_db psql -U tempmail -d tempmail < backup.sql   # восстановление
+  ```
+- **Конфигурация**: `config.yaml` (токен админа, пароль БД, ключ интеграции) и `.env`; храните копии отдельно — их нет в git.
+- **TLS**: `certs/` (`cert.pem`, `key.pem`); при утере можно перевыпустить в панели.
 
 ## Панель управления и API
 
@@ -135,6 +158,10 @@ docker compose down -v   # -v также удаляет все данные по
 
 - [English](README.md) · [简体中文](README.zh-CN.md) · [繁體中文](README.zh-TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Español](README.es.md) · [Français](README.fr.md) · [Deutsch](README.de.md) · [Português](README.pt.md) · [Русский](README.ru.md) · [العربية](README.ar.md) · [हिन्दी](README.hi.md) · [Italiano](README.it.md) · [Türkçe](README.tr.md) · [Bahasa Indonesia](README.id.md) · [Tiếng Việt](README.vi.md)
 - [Руководство по развёртыванию](docs/deployment.md) ([简体中文](docs/deployment.zh-CN.md)) · [Панель управления](docs/admin-panel.md) · [Безопасность](docs/security.md)
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md).
 
 ## Лицензия
 

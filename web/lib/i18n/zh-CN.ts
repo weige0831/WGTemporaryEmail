@@ -1,7 +1,7 @@
 import type { Dict } from "./en"
 
 export const zhCN: Partial<Dict> = {
-  nav: { about: "关于", privacy: "隐私", api: "API", permanentMailbox: "长效邮箱" },
+  nav: { about: "关于", privacy: "隐私", api: "API", permanentMailbox: "长效邮箱", tempMailbox: "临时邮箱" },
   home: {
     yourTempEmail: "你的临时邮箱",
     readyDesc: "你的临时邮箱已就绪，将在 {time} 后自动删除。",
@@ -89,6 +89,7 @@ export const zhCN: Partial<Dict> = {
     collectP2: "你的浏览器本地（localStorage）会保存当前邮箱地址与令牌，以便下次打开时继续使用。这些信息仅保存在你自己的设备上。",
     retentionTitle: "数据保留与删除",
     retentionL1: "地址与邮件默认保留 24 小时，到期后由系统自动删除（保留时长可能因服务配置而异）",
+    permanentMailboxNote: "长效邮箱：地址会一直保留直到您自行删除；其邮件在运营方配置的保留期（默认 30 天）后自动删除。",
     retentionL2: "你可以随时在界面中手动删除邮件",
     retentionL3: "超过单地址邮件数上限时，最早的邮件会被自动清理",
     retentionL4: "删除后的数据不可恢复",

@@ -193,21 +193,12 @@ COMMENT ON FUNCTION enforce_max_emails_per_address(UUID, INTEGER) IS 'Limits ema
 -- Initial data / constraints
 -- ============================================================================
 
--- Add check to ensure cleanup actually deletes expired data
-CREATE OR REPLACE FUNCTION check_no_expired_addresses() RETURNS TRIGGER AS $$
-BEGIN
-    IF NEW.expires_at < NOW() THEN
-        RAISE EXCEPTION 'Cannot insert expired address';
-    END IF;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
 
 -- Stats view for monitoring
 CREATE OR REPLACE VIEW tempmail_stats AS
 SELECT
     (SELECT COUNT(*) FROM addresses) AS total_addresses,
-    (SELECT COUNT(*) FROM addresses WHERE expires_at > NOW()) AS active_addresses,
+    (SELECT COUNT(*) FROM addresses WHERE expires_at > NOW() OR expires_at IS NULL) AS active_addresses,
     (SELECT COUNT(*) FROM emails) AS total_emails,
     (SELECT COUNT(*) FROM email_recipients WHERE is_read = FALSE) AS unread_emails,
     (SELECT COUNT(*) FROM attachments) AS total_attachments,

@@ -1,5 +1,7 @@
 """Email retrieval endpoints - token-based authentication"""
 
+from urllib.parse import quote
+
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.orm import Session
 from sqlalchemy import desc, or_
@@ -9,10 +11,33 @@ from datetime import datetime
 
 from app.database import get_db
 from app.models import Email, EmailRecipient, Attachment
+from app.rate_limit import ip_rate_limit
 from app.schemas import EmailSummary, EmailDetail, EmailListResponse, AttachmentInfo
 from app.utils import get_address_by_token, escape_like
 
-router = APIRouter(prefix="/api/v1/{token}", tags=["emails"])
+router = APIRouter(
+    prefix="/api/v1/{token}",
+    tags=["emails"],
+    # Individual reads are cheap but raw/attachment routes stream whole
+    # messages, so every token route is rate limited per IP. Writes are
+    # limited in their own routers.
+    dependencies=[Depends(ip_rate_limit(240, 60, scope="emails"))],
+)
+
+
+def content_disposition(filename: str) -> str:
+    """Build an RFC 6266 attachment header that is safe for any filename.
+
+    Path separators are replaced first (a filename never legitimately contains
+    one), then the name is emitted twice: an ASCII fallback for old clients and
+    the RFC 5987 `filename*` form. Putting raw non-latin-1 text into a header
+    raises while the response is built (HTTP 500), and an unescaped quote would
+    break out of the quoted-string.
+    """
+    name = (filename or "attachment").replace("/", "_").replace("\\", "_")
+    name = name.replace("\r", "_").replace("\n", "_")
+    fallback = name.encode("ascii", "replace").decode("ascii").replace('"', "_") or "attachment"
+    return f"attachment; filename=\"{fallback}\"; filename*=UTF-8''{quote(name, safe='')}"
 
 
 @router.get("/info")
@@ -246,7 +271,10 @@ def download_raw_email(
     return Response(
         content=result.raw_message,
         media_type="message/rfc822",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "X-Content-Type-Options": "nosniff",
+        }
     )
 
 
@@ -288,14 +316,23 @@ def download_attachment(
     if not attachment:
         raise HTTPException(status_code=404, detail="Attachment not found")
 
-    # Return file
-    # Sanitize filename to prevent path traversal
-    safe_filename = attachment.filename.replace('/', '_').replace('\\', '_')
+    # Return file. The attachment's own MIME type is attacker-controlled, so it
+    # is only used for allowlisted (render-inert) types; everything else is
+    # served as a download-only binary.
+    _RENDERABLE = {
+        "image/png", "image/jpeg", "image/gif", "image/webp", "image/bmp",
+        "application/pdf", "text/plain",
+    }
+    content_type = (attachment.content_type or "").split(";")[0].strip().lower()
+    media_type = content_type if content_type in _RENDERABLE else "application/octet-stream"
 
     return Response(
         content=attachment.data,
-        media_type=attachment.content_type,
-        headers={"Content-Disposition": f'attachment; filename="{safe_filename}"'}
+        media_type=media_type,
+        headers={
+            "Content-Disposition": content_disposition(attachment.filename),
+            "X-Content-Type-Options": "nosniff",
+        }
     )
 
 
@@ -325,8 +362,18 @@ def delete_email(
     if not recipient:
         raise HTTPException(status_code=404, detail="Email not found")
 
-    # Delete the email (CASCADE will handle recipients and attachments)
-    db.query(Email).filter(Email.id == email_id).delete()
+    # Remove this mailbox's link to the message, then the message itself once
+    # no mailbox references it any more. The schema is many-to-many (one
+    # message can be delivered to several local addresses), so deleting the
+    # shared row outright would destroy other recipients' copies.
+    db.delete(recipient)
+    db.flush()
+    still_referenced = db.query(EmailRecipient).filter(
+        EmailRecipient.email_id == email_id
+    ).first()
+    if not still_referenced:
+        db.query(Attachment).filter(Attachment.email_id == email_id).delete(synchronize_session=False)
+        db.query(Email).filter(Email.id == email_id).delete(synchronize_session=False)
     db.commit()
 
     return Response(status_code=204)

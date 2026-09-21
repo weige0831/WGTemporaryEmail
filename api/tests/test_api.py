@@ -16,7 +16,8 @@ class TestHealthEndpoint:
 
         assert "status" in data
         assert "database" in data
-        assert "domains" in data
+        # The unauthenticated health endpoint must not expose configuration.
+        assert "domains" not in data
 
     def test_health_check_structure(self, client):
         """Test health check returns correct structure"""
@@ -26,16 +27,15 @@ class TestHealthEndpoint:
         # Should indicate healthy in test mode
         assert data["status"] in ["healthy", "unhealthy"]
         assert data["database"] in ["connected", "disconnected"]
-        assert isinstance(data["domains"], list)
+        assert set(data.keys()) == {"status", "database"}
 
-    def test_health_check_domains(self, client):
-        """Test health check includes configured domains"""
+    def test_health_check_hides_configuration(self, client):
+        """Health checks must not leak the configured domains"""
         response = client.get("/api/v1/health")
         data = response.json()
 
-        # Should have at least one domain configured
-        assert len(data["domains"]) > 0
-        assert "tempmail.example.com" in data["domains"]
+        assert "tempmail.example.com" not in response.text
+        assert "domains" not in data
 
 
 class TestCORS:

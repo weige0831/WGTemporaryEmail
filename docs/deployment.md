@@ -133,3 +133,14 @@ docker compose down -v   # -v deletes all mail data
   server and port 80 must be publicly reachable; check `docker logs tempmail_certbot`
 - **Panel shows a redirect**: `web.allow_ip_access` is off and you used a non-official
   host - use the official panel domain (the admin panel still works from any host)
+
+## Upgrading an existing installation
+
+```bash
+git pull
+docker compose exec -T postgres psql -U tempmail -d tempmail < db/migrations/002_permanent_addresses.sql
+docker compose build
+docker compose up -d --force-recreate
+```
+
+Migrations live in `db/migrations/` and are idempotent. Run them when upgrading an installation created before the matching feature; a fresh install gets the full schema from `db/init/schema.sql`.

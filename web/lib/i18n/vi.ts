@@ -1,7 +1,7 @@
 import type { Dict } from "./en"
 
 export const vi: Partial<Dict> = {
-  nav: { about: "Giới thiệu", privacy: "Quyền riêng tư", api: "API", permanentMailbox: "Hộp thư vĩnh viễn" },
+  nav: { about: "Giới thiệu", privacy: "Quyền riêng tư", api: "API", permanentMailbox: "Hộp thư vĩnh viễn", tempMailbox: "Hộp thư tạm" },
   home: {
     yourTempEmail: "Email tạm thời của bạn",
     readyDesc: "Email tạm thời của bạn đã sẵn sàng. Nó sẽ tự động bị xóa sau {time}.",
@@ -89,6 +89,7 @@ export const vi: Partial<Dict> = {
     collectP2: "Trình duyệt của bạn (localStorage) lưu địa chỉ và mã hiện tại để bạn có thể tiếp tục vào lần sau. Dữ liệu này chỉ nằm trên thiết bị của bạn.",
     retentionTitle: "Lưu giữ và xóa dữ liệu",
     retentionL1: "Địa chỉ và email được lưu 24 giờ theo mặc định, sau đó tự động bị xóa (thời gian có thể khác tùy cấu hình dịch vụ)",
+    permanentMailboxNote: "Hộp thư vĩnh viễn: địa chỉ được giữ cho đến khi bạn tự xóa, và thư sẽ tự động bị xóa sau thời gian lưu trữ do người vận hành cấu hình (mặc định 30 ngày).",
     retentionL2: "Bạn có thể xóa email thủ công trong giao diện bất cứ lúc nào",
     retentionL3: "Khi vượt quá giới hạn email cho mỗi địa chỉ, các email cũ nhất sẽ được dọn dẹp tự động",
     retentionL4: "Dữ liệu đã xóa không thể khôi phục",
