@@ -102,6 +102,14 @@ Pannello admin → Interruttori → **Consenti l'accesso al pannello utente da I
 - ATTIVO (predefinito): qualsiasi indirizzo può accedere al pannello utente
 - DISATTIVATO: i domini non ufficiali e gli IP vengono reindirizzati al dominio ufficiale del pannello; `/admin`, `/api/*`, `/docs` e il percorso di sfida ACME restano raggiungibili da qualsiasi indirizzo per non restare mai chiusi fuori
 
+### Pulizia automatica di log e disco
+
+- Dati di posta: gli indirizzi scaduti vengono rimossi automaticamente e il totale è limitato da `max_storage_mb` (1 GB predefinito) - prima i più vecchi
+- Log dei container: ogni servizio ruota log da 10 MB x 3 file (max 30 MB per container)
+- Cache di build: `docker system prune` + `docker builder prune` settimanalmente (cron)
+- Cache apt: `apt-get autoclean` mensilmente (cron)
+- journald limitato a 200 MB; `setup.sh` configura tutto automaticamente
+
 ### Aggiornamento
 
 ```bash

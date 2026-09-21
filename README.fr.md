@@ -102,6 +102,14 @@ Panneau admin → Interrupteurs → **Autoriser l'accès au panneau utilisateur 
 - ACTIVÉ (défaut) : n'importe quelle adresse peut accéder au panneau utilisateur
 - DÉSACTIVÉ : les domaines non officiels et les IP sont redirigés vers le domaine officiel du panneau ; `/admin`, `/api/*`, `/docs` et le chemin de défi ACME restent accessibles depuis n'importe quelle adresse afin de ne jamais vous enfermer dehors
 
+### Nettoyage automatique des logs et du disque
+
+- Données de courrier : les adresses expirées sont supprimées automatiquement et le total est plafonné à `max_storage_mb` (1 Go par défaut) - les plus anciens sont nettoyés en premier
+- Logs des conteneurs : chaque service effectue une rotation de 10 Mo x 3 fichiers (30 Mo max par conteneur)
+- Cache de build : `docker system prune` + `docker builder prune` chaque semaine (cron)
+- Cache apt : `apt-get autoclean` chaque mois (cron)
+- journald est plafonné à 200 Mo ; `setup.sh` configure tout cela automatiquement
+
 ### Mise à jour
 
 ```bash

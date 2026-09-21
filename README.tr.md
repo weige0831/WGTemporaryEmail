@@ -102,6 +102,14 @@ Yönetim paneli → Özellik Anahtarları → **Kullanıcı paneline IP / diğer
 - AÇIK (varsayılan): kullanıcı paneline her adresten erişilebilir
 - KAPALI: resmî olmayan alan adları ve IP'lerden erişim resmî panel alan adına yönlendirilir; `/admin`, `/api/*`, `/docs` ve ACME doğrulama yolu her adresten erişilebilir kalır, böylece asla dışarıda kilitli kalmazsınız
 
+### Günlük ve disk otomatik temizliği
+
+- Posta verileri: süresi dolan adresler otomatik silinir, toplam `max_storage_mb` (varsayılan 1GB) ile sınırlanır - en eskiden başlanır
+- Konteyner günlükleri: her hizmet 10MB × 3 dosya olarak döner (konteyner başına en fazla 30MB)
+- Derleme önbelleği: `docker system prune` + `docker builder prune` haftalık (cron)
+- apt önbelleği: `apt-get autoclean` aylık (cron)
+- journald 200MB ile sınırlı; yukarıdakilerin tümünü `setup.sh` otomatik yapılandırır
+
 ### Güncelleme
 
 ```bash

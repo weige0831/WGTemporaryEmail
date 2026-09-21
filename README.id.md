@@ -102,6 +102,14 @@ Panel admin → Sakelar → **Izinkan akses panel pengguna via IP / domain lain*
 - AKTIF (default): panel dapat diakses dari alamat mana pun
 - NONAKTIF: akses dari domain tidak resmi dan IP dialihkan ke domain resmi panel; `/admin`, `/api/*`, `/docs`, dan jalur tantangan ACME tetap dapat diakses dari alamat mana pun agar Anda tidak pernah terkunci
 
+### Pembersihan otomatis log & disk
+
+- Data email: alamat kedaluwarsa dihapus otomatis, total dibatasi `max_storage_mb` (default 1GB) - yang terlama dibersihkan lebih dulu
+- Log kontainer: setiap layanan merotasi log 10MB × 3 file (maks 30MB per kontainer)
+- Cache build: `docker system prune` + `docker builder prune` mingguan (cron)
+- Cache apt: `apt-get autoclean` bulanan (cron)
+- journald dibatasi 200MB; semuanya dikonfigurasi otomatis oleh `setup.sh`
+
 ### Memperbarui
 
 ```bash

@@ -102,6 +102,14 @@ Admin-Panel → Funktionsschalter → **Zugriff auf den Nutzerbereich per IP / a
 - AN (Standard): jede Adresse kann den Nutzerbereich erreichen
 - AUS: Zugriffe über fremde Domains oder IPs werden auf die offizielle Panel-Domain umgeleitet; `/admin`, `/api/*`, `/docs` und der ACME-Challenge-Pfad bleiben von jeder Adresse erreichbar, sodass man sich nie aussperrt
 
+### Automatische Log- und Datenträgerbereinigung
+
+- Mail-Daten: abgelaufene Adressen werden automatisch gelöscht, das Gesamtvolumen ist über `max_storage_mb` (Standard 1 GB) begrenzt - älteste zuerst
+- Container-Logs: jeder Dienst rotiert 10 MB x 3 Dateien (max. 30 MB pro Container)
+- Build-Cache: `docker system prune` + `docker builder prune` wöchentlich (cron)
+- apt-Cache: `apt-get autoclean` monatlich (cron)
+- journald auf 200 MB begrenzt; `setup.sh` richtet all dies automatisch ein
+
 ### Aktualisieren
 
 ```bash

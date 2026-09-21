@@ -102,6 +102,14 @@ Bảng quản trị → Công tắc → **Cho phép truy cập bảng người d
 - BẬT (mặc định): bảng truy cập được từ mọi địa chỉ
 - TẮT: truy cập từ tên miền không chính thức và IP được chuyển hướng sang tên miền chính thức của bảng; `/admin`, `/api/*`, `/docs` và đường dẫn thử thách ACME vẫn truy cập được từ mọi địa chỉ để bạn không bao giờ bị khóa ngoài
 
+### Tự động dọn dẹp nhật ký và ổ đĩa
+
+- Dữ liệu thư: địa chỉ hết hạn tự xóa, tổng dung lượng giới hạn bởi `max_storage_mb` (mặc định 1GB) - thư cũ nhất được dọn trước
+- Nhật ký container: mỗi dịch vụ xoay vòng 10MB × 3 tệp (tối đa 30MB mỗi container)
+- Cache build: `docker system prune` + `docker builder prune` hàng tuần (cron)
+- Cache apt: `apt-get autoclean` hàng tháng (cron)
+- journald giới hạn 200MB; `setup.sh` tự cấu hình toàn bộ điều trên
+
 ### Cập nhật
 
 ```bash

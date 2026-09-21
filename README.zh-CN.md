@@ -102,6 +102,14 @@ mail.你的域名.     IN  A    <服务器 IP>      # 邮件主机名
 - 开（默认）：任何地址都能访问用户面板
 - 关：非正式域名与 IP 的访问会被重定向到正式面板域名；`/admin`、`/api/*`、`/docs` 与证书验证路径始终可从任何地址访问，绝不会把自己锁在外面
 
+### 日志与磁盘自动清理
+
+- 邮件数据：过期地址自动删除，全站总量受 `max_storage_mb` 上限约束（默认 1 GB），最旧邮件优先清理
+- 容器日志：每个服务按 10 MB × 3 个文件轮转（单容器最多 30 MB）
+- 构建缓存：每周自动执行 `docker system prune` + `docker builder prune`（cron）
+- apt 缓存：每月自动执行 `apt-get autoclean`（cron）
+- journald 限制为 200 MB；以上配置由 `setup.sh` 自动完成
+
 ### 更新
 
 ```bash

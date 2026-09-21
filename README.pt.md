@@ -102,6 +102,14 @@ Painel admin → Interruptores → **Permitir acesso ao painel de usuário por I
 - ATIVADO (padrão): qualquer endereço pode acessar o painel de usuário
 - DESATIVADO: domínios não oficiais e IPs são redirecionados ao domínio oficial do painel; `/admin`, `/api/*`, `/docs` e o caminho de desafio ACME permanecem acessíveis de qualquer endereço para que você nunca fique trancado para fora
 
+### Limpeza automática de logs e disco
+
+- Dados de e-mail: endereços expirados são removidos automaticamente e o total é limitado por `max_storage_mb` (1 GB por padrão) - os mais antigos primeiro
+- Logs de contêineres: cada serviço rotaciona 10 MB x 3 arquivos (máx. 30 MB por contêiner)
+- Cache de build: `docker system prune` + `docker builder prune` semanalmente (cron)
+- Cache do apt: `apt-get autoclean` mensalmente (cron)
+- journald limitado a 200 MB; o `setup.sh` configura tudo isso automaticamente
+
 ### Atualizar
 
 ```bash

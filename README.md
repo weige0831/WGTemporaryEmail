@@ -101,6 +101,14 @@ Admin panel → 功能开关 → **允许通过 IP / 其他域名访问用户面
 - ON (default): any host can reach the user panel
 - OFF: non-official domains and IPs are redirected to the official panel domain; `/admin`, `/api/*`, `/docs` and the ACME challenge stay reachable from any address so you can never lock yourself out
 
+### Log & disk cleanup
+
+- Mail data: expired addresses are removed automatically, and total storage is capped at `max_storage_mb` (1 GB by default) - oldest emails are cleaned first
+- Container logs: every service rotates logs at 10 MB x 3 files (30 MB max per container)
+- Build cache: `docker system prune` + `docker builder prune` run weekly (cron)
+- apt cache: `apt-get autoclean` runs monthly (cron)
+- journald is capped at 200 MB; `setup.sh` configures all of the above automatically
+
 ### Update
 
 ```bash

@@ -102,6 +102,14 @@ mail.你的網域.     IN  A    <伺服器 IP>      # 郵件主機名稱
 - 開（預設）：任何位址都能存取使用者面板
 - 關：非正式網域與 IP 的存取會被重新導向到正式面板網域；`/admin`、`/api/*`、`/docs` 與憑證驗證路徑永遠可從任何位址存取，絕不會把自己鎖在外面
 
+### 日誌與磁碟自動清理
+
+- 郵件資料：過期地址自動刪除，全站總量受 `max_storage_mb` 上限約束（預設 1 GB），最舊郵件優先清理
+- 容器日誌：每個服務以 10 MB × 3 個檔案輪轉（單一容器最多 30 MB）
+- 建置快取：每週自動執行 `docker system prune` + `docker builder prune`（cron）
+- apt 快取：每月自動執行 `apt-get autoclean`（cron）
+- journald 限制為 200 MB；以上設定由 `setup.sh` 自動完成
+
 ### 更新
 
 ```bash

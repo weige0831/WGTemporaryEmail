@@ -102,6 +102,14 @@ Panel admin → Interruptores → **Permitir acceso al panel de usuario por IP /
 - ACTIVADO (por defecto): cualquier dirección puede acceder al panel de usuario
 - DESACTIVADO: los dominios no oficiales y las IP se redirigen al dominio oficial del panel; `/admin`, `/api/*`, `/docs` y la ruta de desafío ACME siguen accesibles desde cualquier dirección para que nunca te quedes fuera
 
+### Limpieza automática de logs y disco
+
+- Datos de correo: las direcciones caducadas se eliminan automáticamente y el total se limita con `max_storage_mb` (1 GB por defecto); se limpian primero los más antiguos
+- Logs de contenedores: cada servicio rota logs en 10 MB x 3 archivos (30 MB máx. por contenedor)
+- Caché de build: `docker system prune` + `docker builder prune` semanal (cron)
+- Caché de apt: `apt-get autoclean` mensual (cron)
+- journald limitado a 200 MB; `setup.sh` configura todo lo anterior automáticamente
+
 ### Actualizar
 
 ```bash
