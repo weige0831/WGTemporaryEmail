@@ -91,6 +91,26 @@ curl http://localhost/api/v1/domains  # configured domains
 Then open `http://your-ip/` (or the panel domain), finish the setup wizard and send
 a test mail from an external mailbox.
 
+## Log & disk cleanup
+
+Mail data is auto-cleaned by the application itself (expired addresses + `max_storage_mb`
+cap, see [docs/admin-panel.md](admin-panel.md)). Host-level accumulation is handled by:
+
+- **Container logs**: every compose service sets `max-size: 10m / max-file: 3`; `setup.sh`
+  also writes `/etc/docker/daemon.json` with the same defaults so other containers
+  (e.g. unrelated projects on the same host) rotate too
+- **journald**: capped at 200M via `/etc/systemd/journald.conf`
+- **Scheduled pruning**: `/etc/cron.d/wgtempemail-cleanup` runs `docker system prune`
+  + `docker builder prune` weekly and `apt-get autoclean` monthly
+
+One-off manual cleanup:
+
+```bash
+apt-get clean                 # apt cache
+docker builder prune -f       # build cache
+journalctl --vacuum-size=200M
+```
+
 ## Updating
 
 ```bash

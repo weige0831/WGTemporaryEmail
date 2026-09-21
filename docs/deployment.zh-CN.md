@@ -83,6 +83,22 @@ curl http://localhost/api/v1/domains  # 已配置域名
 
 然后打开 `http://服务器IP/`（或面板域名），完成配置向导，并从外部邮箱发一封测试邮件。
 
+## 日志与磁盘自动清理
+
+邮件数据由应用自身自动清理（过期地址 + `max_storage_mb` 上限，见 [docs/admin-panel.md](admin-panel.md)）。主机层面的积累由以下机制处理：
+
+- **容器日志**：compose 中每个服务都设置了 `max-size: 10m / max-file: 3`；`setup.sh` 还会写入 `/etc/docker/daemon.json` 设置同样的全局默认，使同主机上的其他容器（如无关项目）也会轮转
+- **journald**：通过 `/etc/systemd/journald.conf` 限制为 200M
+- **定时清理**：`/etc/cron.d/wgtempemail-cleanup` 每周执行 `docker system prune` + `docker builder prune`，每月执行 `apt-get autoclean`
+
+手动一次性清理：
+
+```bash
+apt-get clean                 # apt 缓存
+docker builder prune -f       # 构建缓存
+journalctl --vacuum-size=200M
+```
+
 ## 更新
 
 ```bash

@@ -33,6 +33,51 @@ echo "✓ Docker found"
 echo "✓ Docker Compose found"
 echo ""
 
+# ============================================================================
+# 日志与磁盘自动清理配置（防止容器日志、apt 缓存等无限增长）
+# ============================================================================
+echo "Configuring log rotation and disk cleanup..."
+
+# Docker 全局日志轮转（覆盖所有容器，包括非本项目的容器）
+if [ ! -f /etc/docker/daemon.json ]; then
+    cat > /etc/docker/daemon.json <<'EOF'
+{
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "10m",
+    "max-file": "3"
+  }
+}
+EOF
+    systemctl restart docker >/dev/null 2>&1 || true
+    echo "✓ Docker daemon log rotation configured"
+else
+    echo "✓ /etc/docker/daemon.json exists - skipped"
+fi
+
+# journald 限额 200M
+if ! grep -q '^SystemMaxUse=' /etc/systemd/journald.conf 2>/dev/null; then
+    echo 'SystemMaxUse=200M' >> /etc/systemd/journald.conf
+    systemctl restart systemd-journald >/dev/null 2>&1 || true
+    echo "✓ journald limited to 200M"
+fi
+
+# 定时清理：每周 docker prune，每月 apt 清理
+cat > /etc/cron.d/wgtempemail-cleanup <<'EOF'
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+# 每周日凌晨 4 点清理无用的 docker 资源
+0 4 * * 0 root docker system prune -f >/dev/null 2>&1 && docker builder prune -f >/dev/null 2>&1
+# 每月 1 日凌晨 4:30 清理 apt 缓存
+30 4 1 * * root apt-get autoclean -y >/dev/null 2>&1
+EOF
+chmod 644 /etc/cron.d/wgtempemail-cleanup
+echo "✓ Weekly docker prune + monthly apt cleanup scheduled"
+
+# 清理已有 apt 缓存
+apt-get clean -y >/dev/null 2>&1 || true
+echo ""
+
 # Check if config.yaml already exists
 if [ -f "config.yaml" ]; then
     echo "⚠ config.yaml already exists"
