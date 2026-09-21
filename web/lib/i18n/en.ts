@@ -312,6 +312,12 @@ export const en = {
     storageChanged: "Storage: {a} → {b}",
     cleanupFailed: "Cleanup failed. Please try again.",
     cleanupConfirm: "Run expired-address cleanup now? All expired addresses and their emails will be deleted.",
+    autoCleanupTitle: "Automatic cleanup",
+    autoCleanupMail: "Mail data: expired addresses (every {h}h) and the oldest emails exceeding the storage cap ({m} MB)",
+    autoCleanupLogs: "Container logs: rotated automatically per container (10 MB x 3 files, 30 MB max)",
+    autoCleanupBuild: "Docker build cache: cleaned weekly",
+    autoCleanupApt: "apt cache: cleaned monthly",
+    autoCleanupJournald: "System logs (journald): capped at 200 MB",
   },
   setup: {
     setupTitle: "First-Time Setup",

@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Trash2, CheckCircle2, AlertCircle } from "lucide-react"
+import { Trash2, CheckCircle2, AlertCircle, Mail, FileText, HardDrive, Package, ScrollText } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { adminApi, ApiError, type AdminStats, formatBytesZh } from "@/lib/admin-api"
@@ -56,10 +56,46 @@ export default function AdminCleanup() {
     }
   }
 
+  // 自动清理机制清单
+  const autoItems = [
+    {
+      icon: Mail,
+      text: t("admin.autoCleanupMail", {
+        h: stats?.cleanup_interval_hours ?? "-",
+        m: stats?.max_storage_mb ?? "-",
+      }),
+    },
+    { icon: FileText, text: t("admin.autoCleanupLogs") },
+    { icon: HardDrive, text: t("admin.autoCleanupBuild") },
+    { icon: Package, text: t("admin.autoCleanupApt") },
+    { icon: ScrollText, text: t("admin.autoCleanupJournald") },
+  ]
+
   return (
     <div className="space-y-4 max-w-2xl">
       <h1 className="text-xl sm:text-2xl font-bold">{t("admin.cleanupTitle")}</h1>
 
+      {/* 自动清理机制总览 */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">{t("admin.autoCleanupTitle")}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ul className="space-y-2">
+            {autoItems.map((item) => {
+              const Icon = item.icon
+              return (
+                <li key={item.text} className="flex items-start gap-2 text-sm">
+                  <Icon className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                  <span className="text-muted-foreground">{item.text}</span>
+                </li>
+              )
+            })}
+          </ul>
+        </CardContent>
+      </Card>
+
+      {/* 手动清理 */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
