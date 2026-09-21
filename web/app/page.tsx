@@ -388,6 +388,12 @@ export default function Home() {
                         placeholder={t("home.searchEmails")}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
+                        onKeyDown={(e) => {
+                          // Same behaviour as the permanent mailbox page: Enter
+                          // searches immediately instead of waiting for the
+                          // next auto-refresh tick.
+                          if (e.key === "Enter" && address) fetchEmails(address.token)
+                        }}
                         className="pl-8 text-sm sm:text-base min-h-[40px]"
                       />
                     </div>

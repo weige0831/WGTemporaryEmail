@@ -5,9 +5,14 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useState,
   type ReactNode,
 } from "react"
+
+// useLayoutEffect runs before the browser paints, so switching the language
+// there is invisible to the user; on the server it degrades to useEffect.
+const useIsomorphicLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect
 import { en, type Dict } from "./en"
 import { zhCN } from "./zh-CN"
 import { zhTW } from "./zh-TW"
@@ -201,13 +206,23 @@ function getValue(dict: Partial<Dict>, path: string): unknown {
 }
 
 export function I18nProvider({ children }: { children: ReactNode }) {
-  // 同步初始化语言，避免首帧渲染成英文再切换（提示条等内容会用到 t()）
-  const [lang, setLangState] = useState<string>(() => {
-    if (typeof window === "undefined") return DEFAULT_LANG
+  // The statically exported HTML is rendered with the default language (the
+  // build has no access to localStorage), so the first client render has to
+  // match it or React reports a hydration mismatch (error #418) for every
+  // translated string. The stored language is applied in a layout effect
+  // instead: it runs after hydration but before the browser paints, so the
+  // user still never sees the English frame.
+  const [lang, setLangState] = useState<string>(DEFAULT_LANG)
+
+  useIsomorphicLayoutEffect(() => {
     const detected = detectLang()
-    moduleLang = detected
-    return detected
-  })
+    if (detected !== DEFAULT_LANG) {
+      moduleLang = detected
+      setLangState(detected)
+    }
+    applyDocument(detected)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     moduleLang = lang

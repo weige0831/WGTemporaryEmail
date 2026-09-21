@@ -45,6 +45,10 @@ export default function MailboxPage() {
   // Operator-configured retention and official hostname (never hardcode 30).
   const [retentionDays, setRetentionDays] = useState(30)
   const [webHostname, setWebHostname] = useState("")
+  // Time-dependent text must not be part of the prerendered HTML: the build
+  // renders one clock value and the browser another, which React reports as a
+  // hydration mismatch.
+  const [mounted, setMounted] = useState(false)
 
   const saveSession = (addr: string, tok: string) => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ email: addr, token: tok }))
@@ -63,6 +67,7 @@ export default function MailboxPage() {
 
   // 初始化：恢复会话 + 拉域名
   useEffect(() => {
+    setMounted(true)
     ;(async () => {
       try {
         const status = await api.getSetupStatus()
@@ -562,7 +567,7 @@ export default function MailboxPage() {
                 </Card>
               </div>
 
-              {autoRefresh && (
+              {autoRefresh && mounted && (
                 <div className="text-center text-xs sm:text-sm text-muted-foreground px-2">
                   {t("home.lastRefreshed", { time: lastRefresh.toLocaleTimeString() })}
                 </div>

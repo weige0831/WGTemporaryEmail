@@ -4,6 +4,36 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.4] - 2026-09-22
+
+### Fixed
+
+- **React hydration error #418 ("hydration failed because the server rendered
+  text didn't match the client")** on every page for non-English visitors: the
+  statically exported HTML is built with the default language (the build cannot
+  read localStorage), while the client rendered the stored language on its very
+  first pass, so every translated string mismatched. The provider now renders
+  the default language first and applies the stored one in a layout effect,
+  which runs after hydration but **before the browser paints** - the mismatch is
+  gone and the chosen language still appears without an English flash.
+- Time-dependent text (the "last refreshed HH:MM:SS" line on the permanent
+  mailbox page) is no longer part of the prerendered HTML, which was a second
+  hydration mismatch source.
+- Home page search now searches on Enter, matching the permanent mailbox page
+  (previously it waited for the next 15 s auto-refresh).
+
+### Verified
+
+Full functional sweep against the live deployment: temp mailbox (create, copy,
+inbox, search hit/miss, reader with HTML/plain toggle, DKIM/SPF/DMARC badges,
+delete, new-address dialog), permanent mailbox (create, token panel, show/hide
+token, inbox, reader, logout, token login, invalid token rejected), admin panel
+(dashboard, emails, addresses with permanent badge, domains, config with masked
+secrets, cleanup overview + manual run), API docs page (all 32 endpoints listed,
+one-click test returning HTTP 200), 16-language switching incl. RTL Arabic,
+theme toggle, MX delivery to both mailbox types, and the public/admin API
+surface.
+
 ## [1.1.3] - 2026-09-21
 
 ### Fixed
