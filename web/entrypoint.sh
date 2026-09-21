@@ -104,19 +104,26 @@ read_web_config() {
 # Security headers shared by every server block. HSTS is only emitted when a
 # real certificate is in use: sending it while a self-signed placeholder is
 # served would pin users to a certificate their browser rejects.
+# Security headers live in their own file: nginx drops inherited add_header
+# directives as soon as a nested level defines one of its own, so every
+# location that sets Cache-Control has to include this file explicitly.
+build_security_headers() {
+  {
+    echo 'add_header X-Content-Type-Options "nosniff" always;'
+    echo 'add_header X-Frame-Options "DENY" always;'
+    echo 'add_header Referrer-Policy "strict-origin-when-cross-origin" always;'
+    echo 'add_header Content-Security-Policy "default-src '"'"'self'"'"'; script-src '"'"'self'"'"' '"'"'unsafe-inline'"'"'; style-src '"'"'self'"'"' '"'"'unsafe-inline'"'"'; img-src '"'"'self'"'"' data: https:; font-src '"'"'self'"'"' data:; connect-src '"'"'self'"'"'; frame-src '"'"'self'"'"' data:; frame-ancestors '"'"'none'"'"'; base-uri '"'"'self'"'"'; form-action '"'"'self'"'"'; object-src '"'"'none'"'"'" always;'
+    if [ "$USE_PLACEHOLDER" = "false" ]; then
+      echo 'add_header Strict-Transport-Security "max-age=31536000" always;'
+    fi
+  } > /etc/nginx/security-headers.conf
+}
+
 write_security_headers() {
   cat >> /etc/nginx/conf.d/default.conf <<'LOG_EOF'
     access_log /var/log/nginx/access.log redacted;
+    include /etc/nginx/security-headers.conf;
 LOG_EOF
-  cat >> /etc/nginx/conf.d/default.conf <<'HDR_EOF'
-    add_header X-Content-Type-Options "nosniff" always;
-    add_header X-Frame-Options "DENY" always;
-    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
-    add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; frame-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'" always;
-HDR_EOF
-  if [ "$USE_PLACEHOLDER" = "false" ]; then
-    echo '    add_header Strict-Transport-Security "max-age=31536000" always;' >> /etc/nginx/conf.d/default.conf
-  fi
 }
 
 # HTTP -> HTTPS redirect when TLS is enabled; the ACME challenge path must
@@ -218,6 +225,11 @@ CATCH_EOF
     location = /api/ { return 301 /api; }
     location ^~ /admin { try_files $uri $uri.html $uri/index.html =404; }
     location = /setup { try_files /setup.html =404; }
+    location /_next/static/ {
+        include /etc/nginx/security-headers.conf;
+        add_header Cache-Control "public, max-age=31536000, immutable" always;
+        try_files $uri =404;
+    }
     location /_next/ { try_files $uri =404; }
     location / { return 302 https://@WEB_HOSTNAME@$request_uri; }
 LIMIT_EOF
@@ -269,7 +281,14 @@ FULL_EOF
         proxy_set_header X-Forwarded-For $remote_addr;
         proxy_set_header X-Forwarded-Proto $scheme;
     }
+    location /_next/static/ {
+        include /etc/nginx/security-headers.conf;
+        add_header Cache-Control "public, max-age=31536000, immutable" always;
+        try_files $uri =404;
+    }
     location / {
+        include /etc/nginx/security-headers.conf;
+        add_header Cache-Control "no-cache" always;
         rewrite ^(.+)/$ $1 permanent;
         try_files $uri $uri.html $uri/index.html =404;
     }
@@ -281,6 +300,7 @@ NODOCS_EOF
   sed -i "s|@SERVER_NAME@|$SERVER_NAME|g; s|@WEB_HOSTNAME@|$WEB_HOSTNAME|g; s|@CERT@|$CERT|g; s|@KEY@|$KEY|g" /etc/nginx/conf.d/default.conf
 }
 
+build_security_headers
 generate_conf
 nginx
 

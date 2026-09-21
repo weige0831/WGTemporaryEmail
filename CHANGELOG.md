@@ -4,6 +4,25 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.3] - 2026-09-21
+
+### Fixed
+
+- **"Application error: a client-side exception" on the first visit to a page,
+  gone after a refresh.** The static HTML was served without any `Cache-Control`,
+  so browsers cached it heuristically; every rebuild renames the JS chunk files,
+  and the cached HTML then referenced chunks that no longer exist. Filenames are
+  now served with an explicit policy:
+  - documents (`/`, `/mailbox`, ...): `Cache-Control: no-cache` (revalidate every
+    load, 304 when unchanged)
+  - `/_next/static/*` (content-hashed): `public, max-age=31536000, immutable`
+  - `/admin` and `/api/*` responses: `no-store`
+- Security headers moved into a shared include (`/etc/nginx/security-headers.conf`)
+  because nginx drops inherited `add_header` directives in any location that
+  defines its own - the new cache headers would otherwise have silently removed
+  HSTS/CSP/X-Frame-Options from those locations. Verified 5/5 headers on `/`,
+  `/admin` and `/api/*`.
+
 ## [1.1.2] - 2026-09-21
 
 Second audit pass: closes the items that were still open after 1.1.1. Everything
