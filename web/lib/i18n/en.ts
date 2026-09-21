@@ -145,6 +145,7 @@ export const en = {
     loginBtn: "Sign in",
     loggingIn: "Signing in...",
     loginFailed: "Login failed. Check your network and try again.",
+    wrongToken: "Invalid admin token, please check and try again",
     loginLocalNote: "The token is stored only in your browser, never sent to any third party",
     // dashboard
     activeAddresses: "Active Addresses",

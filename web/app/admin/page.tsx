@@ -26,7 +26,12 @@ export default function AdminLogin() {
       router.replace("/admin/dashboard")
     } catch (e) {
       if (e instanceof ApiError) {
-        setError(e.message)
+        // 401：令牌错误（登录场景），与"会话过期"区分开
+        if (e.status === 401) {
+          setError(t("admin.wrongToken"))
+        } else {
+          setError(e.message)
+        }
       } else {
         setError(t("admin.loginFailed"))
       }
