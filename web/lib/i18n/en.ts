@@ -384,6 +384,8 @@ export const en = {
     creating: "Creating...",
     createdNote: "Created successfully! Save the access token now - it is shown only once:",
     copyToken: "Copy token",
+    showToken: "Show token",
+    hideToken: "Hide token",
     copied: "Copied",
     loginTitle: "Sign in to a permanent mailbox",
     tokenPlaceholder: "Enter the access token",

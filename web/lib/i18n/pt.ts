@@ -120,6 +120,8 @@ export const pt: Partial<Dict> = {
     creating: "Criando...",
     createdNote: "Criada! Salve agora o token de acesso (exibido apenas uma vez):",
     copyToken: "Copiar token",
+    showToken: "Mostrar token",
+    hideToken: "Ocultar token",
     copied: "Copiado",
     loginTitle: "Entrar em uma caixa permanente",
     tokenPlaceholder: "Digite o token de acesso",

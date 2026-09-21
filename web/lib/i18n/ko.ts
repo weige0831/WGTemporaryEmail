@@ -120,6 +120,8 @@ export const ko: Partial<Dict> = {
     creating: "만드는 중...",
     createdNote: "생성 완료! 접근 토큰을 지금 저장하세요(한 번만 표시됨):",
     copyToken: "토큰 복사",
+    showToken: "토큰 표시",
+    hideToken: "토큰 숨기기",
     copied: "복사됨",
     loginTitle: "영구 메일함 로그인",
     tokenPlaceholder: "접근 토큰 입력",

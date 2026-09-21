@@ -120,6 +120,8 @@ export const id: Partial<Dict> = {
     creating: "Membuat...",
     createdNote: "Berhasil dibuat! Simpan token akses sekarang (hanya ditampilkan sekali):",
     copyToken: "Salin token",
+    showToken: "Tampilkan token",
+    hideToken: "Sembunyikan token",
     copied: "Tersalin",
     loginTitle: "Masuk ke kotak permanen",
     tokenPlaceholder: "Masukkan token akses",

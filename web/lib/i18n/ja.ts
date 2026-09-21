@@ -120,6 +120,8 @@ export const ja: Partial<Dict> = {
     creating: "作成中...",
     createdNote: "作成しました！アクセストークンを今すぐ保存してください（一度しか表示されません）：",
     copyToken: "トークンをコピー",
+    showToken: "トークンを表示",
+    hideToken: "トークンを隠す",
     copied: "コピーしました",
     loginTitle: "永続メールボックスにログイン",
     tokenPlaceholder: "アクセストークンを入力",

@@ -120,6 +120,8 @@ export const ru: Partial<Dict> = {
     creating: "Создание...",
     createdNote: "Создано! Сохраните токен доступа сейчас (показывается только один раз):",
     copyToken: "Копировать токен",
+    showToken: "Показать токен",
+    hideToken: "Скрыть токен",
     copied: "Скопировано",
     loginTitle: "Войти в постоянный ящик",
     tokenPlaceholder: "Введите токен доступа",

@@ -120,6 +120,8 @@ export const hi: Partial<Dict> = {
     creating: "बन रहा है...",
     createdNote: "बन गया! एक्सेस टोकन अभी सहेजें (केवल एक बार दिखता है):",
     copyToken: "टोकन कॉपी करें",
+    showToken: "टोकन दिखाएं",
+    hideToken: "टोकन छिपाएं",
     copied: "कॉपी हो गया",
     loginTitle: "स्थायी मेलबॉक्स में लॉगिन करें",
     tokenPlaceholder: "एक्सेस टोकन दर्ज करें",

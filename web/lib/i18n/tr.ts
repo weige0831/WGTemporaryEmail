@@ -120,6 +120,8 @@ export const tr: Partial<Dict> = {
     creating: "Oluşturuluyor...",
     createdNote: "Oluşturuldu! Erişim anahtarını hemen kaydedin (yalnızca bir kez gösterilir):",
     copyToken: "Anahtarı kopyala",
+    showToken: "Anahtarı göster",
+    hideToken: "Anahtarı gizle",
     copied: "Kopyalandı",
     loginTitle: "Kalıcı posta kutusuna giriş",
     tokenPlaceholder: "Erişim anahtarını girin",

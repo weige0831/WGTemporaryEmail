@@ -120,6 +120,8 @@ export const de: Partial<Dict> = {
     creating: "Wird erstellt...",
     createdNote: "Erstellt! Speichere jetzt das Zugriffs-Token (wird nur einmal angezeigt):",
     copyToken: "Token kopieren",
+    showToken: "Token anzeigen",
+    hideToken: "Token verbergen",
     copied: "Kopiert",
     loginTitle: "Bei permanenter Mailbox anmelden",
     tokenPlaceholder: "Zugriffs-Token eingeben",

@@ -120,6 +120,8 @@ export const vi: Partial<Dict> = {
     creating: "Đang tạo...",
     createdNote: "Đã tạo! Hãy lưu token truy cập ngay (chỉ hiển thị một lần):",
     copyToken: "Sao chép token",
+    showToken: "Hiện token",
+    hideToken: "Ẩn token",
     copied: "Đã sao chép",
     loginTitle: "Đăng nhập hộp thư vĩnh viễn",
     tokenPlaceholder: "Nhập token truy cập",

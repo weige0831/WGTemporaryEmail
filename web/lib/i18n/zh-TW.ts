@@ -120,6 +120,8 @@ export const zhTW: Partial<Dict> = {
     creating: "建立中...",
     createdNote: "建立成功！請立即保存存取權杖（僅顯示這一次）：",
     copyToken: "複製權杖",
+    showToken: "顯示權杖",
+    hideToken: "隱藏權杖",
     copied: "已複製",
     loginTitle: "登入長效信箱",
     tokenPlaceholder: "輸入存取權杖",

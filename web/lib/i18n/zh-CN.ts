@@ -120,6 +120,8 @@ export const zhCN: Partial<Dict> = {
     creating: "创建中...",
     createdNote: "创建成功！请立即保存访问令牌（仅显示这一次）：",
     copyToken: "复制令牌",
+    showToken: "显示令牌",
+    hideToken: "隐藏令牌",
     copied: "已复制",
     loginTitle: "登录长效邮箱",
     tokenPlaceholder: "输入访问令牌",

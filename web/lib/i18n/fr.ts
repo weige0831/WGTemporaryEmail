@@ -120,6 +120,8 @@ export const fr: Partial<Dict> = {
     creating: "Création...",
     createdNote: "Créée ! Enregistrez maintenant le jeton d'accès (affiché une seule fois) :",
     copyToken: "Copier le jeton",
+    showToken: "Afficher le jeton",
+    hideToken: "Masquer le jeton",
     copied: "Copié",
     loginTitle: "Se connecter à une boîte permanente",
     tokenPlaceholder: "Saisissez le jeton d'accès",

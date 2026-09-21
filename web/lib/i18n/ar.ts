@@ -120,6 +120,8 @@ export const ar: Partial<Dict> = {
     creating: "جارٍ الإنشاء...",
     createdNote: "تم الإنشاء! احفظ رمز الوصول الآن (يُعرض مرة واحدة فقط):",
     copyToken: "نسخ الرمز",
+    showToken: "إظهار الرمز",
+    hideToken: "إخفاء الرمز",
     copied: "تم النسخ",
     loginTitle: "تسجيل الدخول إلى صندوق دائم",
     tokenPlaceholder: "أدخل رمز الوصول",
