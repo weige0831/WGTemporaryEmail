@@ -11,6 +11,7 @@ import hmac
 import json
 import os
 import re
+import secrets
 import ssl
 import time
 from datetime import datetime, timedelta
@@ -21,7 +22,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Session, selectinload
 
-from app.cleanup import cleanup_expired_addresses, enforce_storage_limit, get_storage_usage_bytes
+from app.cleanup import cleanup_expired_addresses, enforce_storage_limit, get_storage_usage_bytes, cleanup_permanent_email_retention
 from app.config import reload_settings, settings
 from app.database import check_db_connection, get_db
 from app.models import Address, Attachment, Email, EmailRecipient
@@ -113,7 +114,9 @@ def get_stats(db: Session = Depends(get_db)):
     return {
         'domains': settings.DOMAINS,
         'total_addresses': db.query(func.count(Address.id)).scalar() or 0,
-        'active_addresses': db.query(func.count(Address.id)).filter(Address.expires_at > now).scalar() or 0,
+        'active_addresses': db.query(func.count(Address.id)).filter(
+            or_(Address.expires_at > now, Address.expires_at.is_(None))
+        ).scalar() or 0,
         'total_emails': total_emails,
         'unread_emails': db.query(func.count(EmailRecipient.id)).filter(EmailRecipient.is_read.is_(False)).scalar() or 0,
         'emails_24h': db.query(func.count(Email.id)).filter(Email.received_at >= now - timedelta(hours=24)).scalar() or 0,
@@ -125,6 +128,7 @@ def get_stats(db: Session = Depends(get_db)):
         'uptime_seconds': round(time.time() - _START_TIME, 1),
         'address_lifetime_hours': settings.ADDRESS_LIFETIME_HOURS,
         'cleanup_interval_hours': settings.CLEANUP_INTERVAL_HOURS,
+        'permanent_email_retention_days': settings.PERMANENT_EMAIL_RETENTION_DAYS,
     }
 
 
@@ -175,9 +179,10 @@ def list_addresses(
         {
             'id': str(a.id),
             'email': a.email,
+            'address_type': a.address_type,
             'created_at': a.created_at,
             'expires_at': a.expires_at,
-            'is_expired': a.expires_at <= now,
+            'is_expired': a.is_expired(),
             'email_count': email_counts.get(a.id, 0),
             'unread_count': unread_counts.get(a.id, 0),
             'last_email_at': last_email.get(a.id),
@@ -222,9 +227,10 @@ def get_address(address_id: UUID, db: Session = Depends(get_db)):
     return {
         'id': str(address.id),
         'email': address.email,
+        'address_type': address.address_type,
         'created_at': address.created_at,
         'expires_at': address.expires_at,
-        'is_expired': address.expires_at <= datetime.utcnow(),
+        'is_expired': address.is_expired(),
         'emails': [
             {
                 'id': str(e.id),
@@ -466,10 +472,12 @@ def run_cleanup_now(db: Session = Depends(get_db)):
     storage_before = get_storage_usage_bytes(db)
     deleted_addresses = cleanup_expired_addresses()
     deleted_emails = enforce_storage_limit()
+    retention_emails = cleanup_permanent_email_retention()
     storage_after = get_storage_usage_bytes(db)
     return {
         'deleted_addresses': deleted_addresses or 0,
         'deleted_emails': deleted_emails or 0,
+        'retention_deleted_emails': retention_emails or 0,
         'storage_bytes_before': storage_before,
         'storage_bytes_after': storage_after,
     }
@@ -561,3 +569,30 @@ def tls_issue(request: TlsIssueRequest):
         json.dump(job, f)
     os.replace(tmp, job_path)
     return {'submitted': True, 'hostname': hostname, 'domains': domains}
+
+
+# ============================================================================
+# Integration API key (for creating permanent mailboxes via the API)
+# ============================================================================
+
+@router.get('/apikey/status')
+def apikey_status():
+    """Return whether an integration API key is configured (masked)."""
+    key = settings.INTEGRATION_API_KEY
+    masked = ''
+    if key:
+        masked = f'{key[:4]}****{key[-4:]}' if len(key) >= 10 else '****'
+    return {'configured': bool(key), 'masked': masked}
+
+
+@router.post('/apikey/regenerate')
+def apikey_regenerate():
+    """Generate a new integration API key and hot-reload the configuration.
+
+    The key is returned only once - save it immediately.
+    """
+    new_key = secrets.token_urlsafe(24)
+    config = read_config()
+    config.setdefault('integration', {})['api_key'] = new_key
+    _commit_config(config)
+    return {'api_key': new_key}

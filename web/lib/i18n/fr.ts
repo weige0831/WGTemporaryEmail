@@ -1,7 +1,7 @@
 import type { Dict } from "./en"
 
 export const fr: Partial<Dict> = {
-  nav: { about: "À propos", privacy: "Confidentialité", api: "API" },
+  nav: { about: "À propos", privacy: "Confidentialité", api: "API", permanentMailbox: "Boîte permanente" },
   home: {
     yourTempEmail: "Votre e-mail temporaire",
     readyDesc: "Votre e-mail temporaire est prêt. Il sera supprimé automatiquement dans {time}.",
@@ -110,5 +110,33 @@ export const fr: Partial<Dict> = {
     contactTitle: "Nous contacter",
     contactP1: "Ce projet est entièrement open source. Code source :",
     contactP2: "Pour les questions de confidentialité ou les demandes de suppression de données, ouvrez une issue GitHub.",
+  },
+  mailbox: {
+    title: "Boîte permanente",
+    desc: "L'adresse est conservée pour toujours ; les e-mails sont conservés 30 jours par défaut. Gardez votre jeton d'accès en lieu sûr.",
+    createTitle: "Créer une boîte permanente",
+    usernamePlaceholder: "votrenom",
+    createBtn: "Créer la boîte",
+    creating: "Création...",
+    createdNote: "Créée ! Enregistrez maintenant le jeton d'accès (affiché une seule fois) :",
+    copyToken: "Copier le jeton",
+    copied: "Copié",
+    loginTitle: "Se connecter à une boîte permanente",
+    tokenPlaceholder: "Saisissez le jeton d'accès",
+    loginBtn: "Se connecter",
+    logout: "Se déconnecter",
+    myEmail: "Ma boîte : {email}",
+    retentionNote: "Les e-mails sont conservés {days} jours ; l'adresse n'expire jamais",
+    noEmails: "Aucun e-mail pour l'instant",
+    noSubject: "(Sans objet)",
+    new: "Nouveau",
+    noContent: "Aucun contenu",
+    attachments: "Pièces jointes",
+    deleteEmail: "Supprimer cet e-mail",
+    deleteConfirm: "Supprimer cet e-mail ?",
+    failedCreate: "Échec de la création. Réessayez.",
+    failedLogin: "Jeton invalide ou boîte inexistante",
+    usernameTaken: "Ce nom d'utilisateur est déjà pris",
+    needUsername: "Saisissez un nom d'utilisateur",
   },
 }

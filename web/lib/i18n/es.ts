@@ -1,7 +1,7 @@
 import type { Dict } from "./en"
 
 export const es: Partial<Dict> = {
-  nav: { about: "Acerca de", privacy: "Privacidad", api: "API" },
+  nav: { about: "Acerca de", privacy: "Privacidad", api: "API", permanentMailbox: "Buzón permanente" },
   home: {
     yourTempEmail: "Tu correo temporal",
     readyDesc: "Tu correo temporal está listo. Se eliminará automáticamente en {time}.",
@@ -110,5 +110,33 @@ export const es: Partial<Dict> = {
     contactTitle: "Contacto",
     contactP1: "Este proyecto es completamente de código abierto. Código fuente:",
     contactP2: "Para preguntas de privacidad o solicitudes de eliminación de datos, abre un issue en GitHub.",
+  },
+  mailbox: {
+    title: "Buzón permanente",
+    desc: "La dirección del buzón se conserva para siempre; los correos se conservan 30 días por defecto. Guarda bien tu token de acceso.",
+    createTitle: "Crear un buzón permanente",
+    usernamePlaceholder: "tunombre",
+    createBtn: "Crear buzón",
+    creating: "Creando...",
+    createdNote: "¡Creado! Guarda ahora el token de acceso (solo se muestra una vez):",
+    copyToken: "Copiar token",
+    copied: "Copiado",
+    loginTitle: "Iniciar sesión en un buzón permanente",
+    tokenPlaceholder: "Introduce el token de acceso",
+    loginBtn: "Iniciar sesión",
+    logout: "Cerrar sesión",
+    myEmail: "Mi buzón: {email}",
+    retentionNote: "Los correos se conservan {days} días; la dirección nunca caduca",
+    noEmails: "Aún no hay correos",
+    noSubject: "(Sin asunto)",
+    new: "Nuevo",
+    noContent: "Sin contenido",
+    attachments: "Adjuntos",
+    deleteEmail: "Eliminar este correo",
+    deleteConfirm: "¿Eliminar este correo?",
+    failedCreate: "Error al crear. Inténtalo de nuevo.",
+    failedLogin: "Token inválido o el buzón no existe",
+    usernameTaken: "Este nombre de usuario ya está en uso",
+    needUsername: "Introduce un nombre de usuario",
   },
 }

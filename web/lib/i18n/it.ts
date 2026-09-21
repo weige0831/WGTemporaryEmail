@@ -1,7 +1,7 @@
 import type { Dict } from "./en"
 
 export const it: Partial<Dict> = {
-  nav: { about: "Info", privacy: "Privacy", api: "API" },
+  nav: { about: "Info", privacy: "Privacy", api: "API", permanentMailbox: "Casella permanente" },
   home: {
     yourTempEmail: "La tua email temporanea",
     readyDesc: "La tua email temporanea è pronta. Verrà eliminata automaticamente tra {time}.",
@@ -110,5 +110,33 @@ export const it: Partial<Dict> = {
     contactTitle: "Contattaci",
     contactP1: "Questo progetto è completamente open source. Codice sorgente:",
     contactP2: "Per domande sulla privacy o richieste di rimozione dati, apri una issue su GitHub.",
+  },
+  mailbox: {
+    title: "Casella permanente",
+    desc: "L'indirizzo resta per sempre; le e-mail sono conservate 30 giorni per impostazione predefinita. Conserva il token di accesso al sicuro.",
+    createTitle: "Crea una casella permanente",
+    usernamePlaceholder: "tuonome",
+    createBtn: "Crea casella",
+    creating: "Creazione...",
+    createdNote: "Creata! Salva subito il token di accesso (mostrato una sola volta):",
+    copyToken: "Copia token",
+    copied: "Copiato",
+    loginTitle: "Accedi a una casella permanente",
+    tokenPlaceholder: "Inserisci il token di accesso",
+    loginBtn: "Accedi",
+    logout: "Esci",
+    myEmail: "La mia casella: {email}",
+    retentionNote: "Le e-mail sono conservate {days} giorni; l'indirizzo non scade mai",
+    noEmails: "Ancora nessuna e-mail",
+    noSubject: "(Nessun oggetto)",
+    new: "Nuova",
+    noContent: "Nessun contenuto",
+    attachments: "Allegati",
+    deleteEmail: "Elimina questa e-mail",
+    deleteConfirm: "Eliminare questa e-mail?",
+    failedCreate: "Creazione non riuscita. Riprova.",
+    failedLogin: "Token non valido o casella inesistente",
+    usernameTaken: "Questo nome utente è già in uso",
+    needUsername: "Inserisci un nome utente",
   },
 }

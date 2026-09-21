@@ -1,7 +1,7 @@
 import type { Dict } from "./en"
 
 export const de: Partial<Dict> = {
-  nav: { about: "Über uns", privacy: "Datenschutz", api: "API" },
+  nav: { about: "Über uns", privacy: "Datenschutz", api: "API", permanentMailbox: "Permanente Mailbox" },
   home: {
     yourTempEmail: "Deine temporäre E-Mail",
     readyDesc: "Deine temporäre E-Mail ist bereit. Sie wird in {time} automatisch gelöscht.",
@@ -110,5 +110,33 @@ export const de: Partial<Dict> = {
     contactTitle: "Kontakt",
     contactP1: "Dieses Projekt ist vollständig Open Source. Quellcode:",
     contactP2: "Bei Fragen zum Datenschutz oder Anträgen auf Datenlöschung öffne bitte ein GitHub-Issue.",
+  },
+  mailbox: {
+    title: "Permanente Mailbox",
+    desc: "Die Adresse bleibt für immer erhalten; E-Mails werden standardmäßig 30 Tage aufbewahrt. Bewahre dein Zugriffs-Token sicher auf.",
+    createTitle: "Permanente Mailbox erstellen",
+    usernamePlaceholder: "deinname",
+    createBtn: "Mailbox erstellen",
+    creating: "Wird erstellt...",
+    createdNote: "Erstellt! Speichere jetzt das Zugriffs-Token (wird nur einmal angezeigt):",
+    copyToken: "Token kopieren",
+    copied: "Kopiert",
+    loginTitle: "Bei permanenter Mailbox anmelden",
+    tokenPlaceholder: "Zugriffs-Token eingeben",
+    loginBtn: "Anmelden",
+    logout: "Abmelden",
+    myEmail: "Meine Mailbox: {email}",
+    retentionNote: "E-Mails werden {days} Tage aufbewahrt; die Adresse selbst läuft nie ab",
+    noEmails: "Noch keine E-Mails",
+    noSubject: "(Kein Betreff)",
+    new: "Neu",
+    noContent: "Kein Inhalt",
+    attachments: "Anhänge",
+    deleteEmail: "Diese E-Mail löschen",
+    deleteConfirm: "Diese E-Mail löschen?",
+    failedCreate: "Erstellen fehlgeschlagen. Bitte erneut versuchen.",
+    failedLogin: "Ungültiges Token oder Mailbox existiert nicht",
+    usernameTaken: "Dieser Benutzername ist bereits vergeben",
+    needUsername: "Bitte einen Benutzernamen eingeben",
   },
 }

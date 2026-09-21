@@ -1,7 +1,7 @@
 import type { Dict } from "./en"
 
 export const hi: Partial<Dict> = {
-  nav: { about: "परिचय", privacy: "गोपनीयता", api: "API" },
+  nav: { about: "परिचय", privacy: "गोपनीयता", api: "API", permanentMailbox: "स्थायी मेलबॉक्स" },
   home: {
     yourTempEmail: "आपका अस्थायी ईमेल",
     readyDesc: "आपका अस्थायी ईमेल तैयार है। यह {time} में स्वतः हटा दिया जाएगा।",
@@ -110,5 +110,33 @@ export const hi: Partial<Dict> = {
     contactTitle: "संपर्क करें",
     contactP1: "यह परियोजना पूर्णतः ओपन सोर्स है। स्रोत कोड:",
     contactP2: "गोपनीयता संबंधी प्रश्नों या डेटा हटाने के अनुरोधों के लिए कृपया GitHub इश्यू खोलें।",
+  },
+  mailbox: {
+    title: "स्थायी मेलबॉक्स",
+    desc: "मेलबॉक्स पता हमेशा रहता है; मेल डिफ़ॉल्ट रूप से 30 दिन रखे जाते हैं। एक्सेस टोकन सुरक्षित रखें।",
+    createTitle: "स्थायी मेलबॉक्स बनाएँ",
+    usernamePlaceholder: "आपका-नाम",
+    createBtn: "मेलबॉक्स बनाएँ",
+    creating: "बन रहा है...",
+    createdNote: "बन गया! एक्सेस टोकन अभी सहेजें (केवल एक बार दिखता है):",
+    copyToken: "टोकन कॉपी करें",
+    copied: "कॉपी हो गया",
+    loginTitle: "स्थायी मेलबॉक्स में लॉगिन करें",
+    tokenPlaceholder: "एक्सेस टोकन दर्ज करें",
+    loginBtn: "लॉगिन",
+    logout: "लॉगआउट",
+    myEmail: "मेरा मेलबॉक्स: {email}",
+    retentionNote: "मेल {days} दिन रखे जाते हैं; पता स्वयं कभी समाप्त नहीं होता",
+    noEmails: "अभी कोई मेल नहीं",
+    noSubject: "(कोई विषय नहीं)",
+    new: "नया",
+    noContent: "कोई सामग्री नहीं",
+    attachments: "अनुलग्नक",
+    deleteEmail: "यह मेल हटाएँ",
+    deleteConfirm: "यह मेल हटाएँ?",
+    failedCreate: "बनाने में विफल। पुनः प्रयास करें।",
+    failedLogin: "टोकन अमान्य या मेलबॉक्स मौजूद नहीं",
+    usernameTaken: "यह उपयोगकर्ता नाम पहले से लिया गया है",
+    needUsername: "उपयोगकर्ता नाम दर्ज करें",
   },
 }

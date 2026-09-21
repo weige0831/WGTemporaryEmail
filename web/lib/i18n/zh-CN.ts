@@ -1,7 +1,7 @@
 import type { Dict } from "./en"
 
 export const zhCN: Partial<Dict> = {
-  nav: { about: "关于", privacy: "隐私", api: "API" },
+  nav: { about: "关于", privacy: "隐私", api: "API", permanentMailbox: "长效邮箱" },
   home: {
     yourTempEmail: "你的临时邮箱",
     readyDesc: "你的临时邮箱已就绪，将在 {time} 后自动删除。",
@@ -110,5 +110,33 @@ export const zhCN: Partial<Dict> = {
     contactTitle: "联系我们",
     contactP1: "本项目完全开源，源代码见：",
     contactP2: "对隐私政策有疑问或需要删除数据，请通过 GitHub Issues 联系我们。",
+  },
+  mailbox: {
+    title: "长效邮箱",
+    desc: "邮箱地址永久保留，邮件默认保留 30 天。请妥善保存访问令牌。",
+    createTitle: "创建长效邮箱",
+    usernamePlaceholder: "yourname",
+    createBtn: "创建长效邮箱",
+    creating: "创建中...",
+    createdNote: "创建成功！请立即保存访问令牌（仅显示这一次）：",
+    copyToken: "复制令牌",
+    copied: "已复制",
+    loginTitle: "登录长效邮箱",
+    tokenPlaceholder: "输入访问令牌",
+    loginBtn: "登录",
+    logout: "退出",
+    myEmail: "我的邮箱：{email}",
+    retentionNote: "邮件默认保留 {days} 天，邮箱地址永久有效",
+    noEmails: "暂无邮件",
+    noSubject: "（无主题）",
+    new: "新",
+    noContent: "无内容",
+    attachments: "附件",
+    deleteEmail: "删除此邮件",
+    deleteConfirm: "确定删除这封邮件吗？",
+    failedCreate: "创建失败，请重试",
+    failedLogin: "令牌无效或邮箱不存在",
+    usernameTaken: "该用户名已被占用",
+    needUsername: "请输入用户名",
   },
 }

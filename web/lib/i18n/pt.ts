@@ -1,7 +1,7 @@
 import type { Dict } from "./en"
 
 export const pt: Partial<Dict> = {
-  nav: { about: "Sobre", privacy: "Privacidade", api: "API" },
+  nav: { about: "Sobre", privacy: "Privacidade", api: "API", permanentMailbox: "Caixa permanente" },
   home: {
     yourTempEmail: "Seu e-mail temporário",
     readyDesc: "Seu e-mail temporário está pronto. Ele será excluído automaticamente em {time}.",
@@ -110,5 +110,33 @@ export const pt: Partial<Dict> = {
     contactTitle: "Fale conosco",
     contactP1: "Este projeto é totalmente código aberto. Código-fonte:",
     contactP2: "Para dúvidas de privacidade ou pedidos de remoção de dados, abra uma issue no GitHub.",
+  },
+  mailbox: {
+    title: "Caixa permanente",
+    desc: "O endereço da caixa é mantido para sempre; os e-mails são mantidos por 30 dias por padrão. Guarde seu token de acesso com segurança.",
+    createTitle: "Criar uma caixa permanente",
+    usernamePlaceholder: "seunome",
+    createBtn: "Criar caixa",
+    creating: "Criando...",
+    createdNote: "Criada! Salve agora o token de acesso (exibido apenas uma vez):",
+    copyToken: "Copiar token",
+    copied: "Copiado",
+    loginTitle: "Entrar em uma caixa permanente",
+    tokenPlaceholder: "Digite o token de acesso",
+    loginBtn: "Entrar",
+    logout: "Sair",
+    myEmail: "Minha caixa: {email}",
+    retentionNote: "Os e-mails são mantidos por {days} dias; o endereço nunca expira",
+    noEmails: "Ainda não há e-mails",
+    noSubject: "(Sem assunto)",
+    new: "Novo",
+    noContent: "Sem conteúdo",
+    attachments: "Anexos",
+    deleteEmail: "Excluir este e-mail",
+    deleteConfirm: "Excluir este e-mail?",
+    failedCreate: "Falha ao criar. Tente novamente.",
+    failedLogin: "Token inválido ou a caixa não existe",
+    usernameTaken: "Este nome de usuário já está em uso",
+    needUsername: "Digite um nome de usuário",
   },
 }

@@ -1,7 +1,7 @@
 import type { Dict } from "./en"
 
 export const ja: Partial<Dict> = {
-  nav: { about: "本サービスについて", privacy: "プライバシー", api: "API" },
+  nav: { about: "本サービスについて", privacy: "プライバシー", api: "API", permanentMailbox: "永続メールボックス" },
   home: {
     yourTempEmail: "あなたの一時メール",
     readyDesc: "一時メールアドレスの準備ができました。{time} 後に自動削除されます。",
@@ -110,5 +110,33 @@ export const ja: Partial<Dict> = {
     contactTitle: "お問い合わせ",
     contactP1: "本プロジェクトは完全にオープンソースです。ソースコード：",
     contactP2: "プライバシーポリシーに関する質問やデータ削除の依頼は、GitHub Issues からご連絡ください。",
+  },
+  mailbox: {
+    title: "永続メールボックス",
+    desc: "アドレスは永久に保持され、メールは既定で30日保持されます。アクセストークンを安全に保管してください。",
+    createTitle: "永続メールボックスを作成",
+    usernamePlaceholder: "yourname",
+    createBtn: "作成する",
+    creating: "作成中...",
+    createdNote: "作成しました！アクセストークンを今すぐ保存してください（一度しか表示されません）：",
+    copyToken: "トークンをコピー",
+    copied: "コピーしました",
+    loginTitle: "永続メールボックスにログイン",
+    tokenPlaceholder: "アクセストークンを入力",
+    loginBtn: "ログイン",
+    logout: "ログアウト",
+    myEmail: "マイメールボックス：{email}",
+    retentionNote: "メールは{days}日間保持され、アドレス自体は失効しません",
+    noEmails: "まだメールがありません",
+    noSubject: "（件名なし）",
+    new: "新着",
+    noContent: "内容がありません",
+    attachments: "添付ファイル",
+    deleteEmail: "このメールを削除",
+    deleteConfirm: "このメールを削除しますか？",
+    failedCreate: "作成に失敗しました。再試行してください。",
+    failedLogin: "トークンが無効か、メールボックスが存在しません",
+    usernameTaken: "このユーザー名は使用されています",
+    needUsername: "ユーザー名を入力してください",
   },
 }

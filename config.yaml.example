@@ -16,6 +16,12 @@ admin:
   # Generate a strong random value, e.g.: openssl rand -base64 32 | tr -d "=+/" | cut -c1-32
   token: CHANGE_THIS_ADMIN_TOKEN
 
+integration:
+  # API key for creating permanent mailboxes via the API
+  # (POST /api/v1/api/addresses with the X-API-Key header). Generate it in
+  # the admin panel (系统配置 → 集成 API 密钥).
+  api_key: CHANGE_THIS_INTEGRATION_API_KEY
+
 database:
   url: postgresql://tempmail:CHANGE_THIS_PASSWORD@postgres:5432/tempmail?sslmode=disable
   pool_size: 10
@@ -70,6 +76,10 @@ tempmail:
 
   # Maximum emails per address (oldest deleted when exceeded)
   max_emails_per_address: 100
+
+  # Email retention for permanent mailboxes in days (the address itself is
+  # kept forever; only its emails older than this are deleted)
+  permanent_email_retention_days: 30
 
   # Global storage cap in MB (total size of all stored emails incl. attachments).
   # When exceeded, the cleanup job deletes the oldest emails until under this cap.

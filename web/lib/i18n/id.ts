@@ -1,7 +1,7 @@
 import type { Dict } from "./en"
 
 export const id: Partial<Dict> = {
-  nav: { about: "Tentang", privacy: "Privasi", api: "API" },
+  nav: { about: "Tentang", privacy: "Privasi", api: "API", permanentMailbox: "Kotak permanen" },
   home: {
     yourTempEmail: "Email sementara Anda",
     readyDesc: "Email sementara Anda sudah siap. Akan dihapus otomatis dalam {time}.",
@@ -110,5 +110,33 @@ export const id: Partial<Dict> = {
     contactTitle: "Hubungi kami",
     contactP1: "Proyek ini sepenuhnya sumber terbuka. Kode sumber:",
     contactP2: "Untuk pertanyaan privasi atau permintaan penghapusan data, silakan buka issue di GitHub.",
+  },
+  mailbox: {
+    title: "Kotak permanen",
+    desc: "Alamat kotak disimpan selamanya; email disimpan 30 hari secara default. Simpan token akses Anda dengan aman.",
+    createTitle: "Buat kotak permanen",
+    usernamePlaceholder: "namamu",
+    createBtn: "Buat kotak",
+    creating: "Membuat...",
+    createdNote: "Berhasil dibuat! Simpan token akses sekarang (hanya ditampilkan sekali):",
+    copyToken: "Salin token",
+    copied: "Tersalin",
+    loginTitle: "Masuk ke kotak permanen",
+    tokenPlaceholder: "Masukkan token akses",
+    loginBtn: "Masuk",
+    logout: "Keluar",
+    myEmail: "Kotak saya: {email}",
+    retentionNote: "Email disimpan {days} hari; alamatnya sendiri tidak pernah kedaluwarsa",
+    noEmails: "Belum ada email",
+    noSubject: "(Tanpa subjek)",
+    new: "Baru",
+    noContent: "Tidak ada isi",
+    attachments: "Lampiran",
+    deleteEmail: "Hapus email ini",
+    deleteConfirm: "Hapus email ini?",
+    failedCreate: "Gagal membuat. Coba lagi.",
+    failedLogin: "Token tidak valid atau kotak tidak ada",
+    usernameTaken: "Nama pengguna ini sudah dipakai",
+    needUsername: "Masukkan nama pengguna",
   },
 }

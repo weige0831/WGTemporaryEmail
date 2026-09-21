@@ -1,7 +1,7 @@
 import type { Dict } from "./en"
 
 export const ar: Partial<Dict> = {
-  nav: { about: "حول", privacy: "الخصوصية", api: "API" },
+  nav: { about: "حول", privacy: "الخصوصية", api: "API", permanentMailbox: "صندوق دائم" },
   home: {
     yourTempEmail: "بريدك المؤقت",
     readyDesc: "بريدك المؤقت جاهز. سيتم حذفه تلقائيًا خلال {time}.",
@@ -110,5 +110,33 @@ export const ar: Partial<Dict> = {
     contactTitle: "تواصل معنا",
     contactP1: "هذا المشروع مفتوح المصدر بالكامل. الكود المصدري:",
     contactP2: "للاستفسارات حول الخصوصية أو طلبات حذف البيانات، افتح issue على GitHub.",
+  },
+  mailbox: {
+    title: "صندوق دائم",
+    desc: "يُحفظ عنوان الصندوق للأبد؛ وتُحفظ الرسائل 30 يومًا افتراضيًا. احتفظ برمز الوصول بأمان.",
+    createTitle: "إنشاء صندوق دائم",
+    usernamePlaceholder: "yourname",
+    createBtn: "إنشاء الصندوق",
+    creating: "جارٍ الإنشاء...",
+    createdNote: "تم الإنشاء! احفظ رمز الوصول الآن (يُعرض مرة واحدة فقط):",
+    copyToken: "نسخ الرمز",
+    copied: "تم النسخ",
+    loginTitle: "تسجيل الدخول إلى صندوق دائم",
+    tokenPlaceholder: "أدخل رمز الوصول",
+    loginBtn: "تسجيل الدخول",
+    logout: "تسجيل الخروج",
+    myEmail: "صندوقي: {email}",
+    retentionNote: "تُحفظ الرسائل {days} يومًا؛ والعنوان نفسه لا ينتهي أبدًا",
+    noEmails: "لا توجد رسائل بعد",
+    noSubject: "(بدون موضوع)",
+    new: "جديد",
+    noContent: "لا يوجد محتوى",
+    attachments: "المرفقات",
+    deleteEmail: "حذف هذه الرسالة",
+    deleteConfirm: "حذف هذه الرسالة؟",
+    failedCreate: "فشل الإنشاء. حاول مرة أخرى.",
+    failedLogin: "الرمز غير صالح أو الصندوق غير موجود",
+    usernameTaken: "اسم المستخدم هذا مستخدم بالفعل",
+    needUsername: "أدخل اسم مستخدم",
   },
 }

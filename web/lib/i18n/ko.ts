@@ -1,7 +1,7 @@
 import type { Dict } from "./en"
 
 export const ko: Partial<Dict> = {
-  nav: { about: "소개", privacy: "개인정보", api: "API" },
+  nav: { about: "소개", privacy: "개인정보", api: "API", permanentMailbox: "영구 메일함" },
   home: {
     yourTempEmail: "내 임시 이메일",
     readyDesc: "임시 이메일이 준비되었습니다. {time} 후 자동 삭제됩니다.",
@@ -110,5 +110,33 @@ export const ko: Partial<Dict> = {
     contactTitle: "문의하기",
     contactP1: "본 프로젝트는 완전한 오픈소스입니다. 소스 코드:",
     contactP2: "개인정보 처리방침에 대한 문의나 데이터 삭제 요청은 GitHub Issues로 연락해 주세요.",
+  },
+  mailbox: {
+    title: "영구 메일함",
+    desc: "메일함 주소는 영구 보존되며 메일은 기본 30일간 보관됩니다. 접근 토큰을 안전하게 보관하세요.",
+    createTitle: "영구 메일함 만들기",
+    usernamePlaceholder: "yourname",
+    createBtn: "메일함 만들기",
+    creating: "만드는 중...",
+    createdNote: "생성 완료! 접근 토큰을 지금 저장하세요(한 번만 표시됨):",
+    copyToken: "토큰 복사",
+    copied: "복사됨",
+    loginTitle: "영구 메일함 로그인",
+    tokenPlaceholder: "접근 토큰 입력",
+    loginBtn: "로그인",
+    logout: "로그아웃",
+    myEmail: "내 메일함: {email}",
+    retentionNote: "메일은 {days}일간 보관되며 주소 자체는 만료되지 않습니다",
+    noEmails: "아직 메일이 없습니다",
+    noSubject: "(제목 없음)",
+    new: "새 메일",
+    noContent: "내용 없음",
+    attachments: "첨부파일",
+    deleteEmail: "이 메일 삭제",
+    deleteConfirm: "이 메일을 삭제할까요?",
+    failedCreate: "만들기에 실패했습니다. 다시 시도하세요.",
+    failedLogin: "토큰이 잘못되었거나 메일함이 없습니다",
+    usernameTaken: "이 사용자 이름은 이미 사용 중입니다",
+    needUsername: "사용자 이름을 입력하세요",
   },
 }

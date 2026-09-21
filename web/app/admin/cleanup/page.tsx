@@ -14,6 +14,7 @@ export default function AdminCleanup() {
   const [result, setResult] = useState<{
     deleted: number
     emails: number
+    retention: number
     before: number
     after: number
     at: string
@@ -43,6 +44,7 @@ export default function AdminCleanup() {
       setResult({
         deleted: res.deleted_addresses,
         emails: res.deleted_emails,
+        retention: res.retention_deleted_emails,
         before: res.storage_bytes_before,
         after: res.storage_bytes_after,
         at: new Date().toLocaleString(),
@@ -66,6 +68,7 @@ export default function AdminCleanup() {
       }),
     },
     { icon: FileText, text: t("admin.autoCleanupLogs") },
+    { icon: Mail, text: t("admin.autoCleanupRetention", { d: stats?.permanent_email_retention_days ?? 30 }) },
     { icon: HardDrive, text: t("admin.autoCleanupBuild") },
     { icon: Package, text: t("admin.autoCleanupApt") },
     { icon: ScrollText, text: t("admin.autoCleanupJournald") },
@@ -136,6 +139,9 @@ export default function AdminCleanup() {
               <ul className="text-xs text-muted-foreground pl-6 space-y-0.5">
                 <li>{t("admin.deletedAddresses", { n: result.deleted })}</li>
                 <li>{t("admin.deletedEmails", { n: result.emails })}</li>
+                {result.retention > 0 && (
+                  <li>{t("admin.retentionDeletedEmails", { n: result.retention })}</li>
+                )}
                 <li>
                   {t("admin.storageChanged", {
                     a: formatBytesZh(result.before),

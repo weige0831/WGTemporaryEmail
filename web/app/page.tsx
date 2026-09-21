@@ -284,6 +284,9 @@ export default function Home() {
             <Link href="/api" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground whitespace-nowrap">
               {t("nav.api")}
             </Link>
+            <Link href="/mailbox" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground whitespace-nowrap">
+              {t("nav.permanentMailbox")}
+            </Link>
           </nav>
         </div>
       </header>
@@ -606,6 +609,10 @@ export default function Home() {
             •{" "}
             <Link href="/api" className="hover:text-foreground">
               {t("nav.api")}
+            </Link>{" "}
+            •{" "}
+            <Link href="/mailbox" className="hover:text-foreground">
+              {t("nav.permanentMailbox")}
             </Link>
           </p>
         </div>

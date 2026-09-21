@@ -15,6 +15,26 @@ from app.utils import get_address_by_token, escape_like
 router = APIRouter(prefix="/api/v1/{token}", tags=["emails"])
 
 
+@router.get("/info")
+def get_address_info(
+    token: str,
+    db: Session = Depends(get_db)
+):
+    """Return the address bound to this token (email, type, timestamps).
+
+    Used by the permanent mailbox page to display the mailbox address after
+    logging in with just the token.
+    """
+    address = get_address_by_token(token, db)
+    return {
+        "id": str(address.id),
+        "email": address.email,
+        "address_type": address.address_type,
+        "created_at": address.created_at.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z',
+        "expires_at": address.expires_at.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z' if address.expires_at else None,
+    }
+
+
 @router.get("/emails", response_model=EmailListResponse)
 def list_emails(
     token: str,

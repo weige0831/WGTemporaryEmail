@@ -140,6 +140,10 @@ echo "Generating admin panel token..."
 ADMIN_TOKEN=$(openssl rand -base64 32 | tr -d "=+/" | cut -c1-32)
 echo "✓ Generated: ${ADMIN_TOKEN:0:8}... (will be saved in config.yaml)"
 
+# 3.6 Integration API key (for creating permanent mailboxes via API)
+INTEGRATION_API_KEY=$(openssl rand -base64 32 | tr -d "=+/" | cut -c1-32)
+echo "✓ Integration API key generated (will be saved in config.yaml)"
+
 # 3.6 Web panel port
 echo ""
 echo "Web panel port - user panel and admin panel (default: 80):"
@@ -271,6 +275,10 @@ setup:
 admin:
   # Bearer token for the admin panel (http://YOUR_IP/admin)
   token: ${ADMIN_TOKEN}
+
+integration:
+  # API key for creating permanent mailboxes via API (X-API-Key header)
+  api_key: ${INTEGRATION_API_KEY}
 
 database:
   url: postgresql://tempmail:${DB_PASSWORD}@postgres:5432/tempmail?sslmode=disable

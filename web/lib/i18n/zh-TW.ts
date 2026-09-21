@@ -1,7 +1,7 @@
 import type { Dict } from "./en"
 
 export const zhTW: Partial<Dict> = {
-  nav: { about: "關於", privacy: "隱私", api: "API" },
+  nav: { about: "關於", privacy: "隱私", api: "API", permanentMailbox: "長效信箱" },
   home: {
     yourTempEmail: "你的臨時信箱",
     readyDesc: "你的臨時信箱已就緒，將在 {time} 後自動刪除。",
@@ -110,5 +110,33 @@ export const zhTW: Partial<Dict> = {
     contactTitle: "聯絡我們",
     contactP1: "本專案完全開源，原始碼見：",
     contactP2: "對隱私政策有疑問或需要刪除資料，請透過 GitHub Issues 聯絡我們。",
+  },
+  mailbox: {
+    title: "長效信箱",
+    desc: "信箱地址永久保留，郵件預設保留 30 天。請妥善保存存取權杖。",
+    createTitle: "建立長效信箱",
+    usernamePlaceholder: "yourname",
+    createBtn: "建立長效信箱",
+    creating: "建立中...",
+    createdNote: "建立成功！請立即保存存取權杖（僅顯示這一次）：",
+    copyToken: "複製權杖",
+    copied: "已複製",
+    loginTitle: "登入長效信箱",
+    tokenPlaceholder: "輸入存取權杖",
+    loginBtn: "登入",
+    logout: "登出",
+    myEmail: "我的信箱：{email}",
+    retentionNote: "郵件預設保留 {days} 天，信箱地址永久有效",
+    noEmails: "暫無郵件",
+    noSubject: "（無主旨）",
+    new: "新",
+    noContent: "無內容",
+    attachments: "附件",
+    deleteEmail: "刪除此郵件",
+    deleteConfirm: "確定刪除這封郵件嗎？",
+    failedCreate: "建立失敗，請重試",
+    failedLogin: "權杖無效或信箱不存在",
+    usernameTaken: "該使用者名稱已被使用",
+    needUsername: "請輸入使用者名稱",
   },
 }

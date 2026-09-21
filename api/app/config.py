@@ -83,6 +83,13 @@ class Config:
         self.WEB_HOSTNAME: str = web_config.get('hostname', '')
         self.WEB_ALLOW_IP_ACCESS: bool = web_config.get('allow_ip_access', True)
 
+        # Integration API key (for creating permanent mailboxes via API)
+        integration_config = config.get('integration', {})
+        self.INTEGRATION_API_KEY: str = integration_config.get('api_key', '')
+
+        # Email retention for permanent mailboxes (days; address itself is kept forever)
+        self.PERMANENT_EMAIL_RETENTION_DAYS: int = tempmail_config.get('permanent_email_retention_days', 30)
+
         # Logging
         logging_config = config.get('logging', {})
         self.LOG_LEVEL: str = logging_config.get('level', 'info')
@@ -177,6 +184,8 @@ def create_test_config() -> Config:
     config.TLS_KEY_FILE = '/tmp/nonexistent-key.pem'
     config.WEB_HOSTNAME = ''
     config.WEB_ALLOW_IP_ACCESS = True
+    config.INTEGRATION_API_KEY = 'test-integration-key'
+    config.PERMANENT_EMAIL_RETENTION_DAYS = 30
     config.LOG_LEVEL = 'info'
     config.LOG_FORMAT = 'json'
     config.CORS_ALLOW_ORIGINS = ['*']

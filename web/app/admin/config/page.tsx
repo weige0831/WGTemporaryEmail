@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Save, RefreshCw, KeyRound, ShieldCheck } from "lucide-react"
+import { Save, RefreshCw, KeyRound, ShieldCheck, Copy } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { adminApi, ApiError, clearAdminToken, type TlsStatus } from "@/lib/admin-api"
+import { copyToClipboard } from "@/lib/utils"
 import { useI18n } from "@/lib/i18n"
 
 interface ConfigData {
@@ -81,6 +82,10 @@ export default function AdminConfig() {
   const [tlsBusy, setTlsBusy] = useState(false)
   const [tlsNotice, setTlsNotice] = useState("")
   const [tlsError, setTlsError] = useState("")
+  // 集成 API 密钥
+  const [apiKeyStatus, setApiKeyStatus] = useState<{ configured: boolean; masked: string } | null>(null)
+  const [apiKeyNew, setApiKeyNew] = useState("")
+  const [apiKeyBusy, setApiKeyBusy] = useState(false)
 
   const fetchConfig = async () => {
     setError("")
@@ -109,8 +114,33 @@ export default function AdminConfig() {
   useEffect(() => {
     fetchConfig()
     fetchTlsStatus()
+    fetchApiKeyStatus()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  const fetchApiKeyStatus = async () => {
+    try {
+      setApiKeyStatus(await adminApi.getApiKeyStatus())
+    } catch (e) {
+      if (e instanceof ApiError) setError(e.message)
+    }
+  }
+
+  const handleRegenerateApiKey = async () => {
+    if (!confirm(t("admin.apiKeyConfirm"))) return
+    setApiKeyBusy(true)
+    setError("")
+    setApiKeyNew("")
+    try {
+      const res = await adminApi.regenerateApiKey()
+      setApiKeyNew(res.api_key)
+      await fetchApiKeyStatus()
+    } catch (e) {
+      if (e instanceof ApiError) setError(e.message)
+    } finally {
+      setApiKeyBusy(false)
+    }
+  }
 
   const fetchTlsStatus = async () => {
     try {
@@ -391,6 +421,52 @@ export default function AdminConfig() {
                 className="font-mono"
               />
               <p className="text-xs text-muted-foreground">{t("admin.tokenHint")}</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <KeyRound className="h-4 w-4" />
+                {t("admin.apiKeyTitle")}
+              </CardTitle>
+              <CardDescription>{t("admin.apiKeyDesc")}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div className="text-sm">
+                {apiKeyStatus?.configured ? (
+                  <p className="text-muted-foreground">
+                    {t("admin.apiKeyStatusConfigured")}:{" "}
+                    <code className="font-mono">{apiKeyStatus.masked}</code>
+                  </p>
+                ) : (
+                  <p className="text-amber-600 dark:text-amber-400">{t("admin.apiKeyNotSet")}</p>
+                )}
+              </div>
+              <Button
+                onClick={handleRegenerateApiKey}
+                disabled={apiKeyBusy}
+                variant="outline"
+                className="w-full"
+              >
+                <KeyRound className="h-4 w-4 mr-2" />
+                {t("admin.apiKeyRegenerate")}
+              </Button>
+              {apiKeyNew && (
+                <div className="border rounded-md p-3 space-y-2 bg-primary/5">
+                  <p className="text-xs text-destructive">{t("admin.apiKeyNew")}</p>
+                  <Input value={apiKeyNew} readOnly className="font-mono text-xs" />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => copyToClipboard(apiKeyNew)}
+                  >
+                    <Copy className="h-3.5 w-3.5 mr-1" />
+                    {t("admin.apiKeyCopy")}
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
 

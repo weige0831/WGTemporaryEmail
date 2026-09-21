@@ -73,6 +73,36 @@ export const api = {
     return res.json()
   },
 
+  async createPermanentAddress(data: {
+    username: string
+    domain?: string
+  }): Promise<{ id: string; email: string; token: string; address_type: string; created_at: string }> {
+    const res = await fetch(`${API_URL}/api/v1/permanent-addresses`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    })
+    if (!res.ok) {
+      const error: any = new Error('Failed to create permanent address')
+      error.status = res.status
+      try {
+        const errorData = await res.json()
+        error.message = errorData.detail || error.message
+        error.detail = errorData.detail
+      } catch (e) {
+        // 解析失败时使用默认错误信息
+      }
+      throw error
+    }
+    return res.json()
+  },
+
+  async getAddressInfo(token: string): Promise<{ id: string; email: string; address_type: string; created_at: string; expires_at: string | null }> {
+    const res = await fetch(`${API_URL}/api/v1/${token}/info`)
+    if (!res.ok) throw new Error('Failed to fetch address info')
+    return res.json()
+  },
+
   async getDomains(): Promise<Domain> {
     const res = await fetch(`${API_URL}/api/v1/domains`)
     if (!res.ok) throw new Error('Failed to fetch domains')

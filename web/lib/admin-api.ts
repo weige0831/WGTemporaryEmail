@@ -74,13 +74,15 @@ export interface AdminStats {
   uptime_seconds: number
   address_lifetime_hours: number
   cleanup_interval_hours: number
+  permanent_email_retention_days: number
 }
 
 export interface AdminAddressSummary {
   id: string
   email: string
+  address_type: string
   created_at: string
-  expires_at: string
+  expires_at: string | null
   is_expired: boolean
   email_count: number
   unread_count: number
@@ -140,8 +142,9 @@ export interface AdminEmailDetail {
 export interface AdminAddressDetail {
   id: string
   email: string
+  address_type: string
   created_at: string
-  expires_at: string
+  expires_at: string | null
   is_expired: boolean
   emails: AdminEmailSummary[]
 }
@@ -155,6 +158,7 @@ export interface DomainStats {
 export interface CleanupResult {
   deleted_addresses: number
   deleted_emails: number
+  retention_deleted_emails: number
   storage_bytes_before: number
   storage_bytes_after: number
 }
@@ -250,6 +254,14 @@ export const adminApi = {
       method: 'POST',
       body: JSON.stringify({ email }),
     })
+  },
+
+  getApiKeyStatus(): Promise<{ configured: boolean; masked: string }> {
+    return request('/api/v1/admin/apikey/status')
+  },
+
+  regenerateApiKey(): Promise<{ api_key: string }> {
+    return request('/api/v1/admin/apikey/regenerate', { method: 'POST' })
   },
 }
 

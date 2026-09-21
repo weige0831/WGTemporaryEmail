@@ -89,3 +89,47 @@ class AddressInfo(BaseModel):
 class DomainListResponse(BaseModel):
     """Response schema for listing available domains"""
     domains: List[str]
+
+
+class PermanentAddressCreate(BaseModel):
+    """Schema for creating a permanent (long-term) mailbox"""
+    username: str
+    domain: Optional[str] = None  # If None, uses first configured domain
+
+    @field_validator('username')
+    @classmethod
+    def validate_username(cls, v: str) -> str:
+        v = v.strip().lower()
+        if len(v) < 3:
+            raise ValueError('Username must be at least 3 characters')
+        if len(v) > 64:
+            raise ValueError('Username must be at most 64 characters')
+        if not re.match(r'^[a-zA-Z0-9._-]+$', v):
+            raise ValueError('Username can only contain letters, numbers, dots, hyphens, and underscores')
+        return v
+
+    @field_validator('domain')
+    @classmethod
+    def validate_domain_format(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        v = v.strip().lower()
+        if not re.match(r'^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$', v):
+            raise ValueError('Invalid domain format')
+        return v
+
+
+class PermanentAddressResponse(BaseModel):
+    """Schema for permanent mailbox API response"""
+    id: UUID
+    email: EmailStr
+    token: str
+    address_type: str = 'permanent'
+    created_at: datetime
+
+    @field_serializer('created_at')
+    def serialize_dt(self, dt: datetime, _info):
+        return dt.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
+
+    class Config:
+        from_attributes = True

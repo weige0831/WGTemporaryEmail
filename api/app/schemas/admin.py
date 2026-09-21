@@ -26,14 +26,16 @@ class AdminStats(BaseModel):
     uptime_seconds: float
     address_lifetime_hours: int
     cleanup_interval_hours: int
+    permanent_email_retention_days: int = 30
 
 
 class AdminAddressSummary(BaseModel):
     """Address row for the admin address list"""
     id: UUID
     email: str
+    address_type: str = 'temp'  # temp | permanent
     created_at: datetime
-    expires_at: datetime
+    expires_at: Optional[datetime] = None  # None = permanent mailbox
     is_expired: bool
     email_count: int
     unread_count: int
@@ -120,14 +122,15 @@ class AdminAddressDetail(BaseModel):
     """Address detail plus its emails"""
     id: UUID
     email: str
+    address_type: str = 'temp'  # temp | permanent
     created_at: datetime
-    expires_at: datetime
+    expires_at: Optional[datetime] = None  # None = permanent mailbox
     is_expired: bool
     emails: List[AdminEmailSummary]
 
     @field_serializer('created_at', 'expires_at')
     def serialize_dt(self, dt: datetime, _info):
-        return _serialize_dt(dt, _info)
+        return _serialize_dt(dt, _info) if dt else None
 
 
 class DomainAddRequest(BaseModel):
@@ -153,6 +156,7 @@ class DomainRemoveResponse(BaseModel):
 class CleanupResult(BaseModel):
     deleted_addresses: int
     deleted_emails: int
+    retention_deleted_emails: int = 0
     storage_bytes_before: int
     storage_bytes_after: int
 

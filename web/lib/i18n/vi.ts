@@ -1,7 +1,7 @@
 import type { Dict } from "./en"
 
 export const vi: Partial<Dict> = {
-  nav: { about: "Giới thiệu", privacy: "Quyền riêng tư", api: "API" },
+  nav: { about: "Giới thiệu", privacy: "Quyền riêng tư", api: "API", permanentMailbox: "Hộp thư vĩnh viễn" },
   home: {
     yourTempEmail: "Email tạm thời của bạn",
     readyDesc: "Email tạm thời của bạn đã sẵn sàng. Nó sẽ tự động bị xóa sau {time}.",
@@ -110,5 +110,33 @@ export const vi: Partial<Dict> = {
     contactTitle: "Liên hệ với chúng tôi",
     contactP1: "Dự án này hoàn toàn mã nguồn mở. Mã nguồn:",
     contactP2: "Đối với câu hỏi về quyền riêng tư hoặc yêu cầu xóa dữ liệu, vui lòng mở issue trên GitHub.",
+  },
+  mailbox: {
+    title: "Hộp thư vĩnh viễn",
+    desc: "Địa chỉ hộp thư được giữ mãi mãi; email được giữ 30 ngày theo mặc định. Hãy lưu token truy cập an toàn.",
+    createTitle: "Tạo hộp thư vĩnh viễn",
+    usernamePlaceholder: "tenban",
+    createBtn: "Tạo hộp thư",
+    creating: "Đang tạo...",
+    createdNote: "Đã tạo! Hãy lưu token truy cập ngay (chỉ hiển thị một lần):",
+    copyToken: "Sao chép token",
+    copied: "Đã sao chép",
+    loginTitle: "Đăng nhập hộp thư vĩnh viễn",
+    tokenPlaceholder: "Nhập token truy cập",
+    loginBtn: "Đăng nhập",
+    logout: "Đăng xuất",
+    myEmail: "Hộp thư của tôi: {email}",
+    retentionNote: "Email được giữ {days} ngày; địa chỉ không bao giờ hết hạn",
+    noEmails: "Chưa có email",
+    noSubject: "(Không có chủ đề)",
+    new: "Mới",
+    noContent: "Không có nội dung",
+    attachments: "Tệp đính kèm",
+    deleteEmail: "Xóa email này",
+    deleteConfirm: "Xóa email này?",
+    failedCreate: "Tạo thất bại. Thử lại.",
+    failedLogin: "Token không hợp lệ hoặc hộp thư không tồn tại",
+    usernameTaken: "Tên người dùng này đã được dùng",
+    needUsername: "Nhập tên người dùng",
   },
 }

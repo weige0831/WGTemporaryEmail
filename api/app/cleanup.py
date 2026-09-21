@@ -2,6 +2,7 @@
 
 import time
 import logging
+from datetime import datetime, timedelta
 from sqlalchemy import text
 
 from app.database import SessionLocal
@@ -106,6 +107,51 @@ def enforce_storage_limit():
             db.close()
 
 
+def cleanup_permanent_email_retention():
+    """
+    Delete emails of permanent mailboxes that are older than the configured
+    retention period (tempmail.permanent_email_retention_days, default 30).
+
+    The mailbox addresses themselves are never deleted by cleanup.
+    Returns the number of deleted emails.
+    """
+    retention_days = settings.PERMANENT_EMAIL_RETENTION_DAYS
+    if retention_days <= 0:
+        return 0
+
+    db = None
+    try:
+        db = SessionLocal()
+        cutoff = datetime.utcnow() - timedelta(days=retention_days)
+        result = db.execute(text("""
+            DELETE FROM emails
+            WHERE received_at < :cutoff
+              AND id IN (
+                SELECT er.email_id
+                FROM email_recipients er
+                JOIN addresses a ON a.id = er.address_id
+                WHERE a.address_type = 'permanent'
+              )
+        """), {"cutoff": cutoff})
+
+        deleted = result.rowcount or 0
+        db.commit()
+
+        if deleted > 0:
+            logger.info(f"Retention cleanup: deleted {deleted} emails of permanent mailboxes older than {retention_days} days")
+        return deleted
+
+    except Exception as e:
+        logger.error(f"Retention cleanup error: {e}")
+        if db:
+            db.rollback()
+        return 0
+
+    finally:
+        if db:
+            db.close()
+
+
 def run_cleanup_loop():
     """
     Run cleanup in an infinite loop.
@@ -120,6 +166,7 @@ def run_cleanup_loop():
         try:
             cleanup_expired_addresses()
             enforce_storage_limit()
+            cleanup_permanent_email_retention()
         except Exception as e:
             logger.error(f"Cleanup loop error: {e}")
 

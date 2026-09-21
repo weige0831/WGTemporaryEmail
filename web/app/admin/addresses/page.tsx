@@ -130,7 +130,9 @@ export default function AdminAddresses() {
                 <tr key={a.id} className="hover:bg-accent/50">
                   <td className="p-3 font-mono max-w-[260px] truncate">{a.email}</td>
                   <td className="p-3">
-                    {a.is_expired ? (
+                    {a.address_type === "permanent" ? (
+                      <Badge variant="default">{t("admin.permanent")}</Badge>
+                    ) : a.is_expired ? (
                       <Badge variant="outline">{t("admin.expired")}</Badge>
                     ) : (
                       <Badge variant="success">{t("admin.active")}</Badge>
@@ -148,7 +150,7 @@ export default function AdminAddresses() {
                     {formatDateTime(a.created_at)}
                   </td>
                   <td className="p-3 whitespace-nowrap text-muted-foreground">
-                    {formatDateTime(a.expires_at)}
+                    {a.address_type === "permanent" ? t("admin.neverExpires") : formatDateTime(a.expires_at)}
                   </td>
                   <td className="p-3 text-right whitespace-nowrap">
                     <Button size="sm" variant="ghost" onClick={() => handleView(a.id)}>
@@ -206,13 +208,18 @@ export default function AdminAddresses() {
           <DialogHeader>
             <DialogTitle className="font-mono">{detail?.email}</DialogTitle>
             <DialogDescription>
-              {detail && t("admin.createdExpiresSub", { a: formatDateTime(detail.created_at), b: formatDateTime(detail.expires_at) })}
+              {detail &&
+                (detail.address_type === "permanent"
+                  ? t("admin.createdPermanentSub", { a: formatDateTime(detail.created_at) })
+                  : t("admin.createdExpiresSub", { a: formatDateTime(detail.created_at), b: formatDateTime(detail.expires_at) }))}
             </DialogDescription>
           </DialogHeader>
           {detail && (
             <div className="space-y-4 text-sm">
               <div className="flex items-center gap-2">
-                {detail.is_expired ? (
+                {detail.address_type === "permanent" ? (
+                  <Badge variant="default">{t("admin.permanent")}</Badge>
+                ) : detail.is_expired ? (
                   <Badge variant="outline">{t("admin.expired")}</Badge>
                 ) : (
                   <Badge variant="success">{t("admin.active")}</Badge>

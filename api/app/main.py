@@ -10,7 +10,7 @@ import time
 
 from app.config import settings
 from app.database import check_db_connection
-from app.routers import addresses_router, emails_router, admin_router, setup_router
+from app.routers import addresses_router, emails_router, admin_router, setup_router, permanent_router
 from app.cleanup import run_cleanup_loop
 
 # Configure logging
@@ -112,6 +112,7 @@ def health_check():
 # /{token}/emails patterns that would otherwise shadow /admin/emails.
 app.include_router(setup_router)
 app.include_router(admin_router)
+app.include_router(permanent_router)
 app.include_router(addresses_router)
 app.include_router(emails_router)
 

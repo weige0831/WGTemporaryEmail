@@ -1,7 +1,7 @@
 import type { Dict } from "./en"
 
 export const ru: Partial<Dict> = {
-  nav: { about: "О сервисе", privacy: "Конфиденциальность", api: "API" },
+  nav: { about: "О сервисе", privacy: "Конфиденциальность", api: "API", permanentMailbox: "Постоянный ящик" },
   home: {
     yourTempEmail: "Ваш временный email",
     readyDesc: "Ваш временный email готов. Он будет автоматически удалён через {time}.",
@@ -110,5 +110,33 @@ export const ru: Partial<Dict> = {
     contactTitle: "Связаться с нами",
     contactP1: "Проект полностью открыт. Исходный код:",
     contactP2: "По вопросам конфиденциальности или запросам на удаление данных создайте issue на GitHub.",
+  },
+  mailbox: {
+    title: "Постоянный ящик",
+    desc: "Адрес сохраняется навсегда; письма по умолчанию хранятся 30 дней. Храните токен доступа в безопасности.",
+    createTitle: "Создать постоянный ящик",
+    usernamePlaceholder: "вашеимя",
+    createBtn: "Создать ящик",
+    creating: "Создание...",
+    createdNote: "Создано! Сохраните токен доступа сейчас (показывается только один раз):",
+    copyToken: "Копировать токен",
+    copied: "Скопировано",
+    loginTitle: "Войти в постоянный ящик",
+    tokenPlaceholder: "Введите токен доступа",
+    loginBtn: "Войти",
+    logout: "Выйти",
+    myEmail: "Мой ящик: {email}",
+    retentionNote: "Письма хранятся {days} дней; сам адрес не истекает",
+    noEmails: "Писем пока нет",
+    noSubject: "(Без темы)",
+    new: "Новое",
+    noContent: "Нет содержимого",
+    attachments: "Вложения",
+    deleteEmail: "Удалить это письмо",
+    deleteConfirm: "Удалить это письмо?",
+    failedCreate: "Не удалось создать. Попробуйте ещё раз.",
+    failedLogin: "Неверный токен или ящик не существует",
+    usernameTaken: "Это имя пользователя уже занято",
+    needUsername: "Введите имя пользователя",
   },
 }

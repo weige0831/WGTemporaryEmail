@@ -13,18 +13,23 @@ CREATE TABLE addresses (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     email VARCHAR(255) NOT NULL UNIQUE,
     token VARCHAR(64) NOT NULL UNIQUE,
+    address_type VARCHAR(10) NOT NULL DEFAULT 'temp',
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    expires_at TIMESTAMP NOT NULL,
-    CONSTRAINT addresses_email_check CHECK (email ~ '^[^@]+@[^@]+$')
+    -- NULL for permanent addresses (never expires)
+    expires_at TIMESTAMP,
+    CONSTRAINT addresses_email_check CHECK (email ~ '^[^@]+@[^@]+$'),
+    CONSTRAINT addresses_type_check CHECK (address_type IN ('temp', 'permanent'))
 );
 
 CREATE INDEX idx_addresses_token ON addresses(token);
 CREATE INDEX idx_addresses_expires_at ON addresses(expires_at);
 CREATE INDEX idx_addresses_email ON addresses(email);
+CREATE INDEX idx_addresses_type ON addresses(address_type);
 
-COMMENT ON TABLE addresses IS 'Temporary email addresses with auto-expiration';
+COMMENT ON TABLE addresses IS 'Temporary email addresses (auto-expiring) and permanent mailboxes';
 COMMENT ON COLUMN addresses.token IS 'Access token for API authentication';
-COMMENT ON COLUMN addresses.expires_at IS 'When this address will be automatically deleted';
+COMMENT ON COLUMN addresses.address_type IS 'temp = auto-expiring temporary address, permanent = long-term mailbox';
+COMMENT ON COLUMN addresses.expires_at IS 'When this address will be automatically deleted (NULL = permanent)';
 
 -- ============================================================================
 -- Table: emails

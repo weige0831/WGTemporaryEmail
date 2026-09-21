@@ -1,7 +1,7 @@
 import type { Dict } from "./en"
 
 export const tr: Partial<Dict> = {
-  nav: { about: "Hakkında", privacy: "Gizlilik", api: "API" },
+  nav: { about: "Hakkında", privacy: "Gizlilik", api: "API", permanentMailbox: "Kalıcı posta kutusu" },
   home: {
     yourTempEmail: "Geçici e-postanız",
     readyDesc: "Geçici e-postanız hazır. {time} içinde otomatik olarak silinecek.",
@@ -110,5 +110,33 @@ export const tr: Partial<Dict> = {
     contactTitle: "Bize ulaşın",
     contactP1: "Bu proje tamamen açık kaynaktır. Kaynak kodu:",
     contactP2: "Gizlilik soruları veya veri silme talepleri için lütfen GitHub'da bir issue açın.",
+  },
+  mailbox: {
+    title: "Kalıcı posta kutusu",
+    desc: "Adres sonsuza dek korunur; e-postalar varsayılan olarak 30 gün saklanır. Erişim anahtarınızı güvende tutun.",
+    createTitle: "Kalıcı posta kutusu oluştur",
+    usernamePlaceholder: "adiniz",
+    createBtn: "Posta kutusu oluştur",
+    creating: "Oluşturuluyor...",
+    createdNote: "Oluşturuldu! Erişim anahtarını hemen kaydedin (yalnızca bir kez gösterilir):",
+    copyToken: "Anahtarı kopyala",
+    copied: "Kopyalandı",
+    loginTitle: "Kalıcı posta kutusuna giriş",
+    tokenPlaceholder: "Erişim anahtarını girin",
+    loginBtn: "Giriş yap",
+    logout: "Çıkış",
+    myEmail: "Posta kutum: {email}",
+    retentionNote: "E-postalar {days} gün saklanır; adresin kendisi asla sona ermez",
+    noEmails: "Henüz e-posta yok",
+    noSubject: "(Konu yok)",
+    new: "Yeni",
+    noContent: "İçerik yok",
+    attachments: "Ekler",
+    deleteEmail: "Bu e-postayı sil",
+    deleteConfirm: "Bu e-posta silinsin mi?",
+    failedCreate: "Oluşturma başarısız. Tekrar deneyin.",
+    failedLogin: "Anahtar geçersiz veya posta kutusu yok",
+    usernameTaken: "Bu kullanıcı adı zaten alınmış",
+    needUsername: "Bir kullanıcı adı girin",
   },
 }
