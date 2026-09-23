@@ -42,6 +42,7 @@ export const id: Partial<Dict> = {
     creating: "Membuat...",
     usernameTaken: "Nama pengguna ini sudah dipakai. Pilih nama lain atau kosongkan untuk alamat acak.",
     failedToCreate: "Gagal membuat alamat email. Coba lagi.",
+    rateLimited: "Terlalu banyak permintaan. Batasnya per alamat IP — tunggu sekitar satu menit.",
     failedToLoad: "Gagal memuat email. Coba lagi.",
     failedToDelete: "Gagal menghapus email. Coba lagi.",
     deleteEmailConfirm: "Hapus email ini?",

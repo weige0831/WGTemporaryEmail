@@ -12,6 +12,7 @@ import { copyToClipboard } from "@/lib/utils"
 import { useI18n } from "@/lib/i18n"
 
 interface ConfigData {
+  rate_limits?: Record<string, number>
   server?: { max_message_size_mb?: number; docs_enabled?: boolean; hostname?: string }
   tempmail?: {
     address_lifetime_hours?: number
@@ -45,6 +46,13 @@ const INT_FIELDS: { section: keyof ConfigData; key: string; labelKey: string; mi
   { section: "tempmail", key: "max_username_length", labelKey: "admin.maxUsernameLength", min: 1 },
   { section: "database", key: "pool_size", labelKey: "admin.poolSize", min: 1 },
   { section: "database", key: "max_overflow", labelKey: "admin.maxOverflow", min: 1 },
+  // 限流（每分钟每 IP；0 = 关闭该限制）
+  { section: "rate_limits", key: "address_create_per_minute", labelKey: "admin.rlAddressCreate", allowZero: true },
+  { section: "rate_limits", key: "permanent_create_per_minute", labelKey: "admin.rlPermanentCreate", allowZero: true },
+  { section: "rate_limits", key: "api_create_per_minute", labelKey: "admin.rlApiCreate", allowZero: true },
+  { section: "rate_limits", key: "setup_per_minute", labelKey: "admin.rlSetup", allowZero: true },
+  { section: "rate_limits", key: "admin_per_minute", labelKey: "admin.rlAdmin", allowZero: true },
+  { section: "rate_limits", key: "email_read_per_minute", labelKey: "admin.rlEmailRead", allowZero: true },
 ]
 
 const BOOL_FIELDS: { section: keyof ConfigData; key: string; labelKey: string }[] = [
@@ -530,6 +538,27 @@ export default function AdminConfig() {
                 </div>
               ))}
               <p className="text-xs text-muted-foreground">{t("admin.poolHint")}</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">{t("admin.rateLimitSection")}</CardTitle>
+              <CardDescription>{t("admin.rateLimitDesc")}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {INT_FIELDS.filter((f) => f.section === "rate_limits").map((f) => (
+                  <div key={f.key} className="space-y-1">
+                    <label className="text-sm font-medium">{t(f.labelKey)}</label>
+                    <Input
+                      type="number"
+                      value={(form[`rate_limits.${f.key}`] as string) ?? ""}
+                      onChange={(e) => setField(`rate_limits.${f.key}`, e.target.value)}
+                    />
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
 

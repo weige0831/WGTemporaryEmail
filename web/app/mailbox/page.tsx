@@ -148,6 +148,7 @@ export default function MailboxPage() {
       fetchEmails(data.token, "")
     } catch (e: any) {
       if (e.status === 409) setError(t("mailbox.usernameTaken"))
+      else if (e.status === 429) setError(t("home.rateLimited"))
       else if (e.detail) setError(String(e.detail))
       else setError(t("mailbox.failedCreate"))
     } finally {

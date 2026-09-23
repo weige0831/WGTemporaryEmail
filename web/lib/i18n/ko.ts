@@ -42,6 +42,7 @@ export const ko: Partial<Dict> = {
     creating: "생성 중...",
     usernameTaken: "이 사용자 이름은 이미 사용 중입니다. 다른 이름을 선택하거나 비워 두어 무작위 주소를 생성하세요.",
     failedToCreate: "이메일 주소 생성에 실패했습니다. 다시 시도해 주세요.",
+    rateLimited: "요청이 너무 많습니다(IP 기준 제한). 약 1분 후 다시 시도해 주세요.",
     failedToLoad: "이메일을 불러오지 못했습니다. 다시 시도해 주세요.",
     failedToDelete: "이메일 삭제에 실패했습니다. 다시 시도해 주세요.",
     deleteEmailConfirm: "이 이메일을 삭제할까요?",

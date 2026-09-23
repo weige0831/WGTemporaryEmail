@@ -13,6 +13,8 @@ from collections import defaultdict, deque
 
 from fastapi import HTTPException, Request
 
+from app.config import settings
+
 # A window holds monotonic timestamps of recent requests per key.
 _WINDOWS: "defaultdict[str, deque]" = defaultdict(deque)
 _LOCK = threading.Lock()
@@ -66,8 +68,18 @@ def get_client_ip(request: Request) -> str:
     return "unknown"
 
 
-def ip_rate_limit(limit: int, window_seconds: int = 60, scope: str = ""):
-    """Return a FastAPI dependency enforcing `limit` requests per window per IP.
+def ip_rate_limit(
+    limit: int,
+    window_seconds: int = 60,
+    scope: str = "",
+    setting_name: str = "",
+):
+    """Return a FastAPI dependency enforcing a per-IP request budget.
+
+    `limit` is the built-in default; when `setting_name` is given the value is
+    read from the config (settings.<setting_name>) on every request, so the
+    operator can adjust it from the admin panel without a restart. A value of 0
+    disables the limit entirely.
 
     Disabled when TESTING is set so the test suite is unaffected.
     """
@@ -75,9 +87,19 @@ def ip_rate_limit(limit: int, window_seconds: int = 60, scope: str = ""):
     def dependency(request: Request) -> None:
         if os.getenv("TESTING"):
             return
+
+        effective = limit
+        if setting_name:
+            try:
+                effective = int(getattr(settings, setting_name, limit))
+            except (TypeError, ValueError):
+                effective = limit
+        if effective <= 0:
+            return
+
         ip = get_client_ip(request)
         key = f"{scope}:{ip}"
-        if not _is_allowed(key, limit, window_seconds):
+        if not _is_allowed(key, effective, window_seconds):
             raise HTTPException(
                 status_code=429,
                 detail="Too many requests",

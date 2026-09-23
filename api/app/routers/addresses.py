@@ -19,7 +19,7 @@ from app.utils import (
 router = APIRouter(prefix="/api/v1", tags=["addresses"])
 
 # Public endpoint - limit address creation to deter DB-filling abuse.
-create_address_rate_limit = ip_rate_limit(limit=10, window_seconds=60, scope="create_address")
+create_address_rate_limit = ip_rate_limit(limit=30, window_seconds=60, scope="create_address", setting_name="RL_ADDRESS_CREATE")
 
 
 @router.get("/domains", response_model=DomainListResponse)

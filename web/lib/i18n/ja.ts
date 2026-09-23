@@ -42,6 +42,7 @@ export const ja: Partial<Dict> = {
     creating: "生成中...",
     usernameTaken: "このユーザー名は使用されています。別の名前を選ぶか、空欄にしてランダムなアドレスを生成してください。",
     failedToCreate: "メールアドレスの作成に失敗しました。もう一度お試しください。",
+    rateLimited: "リクエストが多すぎます（制限は IP 単位）。1 分ほど待ってから再試行してください。",
     failedToLoad: "メールの読み込みに失敗しました。もう一度お試しください。",
     failedToDelete: "メールの削除に失敗しました。もう一度お試しください。",
     deleteEmailConfirm: "このメールを削除しますか？",

@@ -4,6 +4,23 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.6] - 2026-09-23
+
+### Changed
+
+- **Rate limits are now configurable and less strict for creation.** The old
+  fixed values (10 address creations/min, 5 permanent mailbox creations/min per
+  IP) were easy to hit in normal use - especially behind a shared NAT, or when
+  the operator tests alongside automation on the same public IP. New defaults:
+  30/min for temporary addresses, 20/min for permanent mailboxes, 60/min for the
+  API-key route, 120/min for the admin API and 300/min for mailbox reads.
+- All limits live in `config.yaml` under `rate_limits:` (0 disables one) and are
+  editable in the admin panel (**System config -> Rate limits**) with immediate
+  effect - the limiter reads the value on every request, no restart needed.
+- The temp-mailbox and permanent-mailbox pages now explain a 429 clearly
+  ("the limit is per IP address, please wait about a minute") instead of showing
+  a generic failure, in all 16 languages.
+
 ## [1.1.5] - 2026-09-23
 
 ### Added

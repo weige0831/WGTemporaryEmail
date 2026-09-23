@@ -50,6 +50,12 @@ ALLOWED_PATCH_SECTIONS = {
     'admin': {'token'},
     'tls': {'enabled'},
     'web': {'hostname', 'allow_ip_access'},
+    # Per-IP requests per minute; 0 disables that limit.
+    'rate_limits': {
+        'address_create_per_minute', 'permanent_create_per_minute',
+        'api_create_per_minute', 'setup_per_minute',
+        'admin_per_minute', 'email_read_per_minute',
+    },
 }
 
 _INT_KEYS = {
@@ -64,6 +70,12 @@ _INT_KEYS = {
     ('tempmail', 'max_permanent_addresses'),
     ('database', 'pool_size'),
     ('database', 'max_overflow'),
+    ('rate_limits', 'address_create_per_minute'),
+    ('rate_limits', 'permanent_create_per_minute'),
+    ('rate_limits', 'api_create_per_minute'),
+    ('rate_limits', 'setup_per_minute'),
+    ('rate_limits', 'admin_per_minute'),
+    ('rate_limits', 'email_read_per_minute'),
 }
 
 _BOOL_KEYS = {
@@ -222,6 +234,8 @@ def apply_patch(config: dict, patch: dict) -> set:
                     raise ValueError(f'{section}.{key} 必须是整数')
                 if k in _POSITIVE_INT_KEYS and value < 1:
                     raise ValueError(f'{section}.{key} 必须 >= 1')
+                if section == 'rate_limits' and value < 0:
+                    raise ValueError('限流值不能为负数（0 表示关闭该限制）')
                 if k == ('tempmail', 'max_storage_mb') and value < 0:
                     raise ValueError('max_storage_mb 必须 >= 0（0 表示不限制）')
             if k in _BOOL_KEYS and not isinstance(value, bool):

@@ -150,6 +150,9 @@ export default function Home() {
       console.error("Failed to create address", error)
       if (error.status === 409) {
         alert(t("home.usernameTaken"))
+      } else if (error.status === 429) {
+        // 限流是按 IP 计的：共享出口 IP（公司/移动网络）或短时间多次刷新都可能触发
+        alert(t("home.rateLimited"))
       } else {
         alert(t("home.failedToCreate"))
       }

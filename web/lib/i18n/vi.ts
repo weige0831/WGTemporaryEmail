@@ -42,6 +42,7 @@ export const vi: Partial<Dict> = {
     creating: "Đang tạo...",
     usernameTaken: "Tên người dùng này đã được sử dụng. Hãy chọn tên khác hoặc để trống để nhận địa chỉ ngẫu nhiên.",
     failedToCreate: "Không tạo được địa chỉ email. Vui lòng thử lại.",
+    rateLimited: "Quá nhiều yêu cầu. Giới hạn tính theo địa chỉ IP — hãy đợi khoảng một phút.",
     failedToLoad: "Không tải được email. Vui lòng thử lại.",
     failedToDelete: "Không xóa được email. Vui lòng thử lại.",
     deleteEmailConfirm: "Xóa email này?",

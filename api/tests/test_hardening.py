@@ -274,3 +274,76 @@ class TestUsernameBounds:
         )
         assert too_short.status_code == 400
         assert "6" in too_short.text
+
+
+# --------------------------------------------------------------------------
+# configurable rate limits
+# --------------------------------------------------------------------------
+
+class TestConfigurableRateLimits:
+    def test_limit_comes_from_settings(self, monkeypatch):
+        """The limiter reads the configured value on every call."""
+        import app.rate_limit as rl
+        from fastapi import HTTPException
+
+        from app.config import settings
+
+        _WINDOWS.clear()
+        monkeypatch.setattr(settings, "RL_PERMANENT_CREATE", 2)
+        monkeypatch.delenv("TESTING", raising=False)
+        try:
+            dependency = rl.ip_rate_limit(20, 60, scope="test_rl", setting_name="RL_PERMANENT_CREATE")
+
+            class _Req:
+                headers = {"x-forwarded-for": "203.0.113.9"}
+                client = None
+
+            dependency(_Req())          # 1
+            dependency(_Req())          # 2
+            with pytest.raises(HTTPException) as err:
+                dependency(_Req())      # 3 -> over the configured value of 2
+            assert err.value.status_code == 429
+            assert err.value.headers["Retry-After"] == "60"
+        finally:
+            os.environ["TESTING"] = "1"
+            _WINDOWS.clear()
+
+    def test_zero_disables_the_limit(self, monkeypatch):
+        import app.rate_limit as rl
+
+        from app.config import settings
+
+        _WINDOWS.clear()
+        monkeypatch.setattr(settings, "RL_PERMANENT_CREATE", 0)
+        monkeypatch.delenv("TESTING", raising=False)
+        try:
+            dependency = rl.ip_rate_limit(20, 60, scope="test_rl0", setting_name="RL_PERMANENT_CREATE")
+
+            class _Req:
+                headers = {"x-forwarded-for": "203.0.113.10"}
+                client = None
+
+            for _ in range(50):
+                dependency(_Req())  # never raises
+        finally:
+            os.environ["TESTING"] = "1"
+            _WINDOWS.clear()
+
+    def test_limits_are_patchable_through_the_admin_api(self, client, config_file):
+        res = client.put(
+            "/api/v1/admin/config",
+            json={"rate_limits": {"permanent_create_per_minute": 45}},
+            headers=admin_headers(),
+        )
+        assert res.status_code == 200, res.text
+        assert res.json()["config"]["rate_limits"]["permanent_create_per_minute"] == 45
+        # instant effect, no restart
+        assert res.json()["restart_required"] is False
+
+    def test_negative_limit_is_rejected(self, client, config_file):
+        res = client.put(
+            "/api/v1/admin/config",
+            json={"rate_limits": {"address_create_per_minute": -1}},
+            headers=admin_headers(),
+        )
+        assert res.status_code == 400

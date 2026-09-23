@@ -21,7 +21,7 @@ router = APIRouter(
     # Individual reads are cheap but raw/attachment routes stream whole
     # messages, so every token route is rate limited per IP. Writes are
     # limited in their own routers.
-    dependencies=[Depends(ip_rate_limit(240, 60, scope="emails"))],
+    dependencies=[Depends(ip_rate_limit(300, 60, scope="emails", setting_name="RL_EMAIL_READ"))],
 )
 
 

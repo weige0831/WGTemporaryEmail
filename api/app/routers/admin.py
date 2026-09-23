@@ -92,7 +92,7 @@ def require_admin(authorization: Optional[str] = Header(None)):
 # Rate-limit the whole admin surface per IP to blunt brute-force attempts
 # against the bearer token. 32-bit random tokens make brute force infeasible
 # even at 30 req/min, while remaining generous for normal admin use.
-admin_rate_limit = ip_rate_limit(limit=30, window_seconds=60, scope="admin")
+admin_rate_limit = ip_rate_limit(limit=120, window_seconds=60, scope="admin", setting_name="RL_ADMIN")
 
 router = APIRouter(
     prefix='/api/v1/admin',

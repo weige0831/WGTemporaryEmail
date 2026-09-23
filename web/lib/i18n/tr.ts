@@ -42,6 +42,7 @@ export const tr: Partial<Dict> = {
     creating: "Oluşturuluyor...",
     usernameTaken: "Bu kullanıcı adı zaten alınmış. Farklı bir ad seçin veya rastgele adres için boş bırakın.",
     failedToCreate: "E-posta adresi oluşturulamadı. Lütfen tekrar deneyin.",
+    rateLimited: "Çok fazla istek. Sınır IP başına — yaklaşık bir dakika bekleyip tekrar deneyin.",
     failedToLoad: "E-posta yüklenemedi. Lütfen tekrar deneyin.",
     failedToDelete: "E-posta silinemedi. Lütfen tekrar deneyin.",
     deleteEmailConfirm: "Bu e-posta silinsin mi?",

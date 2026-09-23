@@ -42,6 +42,7 @@ export const zhCN: Partial<Dict> = {
     creating: "生成中...",
     usernameTaken: "该用户名已被占用，请换一个用户名或留空以生成随机邮箱地址。",
     failedToCreate: "创建邮箱地址失败，请重试。",
+    rateLimited: "请求过于频繁（限流按 IP 计算），请等约 1 分钟后再试。",
     failedToLoad: "加载邮件失败，请重试。",
     failedToDelete: "删除邮件失败，请重试。",
     deleteEmailConfirm: "确定删除这封邮件吗？",

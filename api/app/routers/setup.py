@@ -21,7 +21,7 @@ from app.schemas.setup import SetupCompleteRequest, SetupCompleteResponse, Setup
 router = APIRouter(prefix='/api/v1/setup', tags=['setup'])
 
 # Tight limit: this endpoint writes the server config while unauthenticated.
-setup_rate_limit = ip_rate_limit(limit=5, window_seconds=60, scope='setup')
+setup_rate_limit = ip_rate_limit(limit=5, window_seconds=60, scope='setup', setting_name='RL_SETUP')
 
 
 def ensure_setup_key(config: dict) -> str:

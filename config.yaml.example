@@ -33,6 +33,18 @@ database:
   pool_size: 10
   max_overflow: 20
 
+# Per-IP request limits, in requests per minute (0 disables a limit).
+# Applied on every request, so the admin panel can change them live. Creation
+# limits are per IP address: several users behind one NAT share the budget, so
+# keep them comfortably above normal interactive use.
+rate_limits:
+  address_create_per_minute: 30       # POST /api/v1/addresses
+  permanent_create_per_minute: 20     # POST /api/v1/permanent-addresses
+  api_create_per_minute: 60           # POST /api/v1/api/addresses (X-API-Key)
+  setup_per_minute: 5                 # POST /api/v1/setup/complete
+  admin_per_minute: 120               # /api/v1/admin/*
+  email_read_per_minute: 300          # /api/v1/{token}/* reads & downloads
+
 # NOTE: cors.*, database.pool_size/max_overflow and server.max_message_size_mb
 # are read once when the API starts. Changing them in the admin panel saves the
 # file and the panel tells you a restart is needed.

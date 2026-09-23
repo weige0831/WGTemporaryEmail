@@ -42,6 +42,7 @@ export const zhTW: Partial<Dict> = {
     creating: "產生中...",
     usernameTaken: "該使用者名稱已被使用，請更換名稱或留空以產生隨機信箱地址。",
     failedToCreate: "建立信箱地址失敗，請重試。",
+    rateLimited: "請求過於頻繁（限流依 IP 計算），請等約 1 分鐘後再試。",
     failedToLoad: "載入郵件失敗，請重試。",
     failedToDelete: "刪除郵件失敗，請重試。",
     deleteEmailConfirm: "確定刪除這封郵件嗎？",

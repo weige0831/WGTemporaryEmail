@@ -42,6 +42,7 @@ export const it: Partial<Dict> = {
     creating: "Creazione...",
     usernameTaken: "Questo nome utente è già in uso. Scegline un altro o lascia vuoto per un indirizzo casuale.",
     failedToCreate: "Impossibile creare l'indirizzo email. Riprova.",
+    rateLimited: "Troppe richieste. Il limite è per IP: attendi circa un minuto e riprova.",
     failedToLoad: "Impossibile caricare l'email. Riprova.",
     failedToDelete: "Impossibile eliminare l'email. Riprova.",
     deleteEmailConfirm: "Eliminare questa email?",

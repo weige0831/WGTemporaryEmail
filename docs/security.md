@@ -47,12 +47,12 @@
 
 | 端点 | 限制 |
 | --- | --- |
-| `POST /api/v1/addresses` | 10 次/分钟/IP |
-| `POST /api/v1/permanent-addresses` | 5 次/分钟/IP |
-| `POST /api/v1/api/addresses`（需 X-API-Key） | 30 次/分钟/IP |
+| `POST /api/v1/addresses` | 30 次/分钟/IP（可配置） |
+| `POST /api/v1/permanent-addresses` | 20 次/分钟/IP（可配置） |
+| `POST /api/v1/api/addresses`（需 X-API-Key） | 60 次/分钟/IP（可配置） |
 | `POST /api/v1/setup/complete` | 5 次/分钟/IP |
-| `/api/v1/admin/*` | 60 次/分钟/IP |
-| `/api/v1/{token}/*`（读取/下载） | 240 次/分钟/IP |
+| `/api/v1/admin/*` | 120 次/分钟/IP（可配置） |
+| `/api/v1/{token}/*`（读取/下载） | 300 次/分钟/IP（可配置） |
 | nginx 边缘限流 | `/api/` 120 次/分钟，`/api/v1/setup/` 与 `/api/v1/admin/` 30 次/分钟 |
 
 ## 首次安装的抢注防护
@@ -97,3 +97,9 @@
   并设置了内存与 PID 上限。
 - `certs/` 以只读方式挂载进 web，自签名占位证书保存在镜像内部目录，
   前端容器无法替换 MX 信任的证书。
+
+以上限流值都可在**管理面板 → 系统配置 → 限流**或 `config.yaml` 的 `rate_limits:` 段调整
+（0 表示关闭该限制），修改后**立即生效**，无需重启。注意限流按**客户端 IP** 计算：
+公司网络/移动网络等共享出口 IP 的用户会共用同一额度，因此创建类限制建议留出余量。
+如果服务前面还有一层会「追加」而非「覆盖」`X-Forwarded-For` 的代理，需要相应调整
+`api/app/rate_limit.py` 的取值逻辑。
