@@ -103,3 +103,14 @@
 公司网络/移动网络等共享出口 IP 的用户会共用同一额度，因此创建类限制建议留出余量。
 如果服务前面还有一层会「追加」而非「覆盖」`X-Forwarded-For` 的代理，需要相应调整
 `api/app/rate_limit.py` 的取值逻辑。
+
+## 数据库连接池与自愈
+
+- API 连接池容量为 `pool_size + max_overflow`（默认 20 + 80 = 100 并发），
+  `pool_timeout` 为 10 秒：拿不到连接时快速报错，不会长时间挂起。
+- Postgres 设置了 `idle_in_transaction_session_timeout=60s`：任何被挂起请求
+  遗留的空闲事务会自动终止，不会永久占住连接槽位。
+- `FAULTHANDLER_SECONDS`（compose 默认 120）会让 API 定期把所有线程栈打进容器
+  日志；连接池使用率达到 80% 时看门狗也会告警并转储线程栈，便于定位"卡住"问题。
+- 若需调整池大小：改 `config.yaml` 的 `database.pool_size / max_overflow`，
+  并同步确保 Postgres 的 `max_connections`（compose 中为 200）足够容纳。

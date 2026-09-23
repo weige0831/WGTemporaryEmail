@@ -4,6 +4,40 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.8] - 2026-09-23
+
+### Fixed
+
+- **Service hang caused by database connection-pool exhaustion.** The pool was
+  small (5 + 10 overflow) and saturation left the API unable to serve requests:
+  creations timed out and `pg_stat_activity` showed the pooled sessions held
+  while requests could not proceed. Recovery only needed the pool to be freed,
+  so the surrounding safeguards are now in place:
+
+  - **capacity raised to 100** (`pool_size: 20` kept warm + `max_overflow: 80`),
+    and Postgres `max_connections` raised to 200 so 100 API connections plus the
+    MX's pool actually fit.
+  - **Postgres reaps leaked transactions**: `idle_in_transaction_session_timeout
+    = 60s` (plus TCP keepalives), so a transaction left open by a hung request
+    can never hold a slot forever again.
+  - **Fail fast instead of queuing**: `pool_timeout` 30s -> 10s, and
+    `pool_reset_on_return: rollback` is now explicit.
+  - **Pool watchdog**: a background thread warns (and dumps every thread stack)
+    once 80% of the pool is in use, and logs when it recovers.
+  - **Stack dumps on demand**: `FAULTHANDLER_SECONDS` (default 120 in compose)
+    makes Python print all thread stacks to the container log periodically, so a
+    future hang can be diagnosed from `docker compose logs api` instead of
+    guesswork.
+
+### Verified
+
+- After the change: 30 concurrent mailbox reads and repeated creations all
+  succeed; pooled sessions return to zero checked out; the idle-in-transaction
+  count observed during traffic consists of sub-second, in-request states.
+- End-to-end re-check: permanent mailbox creation, token login, inbox read,
+  temporary address creation, admin stats and the permanent-address page all
+  work.
+
 ## [1.1.7] - 2026-09-23
 
 ### Changed

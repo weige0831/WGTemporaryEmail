@@ -7,6 +7,15 @@ services:
       POSTGRES_DB: tempmail
       POSTGRES_USER: tempmail
       POSTGRES_PASSWORD: ${DB_PASSWORD:?请在 .env 中设置 DB_PASSWORD（运行 ./setup.sh 会自动生成）}
+    # Reap transactions that are left idle (a hung request would otherwise hold
+    # a connection forever and eventually starve the API's pool) and detect dead
+    # clients faster than the 2-hour TCP default.
+    command: >
+      postgres
+      -c idle_in_transaction_session_timeout=60s
+      -c tcp_keepalives_idle=60
+      -c tcp_keepalives_interval=15
+      -c tcp_keepalives_count=4
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./db/init:/docker-entrypoint-initdb.d:ro
@@ -39,6 +48,9 @@ services:
       CONFIG_PATH: /config/config.yaml
       API_HOST: ${API_HOST:-0.0.0.0}  # Bind to all interfaces in container by default
       PYTHONDONTWRITEBYTECODE: "1"    # root filesystem is read-only
+      # Every 5 minutes dump all thread stacks to the log: if the service hangs
+      # again, `docker compose logs api` shows where the threads are stuck.
+      FAULTHANDLER_SECONDS: "300"
     volumes:
       # Writable: the admin panel persists domain/config changes to this file
       - ./config.yaml:/config/config.yaml

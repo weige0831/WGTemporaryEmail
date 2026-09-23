@@ -30,6 +30,9 @@ integration:
 
 database:
   url: postgresql://tempmail:CHANGE_THIS_PASSWORD@postgres:5432/tempmail?sslmode=disable
+  # Pool used by the API: pool_size + max_overflow is the maximum number of
+  # concurrent database operations; requests beyond that wait (10s) and then
+  # fail with a clear error instead of hanging.
   pool_size: 10
   max_overflow: 20
 

@@ -174,6 +174,16 @@ def run_cleanup_loop():
         except Exception as e:
             logger.error(f"Cleanup loop error: {e}")
 
+        # Pool visibility: "checked out" creeping up towards pool_size+overflow
+        # is the early warning sign of a leak / hung request.
+        try:
+            from app.database import engine as _engine
+
+            if hasattr(_engine, 'pool') and hasattr(_engine.pool, 'status'):
+                logger.info("DB pool: %s", _engine.pool.status())
+        except Exception:
+            pass
+
         # Re-read the interval every round so a change made in the admin panel
         # takes effect without restarting the API.
         try:

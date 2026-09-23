@@ -18,8 +18,14 @@ if not settings.DATABASE_URL.startswith('sqlite'):
         "pool_size": settings.DB_POOL_SIZE,
         "max_overflow": settings.DB_MAX_OVERFLOW,
         "pool_pre_ping": True,  # Verify connections before using them
-        "pool_recycle": 3600,  # Recycle connections after 1 hour
-        "pool_timeout": 30,  # Wait up to 30 seconds for a connection
+        "pool_recycle": 1800,  # Recycle connections after 30 minutes
+        # Fail fast instead of piling up 30-second waits: a request that cannot
+        # get a connection should surface the error while the client is still
+        # waiting, not after it gave up.
+        "pool_timeout": 10,
+        # Explicit (this is also the default): a connection goes back to the
+        # pool only after a rollback, so nothing is ever handed out dirty.
+        "pool_reset_on_return": "rollback",
     })
 
 engine = create_engine(settings.DATABASE_URL, **engine_kwargs)

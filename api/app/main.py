@@ -3,6 +3,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+import faulthandler
 import threading
 import logging
 import os
@@ -23,11 +24,20 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
+# Optional stack dumps: when FAULTHANDLER_SECONDS is set (e.g. 120), Python
+# prints the stack of every thread to stderr at that interval. If the service
+# ever hangs again (pool exhaustion, deadlock), `docker logs` then shows exactly
+# where the threads are stuck instead of leaving us to guess.
+_faulthandler_seconds = int(os.getenv('FAULTHANDLER_SECONDS', '0') or 0)
+if _faulthandler_seconds > 0:
+    faulthandler.enable()
+    faulthandler.dump_traceback_later(_faulthandler_seconds, repeat=True)
+
 # Create FastAPI app
 app = FastAPI(
     title="Tempmail Server API",
     description="Tempmail backend API - receive and manage temporary email addresses",
-    version="1.1.7",
+    version="1.1.8",
     docs_url="/docs" if settings.DOCS_ENABLED else None,
     redoc_url="/redoc" if settings.DOCS_ENABLED else None,
     openapi_url="/openapi.json" if settings.DOCS_ENABLED else None
@@ -96,7 +106,43 @@ async def startup_event():
     cleanup_thread.start()
     logger.info("Cleanup thread started")
 
+    # Pool watchdog: a request that hangs keeps its connection until the client
+    # gives up, and if enough of them pile up the pool starves and every later
+    # request fails. Watching the checked-out count turns that silent failure
+    # into a log line (with thread stacks) while it is still developing.
+    threading.Thread(target=_pool_watchdog, daemon=True).start()
+
     logger.info("Tempmail Server API ready!")
+
+
+def _pool_watchdog(interval_seconds: int = 30) -> None:
+    """Log a warning (and dump thread stacks) when the DB pool runs low."""
+    import re as _re
+    import time as _time
+
+    warned = False
+    while True:
+        _time.sleep(interval_seconds)
+        try:
+            from app.database import engine
+
+            if not hasattr(engine, "pool") or not hasattr(engine.pool, "status"):
+                continue
+            status = engine.pool.status()
+            match = _re.search(r"Checked out connections: (\d+)", status)
+            if not match:
+                continue
+            checked_out = int(match.group(1))
+            capacity = getattr(engine.pool, "size", lambda: 0)() + getattr(engine.pool, "_max_overflow", 0)
+            if capacity and checked_out >= max(1, int(capacity * 0.8)):
+                logger.warning("DB pool nearly exhausted (%d/%d): %s", checked_out, capacity, status)
+                faulthandler.dump_traceback()
+                warned = True
+            elif warned:
+                logger.info("DB pool back to normal: %s", status)
+                warned = False
+        except Exception as exc:  # never let the watchdog kill the app
+            logger.debug("Pool watchdog error: %s", exc)
 
 
 @app.on_event("shutdown")
