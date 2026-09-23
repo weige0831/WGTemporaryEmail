@@ -270,6 +270,35 @@ export const adminApi = {
     })
   },
 
+  // 长效地址管理
+  getPermanentStats(): Promise<AdminPermanentStats> {
+    return request('/api/v1/admin/permanent-addresses/stats')
+  },
+
+  listPermanentAddresses(params: { page?: number; per_page?: number; search?: string; sort?: string } = {}): Promise<AdminPermanentAddressList> {
+    const q = new URLSearchParams()
+    q.set('page', String(params.page ?? 1))
+    q.set('per_page', String(params.per_page ?? 20))
+    if (params.search) q.set('search', params.search)
+    if (params.sort) q.set('sort', params.sort)
+    return request(`/api/v1/admin/permanent-addresses?${q.toString()}`)
+  },
+
+  createPermanentAddress(username: string, domain?: string): Promise<AdminPermanentCreated> {
+    return request('/api/v1/admin/permanent-addresses', {
+      method: 'POST',
+      body: JSON.stringify({ username, domain: domain || null }),
+    })
+  },
+
+  purgePermanentEmails(id: string): Promise<{ email: string; deleted_emails: number }> {
+    return request(`/api/v1/admin/permanent-addresses/${id}/purge-emails`, { method: 'POST' })
+  },
+
+  runPermanentRetention(): Promise<{ email: string; deleted_emails: number; retention_deleted_emails: number }> {
+    return request('/api/v1/admin/permanent-addresses/run-retention', { method: 'POST' })
+  },
+
   getApiKeyStatus(): Promise<{ configured: boolean; masked: string }> {
     return request('/api/v1/admin/apikey/status')
   },
@@ -277,6 +306,45 @@ export const adminApi = {
   regenerateApiKey(): Promise<{ api_key: string }> {
     return request('/api/v1/admin/apikey/regenerate', { method: 'POST' })
   },
+}
+
+// ---------- 长效地址管理 ----------
+
+export interface AdminPermanentAddress {
+  id: string
+  email: string
+  created_at: string
+  email_count: number
+  unread_count: number
+  size_bytes: number
+  last_email_at: string | null
+}
+
+export interface AdminPermanentAddressList {
+  items: AdminPermanentAddress[]
+  total: number
+  page: number
+  per_page: number
+  has_next: boolean
+}
+
+export interface AdminPermanentStats {
+  total: number
+  with_emails: number
+  total_emails: number
+  unread_emails: number
+  size_bytes: number
+  retention_days: number
+  max_allowed: number
+  oldest_created_at: string | null
+  newest_created_at: string | null
+}
+
+export interface AdminPermanentCreated {
+  id: string
+  email: string
+  token: string
+  created_at: string
 }
 
 // ---------- 显示辅助 ----------

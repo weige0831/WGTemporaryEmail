@@ -238,6 +238,25 @@ const ADMIN_ENDPOINTS: Endpoint[] = [
     curl: 'curl -X POST -H "Authorization: Bearer <admin.token>" "BASE/api/v1/admin/tls/issue"',
   },
   { method: "GET", path: "/api/v1/admin/apikey/status", descKey: "api.descApiKeyStatus", params: [], curl: 'curl -H "Authorization: Bearer <admin.token>" "BASE/api/v1/admin/apikey/status"' },
+  { method: "GET", path: "/api/v1/admin/permanent-addresses", descKey: "api.descAdminPermanentList", params: [
+      { name: "page", type: "query", placeholder: "page (default 1)" },
+      { name: "per_page", type: "query", placeholder: "per_page (max 100)" },
+      { name: "search", type: "query", placeholder: "search" },
+      { name: "sort", type: "query", placeholder: "sort: created | emails | email" },
+    ], curl: 'curl -H "Authorization: Bearer <admin.token>" "BASE/api/v1/admin/permanent-addresses?page=1&per_page=20"' },
+  { method: "GET", path: "/api/v1/admin/permanent-addresses/stats", descKey: "api.descAdminPermanentStats", params: [], curl: 'curl -H "Authorization: Bearer <admin.token>" "BASE/api/v1/admin/permanent-addresses/stats"' },
+  {
+    method: "POST", path: "/api/v1/admin/permanent-addresses", descKey: "api.descAdminPermanentCreate", destructive: true,
+    params: [
+      { name: "username", type: "body", placeholder: "username (required)" },
+      { name: "domain", type: "body", placeholder: "domain (optional)" },
+    ],
+    curl: 'curl -X POST -H "Authorization: Bearer <admin.token>" "BASE/api/v1/admin/permanent-addresses"',
+  },
+  { method: "POST", path: "/api/v1/admin/permanent-addresses/{id}/purge-emails", descKey: "api.descAdminPermanentPurge", destructive: true, params: [
+      { name: "id", type: "path", placeholder: "address id" },
+    ], curl: 'curl -X POST -H "Authorization: Bearer <admin.token>" "BASE/api/v1/admin/permanent-addresses/{id}/purge-emails"' },
+  { method: "POST", path: "/api/v1/admin/permanent-addresses/run-retention", descKey: "api.descAdminPermanentRetention", destructive: true, params: [], curl: 'curl -X POST -H "Authorization: Bearer <admin.token>" "BASE/api/v1/admin/permanent-addresses/run-retention"' },
   {
     method: "POST", path: "/api/v1/admin/apikey/regenerate", descKey: "api.descApiKeyRegenerate", destructive: true,
     params: [],

@@ -312,3 +312,110 @@ class TestAdminSurface:
             headers=_admin_headers(),
         )
         assert res.status_code == 400
+
+
+# --------------------------------------------------------------------------
+# permanent-address management (admin panel page)
+# --------------------------------------------------------------------------
+
+class TestPermanentManagement:
+    def test_stats_shape(self, client, db_session):
+        create_permanent(db_session, "statbox")
+        res = client.get("/api/v1/admin/permanent-addresses/stats", headers=_admin_headers())
+        assert res.status_code == 200, res.text
+        data = res.json()
+        for key in ("total", "with_emails", "total_emails", "size_bytes",
+                    "retention_days", "max_allowed"):
+            assert key in data
+        assert data["total"] >= 1
+        assert data["retention_days"] == settings.PERMANENT_EMAIL_RETENTION_DAYS
+
+    def test_list_only_returns_permanent(self, client, db_session):
+        create_permanent(db_session, "listedbox")
+        # a temporary address must not show up here
+        db_session.add(Address(email="tempbox@tempmail.example.com", token="temp-token-x",
+                               address_type="temp", expires_at=None))
+        db_session.commit()
+
+        res = client.get("/api/v1/admin/permanent-addresses", headers=_admin_headers())
+        assert res.status_code == 200
+        emails = [i["email"] for i in res.json()["items"]]
+        assert "listedbox@tempmail.example.com" in emails
+        assert "tempbox@tempmail.example.com" not in emails
+
+    def test_search_filters(self, client, db_session):
+        create_permanent(db_session, "findme")
+        res = client.get("/api/v1/admin/permanent-addresses",
+                         params={"search": "findme"}, headers=_admin_headers())
+        assert res.status_code == 200
+        assert [i["email"] for i in res.json()["items"]] == ["findme@tempmail.example.com"]
+
+    def test_admin_create_returns_token_once(self, client):
+        res = client.post("/api/v1/admin/permanent-addresses",
+                          json={"username": "adminmade", "domain": "tempmail.example.com"},
+                          headers=_admin_headers())
+        assert res.status_code == 201, res.text
+        data = res.json()
+        assert data["email"] == "adminmade@tempmail.example.com"
+        assert len(data["token"]) > 30
+
+        # the token actually works
+        info = client.get(f"/api/v1/{data['token']}/info")
+        assert info.status_code == 200
+        assert info.json()["address_type"] == "permanent"
+
+    def test_admin_create_requires_auth(self, client):
+        res = client.post("/api/v1/admin/permanent-addresses", json={"username": "nope"})
+        assert res.status_code == 401
+
+    def test_admin_create_respects_cap(self, client, monkeypatch):
+        monkeypatch.setattr(settings, "MAX_PERMANENT_ADDRESSES", 1)
+        first = client.post("/api/v1/admin/permanent-addresses",
+                            json={"username": "capone", "domain": "tempmail.example.com"},
+                            headers=_admin_headers())
+        assert first.status_code == 201
+        second = client.post("/api/v1/admin/permanent-addresses",
+                             json={"username": "captwo", "domain": "tempmail.example.com"},
+                             headers=_admin_headers())
+        assert second.status_code == 403
+
+    def test_purge_emails_keeps_the_address(self, client, db_session):
+        addr = create_permanent(db_session, "purgebox")
+        email = Email(message_id="<p@example.com>", subject="s", from_address="a@example.com",
+                      to_address=addr.email, raw_headers="", raw_message=b"x", size_bytes=1)
+        db_session.add(email)
+        db_session.commit()
+        db_session.add(EmailRecipient(email_id=email.id, address_id=addr.id))
+        db_session.commit()
+
+        # Read the ids while the objects are still attached: the request deletes
+        # the row through its own session, after which these instances are stale.
+        addr_id, email_id = addr.id, email.id
+
+        res = client.post(f"/api/v1/admin/permanent-addresses/{addr_id}/purge-emails",
+                          headers=_admin_headers())
+        assert res.status_code == 200, res.text
+        assert res.json()["deleted_emails"] == 1
+
+        db_session.expunge_all()
+        assert db_session.query(Address).filter(Address.id == addr_id).first() is not None
+        assert db_session.query(Email).filter(Email.id == email_id).first() is None
+
+    def test_purge_rejects_temporary_address(self, client, db_session):
+        temp = Address(email="temp-target@tempmail.example.com", token="temp-token-y",
+                       address_type="temp", expires_at=None)
+        db_session.add(temp)
+        db_session.commit()
+        res = client.post(f"/api/v1/admin/permanent-addresses/{temp.id}/purge-emails",
+                          headers=_admin_headers())
+        assert res.status_code == 404
+
+    def test_run_retention_endpoint(self, client):
+        res = client.post("/api/v1/admin/permanent-addresses/run-retention", headers=_admin_headers())
+        assert res.status_code == 200
+        assert "retention_deleted_emails" in res.json()
+
+    def test_management_endpoints_require_auth(self, client):
+        for path in ("/api/v1/admin/permanent-addresses",
+                     "/api/v1/admin/permanent-addresses/stats"):
+            assert client.get(path).status_code == 401, path

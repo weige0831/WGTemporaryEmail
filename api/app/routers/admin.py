@@ -9,6 +9,7 @@ reload the new token takes effect immediately (settings is mutated in place).
 
 import hmac
 import json
+import logging
 import os
 import re
 import secrets
@@ -23,7 +24,13 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Session, selectinload
 
-from app.cleanup import cleanup_expired_addresses, enforce_storage_limit, get_storage_usage_bytes, cleanup_permanent_email_retention
+from app.cleanup import (
+    cleanup_expired_addresses,
+    cleanup_permanent_email_retention,
+    enforce_storage_limit,
+    get_storage_usage_bytes,
+)
+from app.routers.permanent import _create_permanent_address
 from app.config import reload_settings, settings
 from app.database import check_db_connection, get_db
 from app.models import Address, Attachment, Email, EmailRecipient
@@ -37,6 +44,9 @@ from app.runtime_config import (
     write_web_config,
 )
 from app.utils import escape_like
+
+logger = logging.getLogger(__name__)
+from app.schemas.address import PermanentAddressCreate
 from app.schemas.admin import (
     AdminAddressDetail,
     AdminAddressList,
@@ -44,9 +54,14 @@ from app.schemas.admin import (
     AdminDomainList,
     AdminEmailDetail,
     AdminEmailList,
+    AdminPermanentAddressList,
+    AdminPermanentStats,
     CleanupResult,
     DomainAddRequest,
     DomainRemoveResponse,
+    PermanentCreateRequest,
+    PermanentCreateResponse,
+    PermanentPurgeResponse,
     TlsIssueRequest,
     TlsStatus,
 )
@@ -613,6 +628,180 @@ def tls_issue(request: TlsIssueRequest):
         json.dump(job, f)
     os.replace(tmp, job_path)
     return {'submitted': True, 'hostname': hostname, 'domains': domains}
+
+
+# ============================================================================
+# Permanent mailbox management
+# ============================================================================
+
+@router.get('/permanent-addresses/stats', response_model=AdminPermanentStats)
+def permanent_stats(db: Session = Depends(get_db)):
+    """Aggregate numbers for the permanent-mailbox page."""
+    base = db.query(Address).filter(Address.address_type == 'permanent')
+    total = base.count()
+
+    rows = (
+        db.query(
+            func.count(EmailRecipient.id),
+            func.count(func.distinct(EmailRecipient.address_id)),
+            func.coalesce(func.sum(Email.size_bytes), 0),
+        )
+        .select_from(EmailRecipient)
+        .join(Address, Address.id == EmailRecipient.address_id)
+        .join(Email, Email.id == EmailRecipient.email_id)
+        .filter(Address.address_type == 'permanent')
+        .one()
+    )
+    total_emails, with_emails, size_bytes = int(rows[0] or 0), int(rows[1] or 0), int(rows[2] or 0)
+
+    unread = (
+        db.query(func.count(EmailRecipient.id))
+        .join(Address, Address.id == EmailRecipient.address_id)
+        .filter(Address.address_type == 'permanent', EmailRecipient.is_read.is_(False))
+        .scalar()
+        or 0
+    )
+
+    bounds = base.with_entities(func.min(Address.created_at), func.max(Address.created_at)).one()
+
+    return {
+        'total': total,
+        'with_emails': with_emails,
+        'total_emails': total_emails,
+        'unread_emails': int(unread),
+        'size_bytes': size_bytes,
+        'retention_days': settings.PERMANENT_EMAIL_RETENTION_DAYS,
+        'max_allowed': settings.MAX_PERMANENT_ADDRESSES,
+        'oldest_created_at': bounds[0],
+        'newest_created_at': bounds[1],
+    }
+
+
+@router.get('/permanent-addresses', response_model=AdminPermanentAddressList)
+def list_permanent_addresses(
+    page: int = Query(1, ge=1),
+    per_page: int = Query(20, ge=1, le=100),
+    search: Optional[str] = Query(None),
+    sort: str = Query('created', pattern='^(created|emails|email)$'),
+    db: Session = Depends(get_db),
+):
+    """List permanent mailboxes with per-mailbox email counts and storage."""
+    query = db.query(Address).filter(Address.address_type == 'permanent')
+    if search:
+        query = query.filter(Address.email.ilike(f'%{escape_like(search)}%', escape="\\"))
+
+    total = query.count()
+
+    counts_subq = (
+        db.query(
+            EmailRecipient.address_id.label('address_id'),
+            func.count(EmailRecipient.id).label('email_count'),
+            func.count(func.nullif(EmailRecipient.is_read, True)).label('unread_count'),
+            func.coalesce(func.sum(Email.size_bytes), 0).label('size_bytes'),
+            func.max(Email.received_at).label('last_email_at'),
+        )
+        .join(Email, Email.id == EmailRecipient.email_id)
+        .group_by(EmailRecipient.address_id)
+        .subquery()
+    )
+
+    rows = (
+        db.query(
+            Address,
+            func.coalesce(counts_subq.c.email_count, 0),
+            func.coalesce(counts_subq.c.unread_count, 0),
+            func.coalesce(counts_subq.c.size_bytes, 0),
+            counts_subq.c.last_email_at,
+        )
+        .outerjoin(counts_subq, counts_subq.c.address_id == Address.id)
+        # Same filters as the count above: this query builds the rows, so it
+        # needs them too (otherwise the page would list every address).
+        .filter(Address.address_type == 'permanent')
+    )
+    if search:
+        rows = rows.filter(Address.email.ilike(f'%{escape_like(search)}%', escape="\\"))
+
+    if sort == 'emails':
+        rows = rows.order_by(func.coalesce(counts_subq.c.email_count, 0).desc(), Address.created_at.desc())
+    elif sort == 'email':
+        rows = rows.order_by(Address.email.asc())
+    else:
+        rows = rows.order_by(Address.created_at.desc())
+
+    items = rows.offset((page - 1) * per_page).limit(per_page).all()
+
+    return {
+        'items': [
+            {
+                'id': str(a.id),
+                'email': a.email,
+                'created_at': a.created_at,
+                'email_count': int(email_count),
+                'unread_count': int(unread_count),
+                'size_bytes': int(size_bytes),
+                'last_email_at': last_email_at,
+            }
+            for a, email_count, unread_count, size_bytes, last_email_at in items
+        ],
+        'total': total,
+        'page': page,
+        'per_page': per_page,
+        'has_next': page * per_page < total,
+    }
+
+
+@router.post('/permanent-addresses', response_model=PermanentCreateResponse, status_code=201)
+def create_permanent_address_admin(request: PermanentCreateRequest, db: Session = Depends(get_db)):
+    """Create a permanent mailbox from the admin panel.
+
+    Reuses the same validation as the public endpoint (reserved names, length
+    bounds, configured domains, optional cap) and returns the access token,
+    which is the only way to read the mailbox later - it is shown once here.
+    """
+    address = _create_permanent_address(
+        PermanentAddressCreate(username=request.username, domain=request.domain), db
+    )
+    return {
+        'id': address.id,
+        'email': address.email,
+        'token': address.token,
+        'created_at': address.created_at,
+    }
+
+
+@router.post('/permanent-addresses/{address_id}/purge-emails', response_model=PermanentPurgeResponse)
+def purge_permanent_emails(address_id: UUID, db: Session = Depends(get_db)):
+    """Delete every email of one permanent mailbox, keeping the address itself."""
+    address = db.query(Address).filter(
+        Address.id == address_id, Address.address_type == 'permanent'
+    ).first()
+    if not address:
+        raise HTTPException(status_code=404, detail='Permanent mailbox not found')
+
+    deleted = (
+        db.query(EmailRecipient)
+        .filter(EmailRecipient.address_id == address.id)
+        .delete(synchronize_session=False)
+    )
+    # Messages left without any recipient go away with their attachments.
+    db.query(Email).filter(
+        ~Email.email_recipients.any()
+    ).delete(synchronize_session=False)
+    db.commit()
+
+    logger.info('Admin purged %d emails from permanent mailbox %s', deleted, address.email)
+    return {'email': address.email, 'deleted_emails': int(deleted or 0)}
+
+
+@router.post('/permanent-addresses/run-retention', response_model=PermanentPurgeResponse)
+def run_permanent_retention():
+    """Run the retention job immediately (emails older than the configured days)."""
+    deleted = cleanup_permanent_email_retention()
+    return {
+        'email': '*',
+        'deleted_emails': 0,
+        'retention_deleted_emails': int(deleted or 0),
+    }
 
 
 # ============================================================================

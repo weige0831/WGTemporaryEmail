@@ -96,3 +96,18 @@ admin:
 - 地址永久保留，邮件按「系统配置 → 长效邮箱邮件保留天数」自动清理（默认 30 天，
   配置键 `tempmail.permanent_email_retention_days`，该值可在面板修改）。
 - 地址管理页对长效邮箱显示「长效」徽章与「永不过期」，普通临时地址仍显示剩余有效期。
+
+## 长效地址管理（/admin/mailboxes）
+
+除「地址管理」外，面板为长效邮箱提供了独立页面：
+
+- **概览卡片**：长效地址总数、邮件总数与未读数、占用存储、当前邮件保留期（含「立即清理一次」按钮，直接执行保留期清理）。
+- **创建邮箱**：填写用户名并选择域名即可创建；返回的**访问令牌只显示一次**，它是之后读取该邮箱的唯一凭证（页面会提示并支持一键复制）。
+- **列表**：每个邮箱的邮件数、未读数、占用存储、创建时间与最近收信时间；支持按地址搜索与分页。
+- **清除邮件（保留地址）**：删掉该邮箱的全部邮件但保留地址，适合「地址继续用、历史邮件清空」的场景。
+- **删除邮箱**：连同地址与全部邮件永久删除（有二次确认）。
+
+对应管理 API：`GET/POST /api/v1/admin/permanent-addresses`、
+`GET /api/v1/admin/permanent-addresses/stats`、
+`POST /api/v1/admin/permanent-addresses/{id}/purge-emails`、
+`POST /api/v1/admin/permanent-addresses/run-retention`（均需管理令牌）。

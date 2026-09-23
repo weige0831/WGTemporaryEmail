@@ -4,6 +4,30 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.5] - 2026-09-23
+
+### Added
+
+- **Dedicated permanent-address management page in the admin panel**
+  (`/admin/mailboxes`, nav entry "永久地址"): overview cards (mailbox count,
+  emails and unread count, storage, retention window with a "run cleanup now"
+  button), a creation form that returns the access token once, and a list with
+  per-mailbox email count, unread count, storage, creation and last-delivery
+  time plus search and paging.
+- Per-mailbox actions: **purge emails** (keep the address) and **delete
+  mailbox** (address and all emails, with confirmation).
+- Five new admin endpoints backing the page: `GET/POST
+  /api/v1/admin/permanent-addresses`, `GET .../stats`,
+  `POST .../{id}/purge-emails`, `POST .../run-retention` - all authenticated and
+  documented on the `/api` docs page (which now covers 37 endpoints).
+- Localized page and API descriptions in all 16 languages.
+
+### Fixed
+
+- The new permanent-address list applied its filters only to the count query,
+  so the page body listed every address; caught by the new tests.
+- Tests: 10 new cases for the management endpoints (136 total).
+
 ## [1.1.4] - 2026-09-22
 
 ### Fixed

@@ -185,3 +185,72 @@ class AdminConfigResponse(BaseModel):
     # True when the saved change only takes effect after restarting the
     # containers (CORS, DB pool size, max message size).
     restart_required: bool = False
+
+# ---------------------------------------------------------------------------
+# Permanent mailbox management (admin panel)
+# ---------------------------------------------------------------------------
+
+class AdminPermanentAddressSummary(BaseModel):
+    """One permanent mailbox row."""
+    id: UUID
+    email: str
+    created_at: datetime
+    email_count: int
+    unread_count: int
+    size_bytes: int
+    last_email_at: Optional[datetime] = None
+
+    @field_serializer('created_at', 'last_email_at')
+    def serialize_dt(self, dt: datetime, _info):
+        return _serialize_dt(dt, _info) if dt else None
+
+
+class AdminPermanentAddressList(BaseModel):
+    items: List[AdminPermanentAddressSummary]
+    total: int
+    page: int
+    per_page: int
+    has_next: bool
+
+
+class AdminPermanentStats(BaseModel):
+    """Aggregate view of all permanent mailboxes."""
+    total: int
+    with_emails: int
+    total_emails: int
+    unread_emails: int
+    size_bytes: int
+    retention_days: int
+    # 0 = unlimited
+    max_allowed: int
+    oldest_created_at: Optional[datetime] = None
+    newest_created_at: Optional[datetime] = None
+
+    @field_serializer('oldest_created_at', 'newest_created_at')
+    def serialize_dt(self, dt: datetime, _info):
+        return _serialize_dt(dt, _info) if dt else None
+
+
+class PermanentCreateRequest(BaseModel):
+    """Admin-side creation of a permanent mailbox."""
+    username: str
+    domain: Optional[str] = None
+
+
+class PermanentCreateResponse(BaseModel):
+    id: UUID
+    email: str
+    # Returned once so the operator can hand it to the mailbox owner.
+    token: str
+    created_at: datetime
+
+    @field_serializer('created_at')
+    def serialize_dt(self, dt: datetime, _info):
+        return _serialize_dt(dt, _info)
+
+
+class PermanentPurgeResponse(BaseModel):
+    email: str
+    deleted_emails: int
+    """Unconditional run of the retention job (emails past the retention window)."""
+    retention_deleted_emails: int = 0

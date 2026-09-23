@@ -3,17 +3,7 @@
 import { useEffect, useState } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import Link from "next/link"
-import {
-  LayoutDashboard,
-  Mail,
-  Users,
-  Globe,
-  Settings,
-  Trash2,
-  LogOut,
-  ExternalLink,
-  ShieldCheck,
-} from "lucide-react"
+import { LayoutDashboard, Mail, Users, Globe, Settings, Trash2, LogOut, ExternalLink, ShieldCheck, Inbox } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { LanguageSwitcher } from "@/components/language-switcher"
 import { DomainBanner } from "@/components/domain-banner"
@@ -24,6 +14,7 @@ const NAV_ITEMS = [
   { href: "/admin/dashboard", key: "admin.dashboard", icon: LayoutDashboard },
   { href: "/admin/emails", key: "admin.emails", icon: Mail },
   { href: "/admin/addresses", key: "admin.addresses", icon: Users },
+  { href: "/admin/mailboxes", key: "admin.mailboxes", icon: Inbox },
   { href: "/admin/domains", key: "admin.domains", icon: Globe },
   { href: "/admin/config", key: "admin.config", icon: Settings },
   { href: "/admin/cleanup", key: "admin.cleanup", icon: Trash2 },
