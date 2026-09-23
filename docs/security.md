@@ -47,9 +47,9 @@
 
 | 端点 | 限制 |
 | --- | --- |
-| `POST /api/v1/addresses` | 30 次/分钟/IP（可配置） |
+| `POST /api/v1/addresses` | 50 次/分钟/IP（可配置） |
 | `POST /api/v1/permanent-addresses` | 20 次/分钟/IP（可配置） |
-| `POST /api/v1/api/addresses`（需 X-API-Key） | 60 次/分钟/IP（可配置） |
+| `POST /api/v1/api/addresses`（需 X-API-Key） | **默认不限制**（可用 `api_create_per_minute` 开启，或依赖 `max_permanent_addresses` 控制总量） |
 | `POST /api/v1/setup/complete` | 5 次/分钟/IP |
 | `/api/v1/admin/*` | 120 次/分钟/IP（可配置） |
 | `/api/v1/{token}/*`（读取/下载） | 300 次/分钟/IP（可配置） |

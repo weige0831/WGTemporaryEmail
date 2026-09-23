@@ -211,6 +211,17 @@ CATCH_EOF
         root /var/www/certbot;
         default_type text/plain;
     }
+    # API-key creation path: no edge limit (same reasoning as locations.conf).
+    location ^~ /api/v1/api/ {
+        include /etc/nginx/security-headers.conf;
+        add_header Cache-Control "no-store" always;
+        proxy_pass http://api:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
     location /api/ {
         limit_req zone=api_general burst=120 nodelay;
         limit_req_status 429;
@@ -271,6 +282,17 @@ FULL_EOF
     }
     location = /api { try_files /api.html =404; }
     location = /api/ { return 301 /api; }
+    # API-key creation path: no edge limit (same reasoning as locations.conf).
+    location ^~ /api/v1/api/ {
+        include /etc/nginx/security-headers.conf;
+        add_header Cache-Control "no-store" always;
+        proxy_pass http://api:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
     location /api/ {
         limit_req zone=api_general burst=120 nodelay;
         limit_req_status 429;

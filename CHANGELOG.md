@@ -4,6 +4,21 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.7] - 2026-09-23
+
+### Changed
+
+- **Temporary address creation: 50 per minute per IP** (was 30, originally 10).
+- **API-key authenticated permanent-mailbox creation is no longer rate limited
+  by default** (`rate_limits.api_create_per_minute: 0`). The key is the
+  credential and total growth is bounded by `tempmail.max_permanent_addresses`;
+  set a positive value to re-enable a limit, or 0 to disable it again.
+- The nginx edge limit is bypassed for that path too (`/api/v1/api/` gets its
+  own location without `limit_req`), otherwise the 120/min edge bucket would
+  still cap API-key creation.
+- Docs, config example and the admin panel hint reflect both values; 4 new tests
+  pin the defaults (144 total).
+
 ## [1.1.6] - 2026-09-23
 
 ### Changed

@@ -347,3 +347,54 @@ class TestConfigurableRateLimits:
             headers=admin_headers(),
         )
         assert res.status_code == 400
+
+
+# --------------------------------------------------------------------------
+# requested default limits (operator preference)
+# --------------------------------------------------------------------------
+
+class TestConfiguredLimitDefaults:
+    def test_temporary_creation_default_is_50_per_minute(self):
+        from app.config import Config
+
+        cfg = Config.__new__(Config)
+        cfg._apply({"domains": ["example.com"]})
+        assert cfg.RL_ADDRESS_CREATE == 50
+
+    def test_api_key_creation_is_unlimited_by_default(self):
+        from app.config import Config
+
+        cfg = Config.__new__(Config)
+        cfg._apply({"domains": ["example.com"]})
+        assert cfg.RL_API_CREATE == 0, "API-key creation must not be rate limited by default"
+
+    def test_api_key_route_with_zero_limit_never_rejects(self, monkeypatch):
+        import app.rate_limit as rl
+
+        from app.config import settings
+
+        _WINDOWS.clear()
+        monkeypatch.setattr(settings, "RL_API_CREATE", 0)
+        monkeypatch.delenv("TESTING", raising=False)
+        try:
+            dependency = rl.ip_rate_limit(0, 60, scope="test_api_create", setting_name="RL_API_CREATE")
+
+            class _Req:
+                headers = {"x-forwarded-for": "198.51.100.7"}
+                client = None
+
+            for _ in range(200):
+                dependency(_Req())  # never raises
+        finally:
+            os.environ["TESTING"] = "1"
+            _WINDOWS.clear()
+
+    def test_overriding_via_config_is_honoured(self):
+        from app.config import Config
+
+        cfg = Config.__new__(Config)
+        cfg._apply({"domains": ["example.com"],
+                    "rate_limits": {"address_create_per_minute": 120,
+                                    "api_create_per_minute": 300}})
+        assert cfg.RL_ADDRESS_CREATE == 120
+        assert cfg.RL_API_CREATE == 300

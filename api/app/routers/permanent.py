@@ -27,7 +27,7 @@ from app.utils import generate_token
 router = APIRouter(prefix='/api/v1', tags=['permanent'])
 
 public_create_rate_limit = ip_rate_limit(limit=20, window_seconds=60, scope='permanent_create', setting_name='RL_PERMANENT_CREATE')
-api_create_rate_limit = ip_rate_limit(limit=60, window_seconds=60, scope='permanent_create_api', setting_name='RL_API_CREATE')
+api_create_rate_limit = ip_rate_limit(limit=0, window_seconds=60, scope='permanent_create_api', setting_name='RL_API_CREATE')
 
 
 def _create_permanent_address(request: PermanentAddressCreate, db: Session) -> Address:

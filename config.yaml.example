@@ -38,9 +38,10 @@ database:
 # limits are per IP address: several users behind one NAT share the budget, so
 # keep them comfortably above normal interactive use.
 rate_limits:
-  address_create_per_minute: 30       # POST /api/v1/addresses
+  address_create_per_minute: 50       # POST /api/v1/addresses
   permanent_create_per_minute: 20     # POST /api/v1/permanent-addresses
-  api_create_per_minute: 60           # POST /api/v1/api/addresses (X-API-Key)
+  api_create_per_minute: 0            # POST /api/v1/api/addresses (X-API-Key); 0 = no limit
+                                      #   (bound total growth with tempmail.max_permanent_addresses)
   setup_per_minute: 5                 # POST /api/v1/setup/complete
   admin_per_minute: 120               # /api/v1/admin/*
   email_read_per_minute: 300          # /api/v1/{token}/* reads & downloads

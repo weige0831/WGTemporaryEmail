@@ -120,9 +120,11 @@ class Config:
         # are per IP, and several people can share one (office NAT, mobile
         # carrier), while abuse is already bounded by the mailbox/address caps.
         rl = config.get('rate_limits', {})
-        self.RL_ADDRESS_CREATE: int = rl.get('address_create_per_minute', 30)
+        self.RL_ADDRESS_CREATE: int = rl.get('address_create_per_minute', 50)
         self.RL_PERMANENT_CREATE: int = rl.get('permanent_create_per_minute', 20)
-        self.RL_API_CREATE: int = rl.get('api_create_per_minute', 60)
+        # 0 = no limit: the API key is itself the credential, and total growth is
+        # bounded by tempmail.max_permanent_addresses.
+        self.RL_API_CREATE: int = rl.get('api_create_per_minute', 0)
         self.RL_SETUP: int = rl.get('setup_per_minute', 5)
         self.RL_ADMIN: int = rl.get('admin_per_minute', 120)
         self.RL_EMAIL_READ: int = rl.get('email_read_per_minute', 300)
@@ -179,9 +181,9 @@ def create_test_config() -> Config:
     config.ADMIN_TOKEN = 'test-admin-token'
     config.SETUP_INITIALIZED = True
     config.SETUP_KEY = ''
-    config.RL_ADDRESS_CREATE = 30
+    config.RL_ADDRESS_CREATE = 50
     config.RL_PERMANENT_CREATE = 20
-    config.RL_API_CREATE = 60
+    config.RL_API_CREATE = 0
     config.RL_SETUP = 5
     config.RL_ADMIN = 120
     config.RL_EMAIL_READ = 300
