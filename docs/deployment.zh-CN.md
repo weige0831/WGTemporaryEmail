@@ -129,3 +129,28 @@ docker compose up -d --force-recreate
 ```
 
 数据库迁移位于 `db/migrations/`，全部幂等可重复执行。从旧版本升级时需要执行；全新安装由 `db/init/schema.sql` 直接建好完整结构。
+
+## 磁盘紧张的部署方式（预构建前端）
+
+`web/Dockerfile` 会在构建阶段执行 `npm ci && next build`，需要约 1GB 临时空间。
+在已经存有邮件数据的小型 VPS 上可能因 `ENOSPC: no space left on device` 失败。
+
+此时改为"本地构建静态产物、服务器只打包镜像"：
+
+```bash
+# 本地
+cd web && npm ci && npm run build          # 产物在 web/out
+tar -czf webprebuilt.tar.gz -C web out Dockerfile.runtime locations.conf entrypoint.sh
+scp webprebuilt.tar.gz root@服务器:/root/
+
+# 服务器
+cd /root/tempmail-server/web && tar -xzf /root/webprebuilt.tar.gz
+cd /root/tempmail-server
+docker compose build api mx                # 不涉及 npm
+mkdir -p /root/webimg && cp -r web/out web/locations.conf web/entrypoint.sh     web/Dockerfile.runtime /root/webimg/
+docker build -f /root/webimg/Dockerfile.runtime -t tempmail-server-web /root/webimg
+docker compose up -d --no-build
+```
+
+注意：必须用干净的构建目录（`/root/webimg`）——`web/.dockerignore` 排除了 `out/`，
+以 `web/` 为上下文构建会看不到静态产物。

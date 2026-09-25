@@ -1,0 +1,17 @@
+# Runtime-only image: serves a static export that was built elsewhere.
+#
+# Why this exists: the full Dockerfile (npm ci + next build) needs ~1 GB of
+# scratch space, which a small VPS already holding mail data may not have.
+# Building the export on a workstation and shipping `out/` keeps the server-side
+# build to a few MB.
+#
+#   local:  npm run build          (produces web/out)
+#   server: docker build -f Dockerfile.runtime -t <project>-web .
+FROM nginx:1.27-alpine
+RUN apk add --no-cache openssl
+COPY out/ /usr/share/nginx/html
+COPY locations.conf /etc/nginx/locations.conf
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+EXPOSE 80 443
+ENTRYPOINT ["/bin/sh", "/entrypoint.sh"]

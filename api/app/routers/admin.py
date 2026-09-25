@@ -10,6 +10,8 @@ reload the new token takes effect immediately (settings is mutated in place).
 import hmac
 import json
 import logging
+
+import requests
 import os
 import re
 import secrets
@@ -48,6 +50,7 @@ from app.utils import escape_like
 logger = logging.getLogger(__name__)
 from app.schemas.address import PermanentAddressCreate
 from app.schemas.admin import (
+    DomainCheckResult,
     AdminAddressDetail,
     AdminAddressList,
     AdminConfigResponse,
@@ -413,10 +416,58 @@ def list_domains(db: Session = Depends(get_db)):
     return {'domains': result}
 
 
+def check_domain_mx(domain: str) -> dict:
+    """Look the domain's MX records up over DNS-over-HTTPS.
+
+    Never raises: a DNS problem must not break domain management. The result is
+    what the panel shows, so an operator who just added a domain immediately
+    sees whether mail can actually reach this server.
+    """
+    expected = (settings.HOSTNAME or '').strip().lower().rstrip('.')
+    try:
+        response = requests.get(
+            'https://dns.google/resolve',
+            params={'name': domain, 'type': 'MX'},
+            headers={'Accept': 'application/dns-json'},
+            timeout=5,
+        )
+        response.raise_for_status()
+        payload = response.json()
+    except Exception as exc:  # network/DNS failure - report, do not raise
+        return {'domain': domain, 'expected': expected, 'records': [],
+                'matches': False, 'error': str(exc)[:200]}
+
+    records = []
+    for answer in payload.get('Answer') or []:
+        if answer.get('type') == 15:  # MX
+            parts = str(answer.get('data', '')).split()
+            if parts:
+                records.append(parts[-1].rstrip('.').lower())
+    records = sorted(set(records))
+    return {
+        'domain': domain,
+        'expected': expected,
+        'records': records,
+        'matches': bool(expected) and expected in records,
+        'error': None,
+    }
+
+
+@router.get('/domains/check', response_model=DomainCheckResult)
+def check_domain(domain: str = Query(..., min_length=3)):
+    """Check whether a domain's MX records point at this server."""
+    return check_domain_mx(_validate_domain_format(domain))
+
+
 @router.post('/domains')
 def add_domain(request: DomainAddRequest):
-    """Add a domain. Takes effect for the API immediately and for the MX
-    server within its config reload interval (15s)."""
+    """Add a domain.
+
+    Takes effect for the API immediately and for the MX on the next incoming
+    mail (the MX re-reads config.yaml before rejecting an unknown domain). The
+    response carries an MX check so the operator learns right away if the DNS
+    record is missing - mail would otherwise silently never arrive.
+    """
     domain = _validate_domain_format(request.domain)
 
     config = read_config()
@@ -428,7 +479,7 @@ def add_domain(request: DomainAddRequest):
 
     config['domains'] = domains + [domain]
     _commit_config(config)
-    return {'added': domain, 'domains': settings.DOMAINS}
+    return {'added': domain, 'domains': settings.DOMAINS, 'check': check_domain_mx(domain)}
 
 
 @router.delete('/domains/{domain}', response_model=DomainRemoveResponse)

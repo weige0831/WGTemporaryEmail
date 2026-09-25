@@ -106,7 +106,20 @@ func (s *Session) Rcpt(to string, opts *smtp.RcptOptions) error {
 	}
 	domain := strings.ToLower(parts[1])
 
-	// Check if domain is in our allowed list
+	// Check if domain is in our allowed list. A domain added in the admin panel
+	// moments ago may not be in this session's snapshot yet: re-read config.yaml
+	// before answering, because a permanent 550 here bounces the sender's mail
+	// for good (the previous behaviour when an operator added a domain and mail
+	// arrived inside the reload interval).
+	if !s.domains[domain] {
+		if cfg := reloadIfChanged(configFilePath); cfg != nil {
+			s.cfg = cfg
+			s.domains = cfg.GetDomainMap()
+			if s.domains[domain] {
+				log.Printf("[%s] Domain %s accepted right after a config reload", s.remoteAddr, domain)
+			}
+		}
+	}
 	if !s.domains[domain] {
 		log.Printf("[%s] REJECTED: Domain not accepted: %s (allowed: %v)", s.remoteAddr, domain, s.cfg.Domains)
 		return smtpError(550, [3]int{5, 7, 1}, "relay access denied")

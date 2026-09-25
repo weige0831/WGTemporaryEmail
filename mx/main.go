@@ -68,7 +68,7 @@ func main() {
 	}()
 
 	// Watch config.yaml for hot-reloaded changes (e.g. domains from the admin panel)
-	go watchConfig(configPath, server.ReloadTLS)
+	go watchConfig(configPath, hashFile(configPath), server.ReloadTLS)
 
 	// Wait for interrupt signal
 	sigChan := make(chan os.Signal, 1)

@@ -159,6 +159,14 @@ export interface AdminAddressDetail {
   emails: AdminEmailSummary[]
 }
 
+export interface DomainCheck {
+  domain: string
+  expected: string
+  records: string[]
+  matches: boolean
+  error: string | null
+}
+
 export interface DomainStats {
   domain: string
   address_count: number
@@ -229,7 +237,11 @@ export const adminApi = {
     return request('/api/v1/admin/domains')
   },
 
-  addDomain(domain: string): Promise<{ added: string; domains: string[] }> {
+  checkDomain(domain: string): Promise<DomainCheck> {
+    return request(`/api/v1/admin/domains/check?domain=${encodeURIComponent(domain)}`)
+  },
+
+  addDomain(domain: string): Promise<{ added: string; domains: string[]; check?: DomainCheck }> {
     return request('/api/v1/admin/domains', {
       method: 'POST',
       body: JSON.stringify({ domain }),

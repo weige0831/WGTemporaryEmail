@@ -143,6 +143,16 @@ class DomainStats(BaseModel):
     email_count: int
 
 
+class DomainCheckResult(BaseModel):
+    """Result of checking a domain's MX records."""
+    domain: str
+    # Hostname this server expects MX to point at (server.hostname).
+    expected: str = ""
+    records: List[str] = []
+    matches: bool = False
+    error: Optional[str] = None
+
+
 class AdminDomainList(BaseModel):
     domains: List[DomainStats]
 

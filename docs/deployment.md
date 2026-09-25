@@ -144,3 +144,29 @@ docker compose up -d --force-recreate
 ```
 
 Migrations live in `db/migrations/` and are idempotent. Run them when upgrading an installation created before the matching feature; a fresh install gets the full schema from `db/init/schema.sql`.
+
+## Low-disk deployments (prebuilt frontend)
+
+`web/Dockerfile` runs `npm ci && next build` inside the build, which needs
+roughly 1 GB of scratch space. On a small VPS that already holds mail data this
+can fail with `ENOSPC: no space left on device`.
+
+Build the static export on a workstation instead and ship only the output:
+
+```bash
+# workstation
+cd web && npm ci && npm run build          # produces web/out
+tar -czf webprebuilt.tar.gz -C web out Dockerfile.runtime locations.conf entrypoint.sh
+scp webprebuilt.tar.gz root@server:/root/
+
+# server
+cd /root/tempmail-server/web && tar -xzf /root/webprebuilt.tar.gz
+cd /root/tempmail-server
+docker compose build api mx                # no npm involved
+mkdir -p /root/webimg && cp -r web/out web/locations.conf web/entrypoint.sh     web/Dockerfile.runtime /root/webimg/
+docker build -f /root/webimg/Dockerfile.runtime -t tempmail-server-web /root/webimg
+docker compose up -d --no-build
+```
+
+Note: build from a clean context (`/root/webimg`) - `web/.dockerignore` excludes
+`out/`, so building with `web/` as the context cannot see the export.

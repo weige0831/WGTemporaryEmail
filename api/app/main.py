@@ -37,7 +37,7 @@ if _faulthandler_seconds > 0:
 app = FastAPI(
     title="Tempmail Server API",
     description="Tempmail backend API - receive and manage temporary email addresses",
-    version="1.1.9",
+    version="1.2.0",
     docs_url="/docs" if settings.DOCS_ENABLED else None,
     redoc_url="/redoc" if settings.DOCS_ENABLED else None,
     openapi_url="/openapi.json" if settings.DOCS_ENABLED else None

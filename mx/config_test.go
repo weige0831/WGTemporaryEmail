@@ -355,3 +355,51 @@ func TestUnlimitedMessageRateAcceptsMany(t *testing.T) {
 	}
 	ipWindows = map[string]*ipWindow{}
 }
+
+func TestReloadIfChangedPicksUpNewDomain(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.yaml")
+	write := func(domains string) {
+		content := "domains:\n" + domains +
+			"database:\n  url: postgresql://u:p@localhost:5432/db\n" +
+			"server:\n  mx_port: 25\n"
+		if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write("- first.test\n")
+
+	base, err := LoadConfig(path)
+	if err != nil {
+		t.Fatalf("LoadConfig: %v", err)
+	}
+	SetCurrentConfig(base)
+
+	// Prime the hash exactly like main() does, then change the file.
+	SetConfigPath(path)
+	configHash = hashFile(path)
+
+	// A brand new domain must be visible after one forced re-read.
+	write("- first.test\n- second.test\n")
+	cfg := reloadIfChanged(path)
+	if cfg == nil {
+		t.Fatal("reloadIfChanged returned nil after the file changed")
+	}
+	if !cfg.GetDomainMap()["second.test"] {
+		t.Errorf("new domain missing after reload: %v", cfg.Domains)
+	}
+
+	// Second call with unchanged content must be a no-op.
+	if again := reloadIfChanged(path); again != nil {
+		t.Error("reloadIfChanged reloaded even though the file did not change")
+	}
+
+	// A broken file keeps the previous config and returns nil.
+	os.WriteFile(path, []byte("domains: [broken\n"), 0o644)
+	if broken := reloadIfChanged(path); broken != nil {
+		t.Error("reloadIfChanged accepted an unparsable file")
+	}
+	if got := GetCurrentConfig(); got == nil || !got.GetDomainMap()["second.test"] {
+		t.Error("previous config was not kept after a failed reload")
+	}
+}

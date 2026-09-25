@@ -398,3 +398,56 @@ class TestConfiguredLimitDefaults:
                                     "api_create_per_minute": 300}})
         assert cfg.RL_ADDRESS_CREATE == 120
         assert cfg.RL_API_CREATE == 300
+
+
+# --------------------------------------------------------------------------
+# domain flow: MX check when adding a domain
+# --------------------------------------------------------------------------
+
+class TestDomainMxCheck:
+    def test_check_endpoint_reports_records(self, client, config_file, monkeypatch):
+        import app.routers.admin as admin_router
+
+        def fake_check(domain):
+            return {"domain": domain, "expected": "mx.tempmail.example.com",
+                    "records": ["mx.tempmail.example.com"], "matches": True, "error": None}
+
+        monkeypatch.setattr(admin_router, "check_domain_mx", fake_check)
+        res = client.get("/api/v1/admin/domains/check",
+                         params={"domain": "example.com"}, headers=admin_headers())
+        assert res.status_code == 200, res.text
+        body = res.json()
+        assert body["matches"] is True
+        assert body["records"] == ["mx.tempmail.example.com"]
+
+    def test_add_domain_returns_the_check(self, client, config_file, monkeypatch):
+        import app.routers.admin as admin_router
+
+        monkeypatch.setattr(admin_router, "check_domain_mx", lambda d: {
+            "domain": d, "expected": "mx.tempmail.example.com",
+            "records": [], "matches": False, "error": None})
+
+        res = client.post("/api/v1/admin/domains", json={"domain": "newdomain.test"},
+                          headers=admin_headers())
+        assert res.status_code == 200, res.text
+        body = res.json()
+        assert body["added"] == "newdomain.test"
+        # The operator sees immediately that DNS is not ready yet.
+        assert body["check"]["matches"] is False
+        # Persisted to config.yaml (settings.DOMAINS is only re-read outside
+        # TESTING, so assert on the file itself).
+        saved = yaml.safe_load(io.open(config_file, encoding="utf-8"))
+        assert "newdomain.test" in saved["domains"]
+
+    def test_check_survives_dns_failure(self, client, config_file, monkeypatch):
+        import app.routers.admin as admin_router
+
+        def boom(domain):
+            return {"domain": domain, "expected": "mx.tempmail.example.com", "records": [],
+                    "matches": False, "error": "dns unavailable"}
+
+        monkeypatch.setattr(admin_router, "check_domain_mx", boom)
+        res = client.get("/api/v1/admin/domains/check",
+                         params={"domain": "example.com"}, headers=admin_headers())
+        assert res.status_code == 200
+        assert res.json()["error"] == "dns unavailable"

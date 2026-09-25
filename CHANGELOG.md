@@ -4,6 +4,32 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-09-25
+
+### Fixed - adding a domain could silently lose mail
+
+- **The MX now accepts a domain added seconds ago.** When a recipient domain is
+  unknown, the MX re-reads `config.yaml` before answering instead of replying
+  `550 5.7.1 relay access denied` from a stale in-memory snapshot. A domain added
+  in the panel is therefore live for the very next message; previously mail that
+  arrived inside the reload interval was rejected **permanently** (the sender
+  bounces it, so it is lost rather than retried).
+- The periodic reload interval dropped from 15s to 5s, so removals (and other
+  config edits) propagate faster too.
+
+### Added - the domain flow now tells the operator what is wrong
+
+- **MX record check**: `GET /api/v1/admin/domains/check?domain=...` looks the MX
+  records up over DNS-over-HTTPS (no new dependency, `requests` was already
+  there) and compares them with `server.hostname`.
+- **`POST /api/v1/admin/domains` returns that check** in its response, and the
+  admin panel shows the result per domain: green when MX points here, amber with
+  the found/expected values when it does not, plus a "check again" action. A
+  domain added without a correct MX record would otherwise receive nothing while
+  looking perfectly configured - exactly the confusing case an operator hits
+  when adding a domain by hand.
+- 7 new UI strings in all 16 languages; 3 new tests (147 backend tests).
+
 ## [1.1.9] - 2026-09-23
 
 ### Changed

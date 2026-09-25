@@ -1,13 +1,14 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Globe, Plus, Trash2, RefreshCw } from "lucide-react"
+import { Globe, Plus, Trash2, RefreshCw, ShieldCheck, AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   adminApi,
   ApiError,
+  type DomainCheck,
   type DomainStats,
 } from "@/lib/admin-api"
 import { useI18n } from "@/lib/i18n"
@@ -19,6 +20,10 @@ export default function AdminDomains() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [notice, setNotice] = useState("")
+  // MX 记录检查结果：域名加了但 DNS 没指过来时，邮件会静默丢失，
+  // 所以这里把检查结果直接摆在操作者面前。
+  const [checks, setChecks] = useState<Record<string, DomainCheck>>({})
+  const [checking, setChecking] = useState<string>("")
 
   const fetchDomains = async () => {
     setError("")
@@ -32,7 +37,15 @@ export default function AdminDomains() {
   }
 
   useEffect(() => {
-    fetchDomains()
+    fetchDomains().then(() => {
+      // 首次加载时顺带检查已配置域名的 MX 记录
+      adminApi
+        .listDomains()
+        .then((res) => res.domains.forEach((d) => runCheck(d.domain)))
+        .catch(() => {
+          // 忽略：DNS 检查失败不影响域名管理
+        })
+    })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -43,15 +56,32 @@ export default function AdminDomains() {
     setError("")
     setNotice("")
     try {
-      await adminApi.addDomain(domain)
+      const res = await adminApi.addDomain(domain)
       setNewDomain("")
       setNotice(t("admin.domainAdded", { domain }))
+      if (res.check) {
+        setChecks((prev) => ({ ...prev, [domain]: res.check as DomainCheck }))
+      } else {
+        runCheck(domain)
+      }
       await fetchDomains()
     } catch (e) {
       if (e instanceof ApiError) setError(e.message)
       else setError(t("admin.addFailed"))
     } finally {
       setLoading(false)
+    }
+  }
+
+  const runCheck = async (domain: string) => {
+    setChecking(domain)
+    try {
+      const result = await adminApi.checkDomain(domain)
+      setChecks((prev) => ({ ...prev, [domain]: result }))
+    } catch {
+      // 检查失败不阻塞页面，保留上一次结果
+    } finally {
+      setChecking("")
     }
   }
 
@@ -118,13 +148,14 @@ export default function AdminDomains() {
                 <th className="p-3 font-medium">{t("admin.domainCol")}</th>
                 <th className="p-3 font-medium">{t("admin.addressCountCol")}</th>
                 <th className="p-3 font-medium">{t("admin.emailCountCol")}</th>
+                <th className="p-3 font-medium">{t("admin.dnsCol")}</th>
                 <th className="p-3 font-medium text-right">{t("admin.actionsCol")}</th>
               </tr>
             </thead>
             <tbody className="divide-y">
               {domains.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="p-6 text-center text-muted-foreground">
+                  <td colSpan={5} className="p-6 text-center text-muted-foreground">
                     {t("admin.noDomainsConfigured")}
                   </td>
                 </tr>
@@ -134,6 +165,14 @@ export default function AdminDomains() {
                   <td className="p-3 font-mono">{d.domain}</td>
                   <td className="p-3">{d.address_count}</td>
                   <td className="p-3">{d.email_count}</td>
+                  <td className="p-3">
+                    <DnsStatus
+                      check={checks[d.domain]}
+                      checking={checking === d.domain}
+                      onCheck={() => runCheck(d.domain)}
+                      t={t}
+                    />
+                  </td>
                   <td className="p-3 text-right">
                     <Button
                       size="sm"
@@ -153,5 +192,57 @@ export default function AdminDomains() {
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+// 每个域名的 MX 记录状态：正确 / 未指向本机 / 无记录 / 查询失败，均可手动复查。
+function DnsStatus({
+  check,
+  checking,
+  onCheck,
+  t,
+}: {
+  check?: DomainCheck
+  checking: boolean
+  onCheck: () => void
+  t: (key: string, vars?: Record<string, string | number>) => string
+}) {
+  if (checking) {
+    return (
+      <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+        <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+        {t("admin.dnsChecking")}
+      </span>
+    )
+  }
+  if (!check) {
+    return (
+      <Button size="sm" variant="outline" className="h-7 text-xs" onClick={onCheck}>
+        {t("admin.dnsCheck")}
+      </Button>
+    )
+  }
+  if (check.error) {
+    return (
+      <button onClick={onCheck} className="inline-flex items-center gap-1 text-xs text-destructive text-left">
+        <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+        {t("admin.dnsError", { err: check.error })}
+      </button>
+    )
+  }
+  if (check.matches) {
+    return (
+      <button onClick={onCheck} className="inline-flex items-center gap-1 text-xs text-green-600 dark:text-green-400 text-left">
+        <ShieldCheck className="h-3.5 w-3.5 shrink-0" />
+        {t("admin.dnsOk", { host: check.expected })}
+      </button>
+    )
+  }
+  const found = check.records.length ? check.records.join(", ") : t("admin.dnsNone")
+  return (
+    <button onClick={onCheck} className="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 text-left">
+      <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+      {t("admin.dnsMismatch", { found, expected: check.expected })}
+    </button>
   )
 }
