@@ -32,6 +32,24 @@ func GetCurrentConfig() *Config {
 	return cfg
 }
 
+// ServerConfig groups the [server] section. A named type (rather than an
+// anonymous struct) keeps the struct literals in tests stable when a field is
+// added.
+type ServerConfig struct {
+	APIPort      int    `yaml:"api_port"`
+	MXPort       int    `yaml:"mx_port"`
+	MaxMsgSizeMB int    `yaml:"max_message_size_mb"`
+	Hostname     string `yaml:"hostname"`
+	// Concurrency and abuse limits. 0 values fall back to the defaults below,
+	// except the two pointer fields where a present 0 means "no limit".
+	MaxConnections int `yaml:"max_connections"`
+	// Per source IP, per hour. Absent -> 300. Present and 0 (or negative) ->
+	// unlimited, which is what an operator running a high-volume sink wants.
+	MaxMessagesPerHourIP *int `yaml:"max_messages_per_hour_per_ip"`
+	// Per message. Absent -> 100. Present and 0 -> unlimited.
+	MaxMIMEParts *int `yaml:"max_mime_parts"`
+}
+
 // Config holds the MX server configuration loaded from YAML
 type Config struct {
 	Domains []string `yaml:"domains"`
@@ -41,17 +59,7 @@ type Config struct {
 		PoolSize int    `yaml:"pool_size"`
 	} `yaml:"database"`
 
-	Server struct {
-		APIPort              int    `yaml:"api_port"`
-		MXPort               int    `yaml:"mx_port"`
-		MaxMsgSizeMB         int    `yaml:"max_message_size_mb"`
-		Hostname             string `yaml:"hostname"`
-		MaxConnections       int    `yaml:"max_connections"`
-		MaxMessagesPerHourIP int    `yaml:"max_messages_per_hour_per_ip"`
-		MaxMIMEParts         int    `yaml:"max_mime_parts"`
-		// Concurrency and abuse limits. Zero values fall back to the
-		// defaults in the getters below.
-	} `yaml:"server"`
+	Server ServerConfig `yaml:"server"`
 
 	TLS struct {
 		Enabled  bool   `yaml:"enabled"`
@@ -161,21 +169,23 @@ func (c *Config) GetMaxConnections() int {
 	return 200
 }
 
-// GetMaxMessagesPerHourIP caps accepted messages per source IP per hour
-// (0 -> default 300). It bounds mail floods from one sender.
+// GetMaxMessagesPerHourIP caps accepted messages per source IP per hour.
+//
+// The key is absent -> 300 (a defensive default). The key is present and 0 or
+// negative -> no limit, so an operator can switch the flood guard off without
+// patching the binary (a mail sink fed by a large sender pool needs this).
 func (c *Config) GetMaxMessagesPerHourIP() int {
-	if c.Server.MaxMessagesPerHourIP > 0 {
-		return c.Server.MaxMessagesPerHourIP
+	if c.Server.MaxMessagesPerHourIP == nil {
+		return 300
 	}
-	return 300
+	return *c.Server.MaxMessagesPerHourIP
 }
 
-// GetMaxMIMEParts caps the number of MIME parts parsed from one message
-// (0 -> default 100). A message made of thousands of tiny parts costs far more
-// memory to parse than its size suggests.
+// GetMaxMIMEParts caps the number of MIME parts parsed from one message.
+// Absent -> 100; present and 0 -> unlimited.
 func (c *Config) GetMaxMIMEParts() int {
-	if c.Server.MaxMIMEParts > 0 {
-		return c.Server.MaxMIMEParts
+	if c.Server.MaxMIMEParts == nil {
+		return 100
 	}
-	return 100
+	return *c.Server.MaxMIMEParts
 }

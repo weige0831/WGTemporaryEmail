@@ -109,6 +109,8 @@ func NewSMTPServer(cfg *Config, db *DB) (*SMTPServer, error) {
 	log.Printf("  Server domain: %s", s.Domain)
 	log.Printf("  Max message size: %d MB", cfg.Server.MaxMsgSizeMB)
 	log.Printf("  Max recipients: %d", s.MaxRecipients)
+	log.Printf("  Message rate limit: %s", describeLimit(cfg.GetMaxMessagesPerHourIP(), "per hour per source IP"))
+	log.Printf("  Max MIME parts: %s", describeLimit(cfg.GetMaxMIMEParts(), "per message"))
 	log.Printf("  Accepted domains: %v", cfg.Domains)
 
 	return &SMTPServer{
@@ -172,4 +174,13 @@ func tlsVersionString(version uint16) string {
 	default:
 		return fmt.Sprintf("Unknown (0x%04X)", version)
 	}
+}
+
+// describeLimit renders 0/negative limits as "unlimited" for the startup log,
+// so the operator can see from `docker compose logs mx` whether a guard is on.
+func describeLimit(limit int, unit string) string {
+	if limit <= 0 {
+		return "unlimited"
+	}
+	return fmt.Sprintf("%d %s", limit, unit)
 }

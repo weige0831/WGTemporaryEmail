@@ -235,15 +235,7 @@ func TestConfigGetMaxMessageSize(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := &Config{
-				Server: struct {
-					APIPort              int    `yaml:"api_port"`
-					MXPort               int    `yaml:"mx_port"`
-					MaxMsgSizeMB         int    `yaml:"max_message_size_mb"`
-					Hostname             string `yaml:"hostname"`
-					MaxConnections       int    `yaml:"max_connections"`
-					MaxMessagesPerHourIP int    `yaml:"max_messages_per_hour_per_ip"`
-					MaxMIMEParts         int    `yaml:"max_mime_parts"`
-				}{
+				Server: ServerConfig{
 					MaxMsgSizeMB: tt.sizeMB,
 				},
 			}
@@ -310,4 +302,56 @@ tls:
 	if cfg.TLS.KeyFile != "/config/certs/key.pem" {
 		t.Errorf("LoadConfig() default KeyFile = %v, want /config/certs/key.pem", cfg.TLS.KeyFile)
 	}
+}
+
+func TestPerIPMessageLimitSemantics(t *testing.T) {
+	// absent -> defensive default
+	cfg := &Config{}
+	if got := cfg.GetMaxMessagesPerHourIP(); got != 300 {
+		t.Errorf("absent limit = %d, want 300", got)
+	}
+	// explicit 0 -> unlimited (0 is returned and allowMessageFrom treats <=0 as no limit)
+	zero := 0
+	cfg.Server.MaxMessagesPerHourIP = &zero
+	if got := cfg.GetMaxMessagesPerHourIP(); got != 0 {
+		t.Errorf("explicit 0 = %d, want 0 (unlimited)", got)
+	}
+	if !allowMessageFrom("203.0.113.5", cfg.GetMaxMessagesPerHourIP()) {
+		t.Error("limit 0 must accept mail")
+	}
+	// positive -> that value
+	n := 42
+	cfg.Server.MaxMessagesPerHourIP = &n
+	if got := cfg.GetMaxMessagesPerHourIP(); got != 42 {
+		t.Errorf("limit = %d, want 42", got)
+	}
+}
+
+func TestMIMEPartsLimitSemantics(t *testing.T) {
+	cfg := &Config{}
+	if got := cfg.GetMaxMIMEParts(); got != 100 {
+		t.Errorf("absent parts limit = %d, want 100", got)
+	}
+	zero := 0
+	cfg.Server.MaxMIMEParts = &zero
+	if got := cfg.GetMaxMIMEParts(); got != 0 {
+		t.Errorf("explicit 0 = %d, want 0 (unlimited)", got)
+	}
+	n := 250
+	cfg.Server.MaxMIMEParts = &n
+	if got := cfg.GetMaxMIMEParts(); got != 250 {
+		t.Errorf("parts limit = %d, want 250", got)
+	}
+}
+
+func TestUnlimitedMessageRateAcceptsMany(t *testing.T) {
+	ipWindows = map[string]*ipWindow{}
+	zero := 0
+	limit := zero
+	for i := 0; i < 5000; i++ {
+		if !allowMessageFrom("198.51.100.9", limit) {
+			t.Fatalf("message %d rejected while the limit is 0 (unlimited)", i+1)
+		}
+	}
+	ipWindows = map[string]*ipWindow{}
 }

@@ -36,15 +36,7 @@ func TestNewBackend(t *testing.T) {
 func TestBackendNewSession(t *testing.T) {
 	cfg := &Config{
 		Domains: []string{"tempmail.example.com"},
-		Server: struct {
-			APIPort              int    `yaml:"api_port"`
-			MXPort               int    `yaml:"mx_port"`
-			MaxMsgSizeMB         int    `yaml:"max_message_size_mb"`
-			Hostname             string `yaml:"hostname"`
-			MaxConnections       int    `yaml:"max_connections"`
-			MaxMessagesPerHourIP int    `yaml:"max_messages_per_hour_per_ip"`
-			MaxMIMEParts         int    `yaml:"max_mime_parts"`
-		}{
+		Server: ServerConfig{
 			MXPort:       25,
 			MaxMsgSizeMB: 10,
 			Hostname:     "mail.test.com",
@@ -114,15 +106,7 @@ func TestTLSVersionString(t *testing.T) {
 func TestNewSMTPServerConfig(t *testing.T) {
 	cfg := &Config{
 		Domains: []string{"tempmail.example.com"},
-		Server: struct {
-			APIPort              int    `yaml:"api_port"`
-			MXPort               int    `yaml:"mx_port"`
-			MaxMsgSizeMB         int    `yaml:"max_message_size_mb"`
-			Hostname             string `yaml:"hostname"`
-			MaxConnections       int    `yaml:"max_connections"`
-			MaxMessagesPerHourIP int    `yaml:"max_messages_per_hour_per_ip"`
-			MaxMIMEParts         int    `yaml:"max_mime_parts"`
-		}{
+		Server: ServerConfig{
 			MXPort:       2525,
 			MaxMsgSizeMB: 10,
 			Hostname:     "mail.tempmail.test",
@@ -220,15 +204,7 @@ func TestNewSMTPServerValidation(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := &Config{
 				Domains: []string{"test.com"},
-				Server: struct {
-					APIPort              int    `yaml:"api_port"`
-					MXPort               int    `yaml:"mx_port"`
-					MaxMsgSizeMB         int    `yaml:"max_message_size_mb"`
-					Hostname             string `yaml:"hostname"`
-					MaxConnections       int    `yaml:"max_connections"`
-					MaxMessagesPerHourIP int    `yaml:"max_messages_per_hour_per_ip"`
-					MaxMIMEParts         int    `yaml:"max_mime_parts"`
-				}{
+				Server: ServerConfig{
 					MXPort:       25,
 					MaxMsgSizeMB: 10,
 					Hostname:     "mail.test.com",

@@ -59,10 +59,16 @@ server:
   mx_port: 25
   max_message_size_mb: 10
 
-  # MX abuse limits (0 = defaults): concurrent SMTP connections (200),
-  # accepted messages per source IP per hour (300), MIME parts per message (100)
+  # MX abuse limits. Omit a key to keep its default; write 0 to switch that
+  # guard off entirely.
+  #   max_connections              - concurrent SMTP sessions      (default 200)
+  #   max_messages_per_hour_per_ip - accepted mail per source IP   (default 300,
+  #                                  0 = unlimited; raise this when a large
+  #                                  sender pool, e.g. AWS SES, delivers more)
+  #   max_mime_parts               - MIME parts per message        (default 100,
+  #                                  0 = unlimited)
   max_connections: 200
-  max_messages_per_hour_per_ip: 300
+  max_messages_per_hour_per_ip: 0
   max_mime_parts: 100
   # Mail server hostname (MX record target) - also the SAN of the TLS cert
   hostname: mail.example.com

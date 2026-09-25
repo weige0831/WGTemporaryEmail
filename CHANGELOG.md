@@ -4,6 +4,28 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the
 project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.9] - 2026-09-23
+
+### Changed
+
+- **`server.max_messages_per_hour_per_ip: 0` now really means "no limit".**
+  Previously a 0 in the config fell back to the 300/hour default (the getter
+  could not tell "unset" from "zero"), so an operator could not switch the guard
+  off. The key is now optional: absent -> 300 (defensive default), present and
+  0/negative -> unlimited. `server.max_mime_parts` follows the same rule.
+- The MX logs the effective values at startup
+  (`Per-IP message limit: 300/hour` or `unlimited`) so the setting is verifiable
+  from `docker compose logs mx`.
+
+### Why
+
+A large sender pool (AWS SES, used by Twitch: 55 source IPs in 54.240.26.0/24)
+delivering ~17k mails/hour saturates a per-IP cap: each IP reached 300 in the
+hour and the overflow was rejected with "per-IP message rate limit exceeded"
+(1500 rejections observed). The guard is advisory infrastructure, not a spam
+filter - DKIM/SPF/DMARC results are still recorded only and never cause a
+rejection.
+
 ## [1.1.8] - 2026-09-23
 
 ### Fixed
